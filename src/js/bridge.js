@@ -69,5 +69,11 @@ const Bridge = (() => {
     revealProject:      native ? (t) => api.revealProject(t)          : unsupported("revealing in Finder"),
     pickFiles:          native ? () => api.pickFiles()                : async () => [],
     onProjectsChanged:  native ? (cb) => api.onProjectsChanged(cb)    : () => () => {},
+
+    // Feed. In a plain browser tab there is no main process to fetch through,
+    // so the feed simply reports as unavailable rather than half-working.
+    feedFetch:  native ? (url) => api.feedFetch(url) : async () => ({ ok:false, error:"needs the desktop app" }),
+    feedDrop:   native ? () => api.feedDrop()        : async () => ({ ok:false, error:"needs the desktop app" }),
+    feedDropDir:native ? () => api.feedDropDir()     : async () => null,
   };
 })();

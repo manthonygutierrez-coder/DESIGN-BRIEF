@@ -35,8 +35,10 @@ const Mail = (() => {
   function save(){ Bridge.saveState(state); }
 
   /* ── message content, derived not stored ─────────────── */
-  function briefOf(m){ return CATS[m.ci].briefs[m.briefIdx]; }
-  function clientOf(m){ return clientFor(briefOf(m).project); }
+  // A message either points at the built-in pool, or carries its own brief and
+  // client because it arrived from the feed. Everything downstream is identical.
+  function briefOf(m){ return m.brief || CATS[m.ci].briefs[m.briefIdx]; }
+  function clientOf(m){ return m.client || clientFor(briefOf(m).project); }
 
   function subjectOf(m){
     const b = briefOf(m);
@@ -117,6 +119,46 @@ const Mail = (() => {
     return m;
   }
 
+  /* A brief that arrived from the feed rather than the built-in pool.
+   * It carries its own brief and client, so nothing here consults CATS.
+   * Returns null if this id has already been seen — the feed is polled
+   * repeatedly and must be idempotent. */
+  function ingest(rec){
+    if (!rec || !rec.id || !rec.brief) return null;
+    const seenId = "feed:" + rec.id;
+    if (state.mail.some((m) => m.feedId === seenId)) return null;
+
+    const m = {
+      id: "m" + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36),
+      feedId: seenId,
+      ci: typeof rec.ci === "number" ? rec.ci : disciplineIndex(rec.discipline),
+      briefIdx: 0,
+      brief: rec.brief,
+      client: rec.client || null,
+      cadence: rec.cadence || null,
+      state: "unread",
+      received: rec.received ? Date.parse(rec.received) || Date.now() : Date.now(),
+      replied: false,
+      signedOff: false,
+      projectDir: null,
+      attachments: [],
+    };
+    state.mail.unshift(m);
+    save(); render(); syncTray();
+    balloon(m);
+    return m;
+  }
+
+  // Feed records name their discipline in words; fall back to graphic design.
+  function disciplineIndex(name){
+    if (!name) return 0;
+    const want = String(name).toLowerCase().replace(/[^a-z]/g, "");
+    const i = CATS.findIndex((c) =>
+      c.label.toLowerCase().replace(/[^a-z]/g, "") === want ||
+      c.id.toLowerCase() === String(name).toLowerCase());
+    return i < 0 ? 0 : i;
+  }
+
   /* ── state transitions ───────────────────────────────── */
   function setState(m, next){
     m.state = next;
@@ -130,6 +172,7 @@ const Mail = (() => {
 
   function reroll(m){
     setState(m, "rerolled");
+    // Feed briefs have no siblings to draw from; fall back to the built-in pool.
     const fresh = issue(m.ci, { quiet: true });
     folder = "inbox";
     selectedId = fresh.id;
@@ -451,7 +494,7 @@ const Mail = (() => {
     return w;
   }
 
-  return { boot, open, restore, issue, unreadCount, render };
+  return { boot, open, restore, issue, ingest, unreadCount, render };
 })();
 
 /* Called by the Start menu: taking on work in a discipline.

@@ -26,3 +26,6 @@ Mail.boot().then(() => {
 
 // Files landing in a project folder are worth knowing about.
 Bridge.onProjectsChanged(() => { if (typeof Mail !== "undefined") Mail.render(); });
+
+// Scheduled briefs from the feed (repo URL and/or the local _inbox drop).
+Feed.boot().catch((e) => console.error("[feed] boot failed:", e));

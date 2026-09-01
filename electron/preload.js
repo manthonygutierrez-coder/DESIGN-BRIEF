@@ -19,6 +19,12 @@ contextBridge.exposeInMainWorld('crossing', {
     return () => ipcRenderer.off('projects:changed', handler);
   },
 
+  // Brief feed. The fetch itself happens in the main process, so the renderer
+  // never needs network permission of its own.
+  feedFetch: (url) => ipcRenderer.invoke('feed:fetch', url),
+  feedDrop: () => ipcRenderer.invoke('feed:drop'),
+  feedDropDir: () => ipcRenderer.invoke('feed:dropDir'),
+
   // Real path for a dropped File — the only supported way under sandbox.
   pathForFile: (file) => webUtils.getPathForFile(file),
 });

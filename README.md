@@ -90,6 +90,22 @@ src/
 - **Silkscreen's ampersand** draws as something close to a cent sign, so any label
   shown in the pixel face goes through `pixelLabel()` first.
 
+## Scheduled briefs
+
+Briefs can arrive on a schedule instead of only when you ask for one. The app
+polls two sources and treats both identically:
+
+- a JSON feed at an HTTPS URL — a routine commits briefs to a public repo
+- `~/Documents/Pixel Crossing/_inbox/*.json` — anything running on this Mac
+
+Both are deduped by record id, so polling never duplicates a message. A
+scheduled brief arrives as ordinary unread mail, and if it carries a client
+profile that client's site becomes reachable in the in-app browser like any
+other. See [briefs/README.md](briefs/README.md) for the schema and setup.
+
+The fetch runs in the main process; the renderer keeps `connect-src 'none'` and
+can never reach the network itself.
+
 ## Where things live
 
 | What | Where |
@@ -97,3 +113,4 @@ src/
 | App state | `~/Library/Application Support/Pixel Crossing/state.json` |
 | Your projects | `~/Documents/Pixel Crossing/` (changeable in-app) |
 | Build output | `build/` |
+| Brief drop folder | `~/Documents/Pixel Crossing/_inbox/` |

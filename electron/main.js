@@ -2,6 +2,8 @@ const { app, BrowserWindow, ipcMain, dialog, shell, nativeImage } = require('ele
 const path = require('path');
 const fs = require('fs');
 const fsp = require('fs/promises');
+const https = require('https');
+const http = require('http');
 
 let mainWindow = null;
 
@@ -161,6 +163,80 @@ ipcMain.handle('projects:pickFiles', async () => {
     const st = await fsp.stat(p).catch(() => null);
     return { name: path.basename(p), path: p, size: st ? st.size : 0 };
   }));
+});
+
+/* ── brief feed ────────────────────────────────────────────
+ * Scheduled briefs reach the app two ways, and it does not care which:
+ *   pull — a JSON feed at a URL (a routine commits to the public repo)
+ *   drop — JSON files in a local folder (a job on this machine writes them)
+ * The fetch lives here in the main process on purpose: the renderer keeps
+ * `connect-src 'none'`, so no page in the app can reach the network itself.
+ */
+
+const FEED_MAX_BYTES = 2 * 1024 * 1024;
+const FEED_TIMEOUT = 12000;
+const DROP_DIRNAME = '_inbox';
+
+function fetchJSON(url){
+  return new Promise((resolve, reject) => {
+    let u;
+    try { u = new URL(url); } catch { return reject(new Error('bad feed url')); }
+    const isLocal = u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+    if (u.protocol !== 'https:' && !(u.protocol === 'http:' && isLocal)){
+      return reject(new Error('feed must be https (http allowed for localhost only)'));
+    }
+    const lib = u.protocol === 'https:' ? https : http;
+    const req = lib.get(u, { headers: { 'accept': 'application/json', 'user-agent': 'PixelCrossing' } }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location){
+        res.resume();
+        return fetchJSON(new URL(res.headers.location, u).href).then(resolve, reject);
+      }
+      if (res.statusCode !== 200){ res.resume(); return reject(new Error('feed HTTP ' + res.statusCode)); }
+      let size = 0; const chunks = [];
+      res.on('data', (d) => {
+        size += d.length;
+        if (size > FEED_MAX_BYTES){ req.destroy(); return reject(new Error('feed too large')); }
+        chunks.push(d);
+      });
+      res.on('end', () => {
+        try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8'))); }
+        catch (e){ reject(new Error('feed is not valid JSON: ' + e.message)); }
+      });
+    });
+    req.setTimeout(FEED_TIMEOUT, () => { req.destroy(); reject(new Error('feed timed out')); });
+    req.on('error', reject);
+  });
+}
+
+async function readDrop(){
+  const dir = path.join(await resolveRoot(), DROP_DIRNAME);
+  let names;
+  try { names = await fsp.readdir(dir); }
+  catch { return []; }                       // no drop folder yet is not an error
+  const out = [];
+  for (const n of names){
+    if (!n.toLowerCase().endsWith('.json') || n.startsWith('.')) continue;
+    try {
+      const raw = await fsp.readFile(path.join(dir, n), 'utf8');
+      const parsed = JSON.parse(raw);
+      for (const rec of (Array.isArray(parsed) ? parsed : parsed.briefs || [parsed])) out.push(rec);
+    } catch (e){ console.error('[feed] skipping', n, e.message); }
+  }
+  return out;
+}
+
+ipcMain.handle('feed:fetch', async (_e, url) => {
+  try { return { ok: true, data: await fetchJSON(url) }; }
+  catch (e){ return { ok: false, error: e.message }; }
+});
+ipcMain.handle('feed:drop', async () => {
+  try { return { ok: true, data: await readDrop() }; }
+  catch (e){ return { ok: false, error: e.message }; }
+});
+ipcMain.handle('feed:dropDir', async () => {
+  const dir = path.join(await resolveRoot(), DROP_DIRNAME);
+  await fsp.mkdir(dir, { recursive: true }).catch(() => {});
+  return dir;
 });
 
 /* ── window ────────────────────────────────────────────── */
