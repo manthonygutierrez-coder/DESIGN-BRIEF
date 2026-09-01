@@ -1,7 +1,98 @@
 {
   "version": 1,
-  "updated": "2026-08-31T17:00:00Z",
+  "updated": "2026-09-01T18:55:00Z",
   "briefs": [
+    {
+      "id": "2026-09-01-closing-time",
+      "cadence": "hourly",
+      "received": "2026-09-01T18:00:00Z",
+      "discipline": "Type Design",
+      "brief": {
+        "project": "CLOSING TIME",
+        "client": "A municipal swimming baths built in 1906, still open",
+        "ask": "The last of the original tilework spells out DEEP END and NO DIVING in a hand nobody has identified. The council wants new signage throughout and has agreed, reluctantly, that it should match. Draw the alphabet those two phrases imply.",
+        "deliver": [
+          "Uppercase, figures, and the four words already on the wall",
+          "Signage cut at three sizes",
+          "A note on what you inferred and what you invented"
+        ],
+        "limits": [
+          "Twenty-two letters are missing. Do not fake certainty.",
+          "It has to survive being read through steam.",
+          "No revival flourishes the original tiler had no reason to make."
+        ],
+        "tone": "Municipal · warm · older than it looks"
+      },
+      "clientProfile": {
+        "who": "Halina Okonkwo",
+        "role": "Conservation Officer",
+        "co": "Ardwick Baths",
+        "dom": "ardwickbaths.gov.uk",
+        "frame": "civic",
+        "voice": "Whatever you draw will outlast everyone who approved it.",
+        "refs": [
+          "victorian swimming baths",
+          "glazed tile lettering",
+          "steam on tiles",
+          "municipal signage"
+        ],
+        "site": {
+          "tagline": "Municipal Baths, opened 1906",
+          "nav": [
+            [
+              "Home",
+              "/"
+            ],
+            [
+              "Times",
+              "/times"
+            ]
+          ],
+          "pages": {
+            "/": [
+              {
+                "t": "lede",
+                "p": "Two pools, one of them the original. Open every day since 1906 except for the war and one burst main."
+              },
+              {
+                "t": "notice",
+                "h": "Refurbishment",
+                "p": "Signage and wayfinding will be replaced during the autumn closure. The tilework on the north wall is listed and is not going anywhere.",
+                "stamp": "Council notice"
+              }
+            ],
+            "/times": [
+              {
+                "t": "table",
+                "h": "This week",
+                "cols": [
+                  "Session",
+                  "Pool",
+                  "Times"
+                ],
+                "rows": [
+                  [
+                    "Lane swimming",
+                    "Original",
+                    "06:00 – 08:30"
+                  ],
+                  [
+                    "Public",
+                    "Both",
+                    "09:00 – 16:00"
+                  ],
+                  [
+                    "Lane swimming",
+                    "New",
+                    "19:00 – 21:00"
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
     {
       "id": "2026-08-31-quarter-inch",
       "cadence": "daily",
@@ -11,8 +102,16 @@
         "project": "QUARTER INCH",
         "client": "A hardware shop that has never advertised",
         "ask": "Fifty-one years without a single advert, and now the landlord has sold the building and they have one month on the corner they have always been on. One poster. It goes in their own window, facing people who already walk past every day.",
-        "deliver": ["Poster, A1", "Window vinyl, one line", "A card for the till"],
-        "limits": ["It cannot beg.", "One colour plus the paper.", "Legible from across a two-lane road."],
+        "deliver": [
+          "Poster, A1",
+          "Window vinyl, one line",
+          "A card for the till"
+        ],
+        "limits": [
+          "It cannot beg.",
+          "One colour plus the paper.",
+          "Legible from across a two-lane road."
+        ],
         "tone": "Plain · stubborn · not sentimental"
       },
       "clientProfile": {
@@ -22,18 +121,67 @@
         "dom": "winterbourneandsons.co.uk",
         "frame": "shop",
         "voice": "We have never had to say anything before. Now we do.",
-        "refs": ["hardware shop interior", "hand painted sign", "brass fittings", "shop window at dusk"],
+        "refs": [
+          "hardware shop interior",
+          "hand painted sign",
+          "brass fittings",
+          "shop window at dusk"
+        ],
         "site": {
           "tagline": "Ironmongers. Corner of Petty Cury since 1974.",
-          "nav": [["Home", "/"], ["What we stock", "/stock"]],
+          "nav": [
+            [
+              "Home",
+              "/"
+            ],
+            [
+              "What we stock",
+              "/stock"
+            ]
+          ],
           "pages": {
             "/": [
-              { "t": "lede", "p": "We sell screws by the single screw. We always have." },
-              { "t": "prose", "h": "The shop", "ps": ["Four aisles, one counter, and a man who knows where everything is because he put it there. If we do not have it we will tell you who does, even when that is the shop across the road."] },
-              { "t": "notice", "h": "The building has been sold", "p": "We are on the corner until the end of the month. After that we do not yet know. Thank you for fifty-one years.", "stamp": "Posted in the window" }
+              {
+                "t": "lede",
+                "p": "We sell screws by the single screw. We always have."
+              },
+              {
+                "t": "prose",
+                "h": "The shop",
+                "ps": [
+                  "Four aisles, one counter, and a man who knows where everything is because he put it there. If we do not have it we will tell you who does, even when that is the shop across the road."
+                ]
+              },
+              {
+                "t": "notice",
+                "h": "The building has been sold",
+                "p": "We are on the corner until the end of the month. After that we do not yet know. Thank you for fifty-one years.",
+                "stamp": "Posted in the window"
+              }
             ],
             "/stock": [
-              { "t": "spec", "h": "Some of what is in here", "rows": [["Fixings", "Sold singly or by weight"], ["Timber", "Cut to length while you wait"], ["Keys", "Cut in four minutes"], ["Paint", "Mixed to a chip you bring in"]] }
+              {
+                "t": "spec",
+                "h": "Some of what is in here",
+                "rows": [
+                  [
+                    "Fixings",
+                    "Sold singly or by weight"
+                  ],
+                  [
+                    "Timber",
+                    "Cut to length while you wait"
+                  ],
+                  [
+                    "Keys",
+                    "Cut in four minutes"
+                  ],
+                  [
+                    "Paint",
+                    "Mixed to a chip you bring in"
+                  ]
+                ]
+              }
             ]
           }
         }
