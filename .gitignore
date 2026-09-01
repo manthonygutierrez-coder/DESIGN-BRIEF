@@ -1,0 +1,28 @@
+# dependencies — 396MB, restored with `npm install`
+node_modules/
+
+# electron-builder output — 391MB, rebuilt with `npm run build`
+build/
+
+# generated during icon work; icon.icns and icon-1024.png are committed
+build-resources/*.iconset/
+build-resources/existing*/
+
+# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# editors
+.vscode/
+.idea/
+*.swp
+
+# local scratch
+*.log
+.env
+.env.*
+
+# Affinity lock files (present while a document is open)
+*~lock~

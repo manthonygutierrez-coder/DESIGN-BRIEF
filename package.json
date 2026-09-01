@@ -1,0 +1,43 @@
+{
+  "name": "pixel-crossing",
+  "productName": "Pixel Crossing",
+  "version": "0.1.0",
+  "description": "A freelance design studio on the other side of the screen: briefs arrive by mail, references live in a 1998 browser, and the work lands in real folders.",
+  "main": "electron/main.js",
+  "private": true,
+  "scripts": {
+    "dev": "electron .",
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^43.4.1",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "local.pixel.crossing",
+    "productName": "Pixel Crossing",
+    "directories": {
+      "output": "build"
+    },
+    "files": [
+      "build-resources/icon-1024.png",
+      "electron/**/*",
+      "package.json",
+      "src/**/*"
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "dir"
+      ],
+      "category": "public.app-category.graphics-design",
+      "icon": "build-resources/icon.icns"
+    }
+  },
+  "lavamoat": {
+    "allowScripts": {
+      "electron": true
+    }
+  }
+}
