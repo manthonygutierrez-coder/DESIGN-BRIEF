@@ -17,10 +17,25 @@ duplicate message.
 In the app's DevTools console:
 
 ```js
-await Feed.configure({ url: "https://raw.githubusercontent.com/<you>/DESIGN-BRIEF/main/briefs/feed.json", pollMinutes: 15 })
+await Feed.configure({
+  url: "https://api.github.com/repos/manthonygutierrez-coder/DESIGN-BRIEF/contents/briefs/feed.json",
+  pollMinutes: 15
+})
 await Feed.poll()          // force a poll now rather than waiting
 Feed.status()              // last result and current config
 ```
+
+**Use the API URL, not `raw.githubusercontent.com`.** Raw is served through a
+CDN cache keyed on path, held for several minutes; a cache-busting query string
+and `Cache-Control: no-cache` both fail to defeat it, so a freshly committed
+brief would not arrive until the cache expired on its own. The Contents API
+reflects a commit immediately. It returns the file inside a base64 envelope,
+which the app unwraps automatically — either URL form works, the API one is
+just current.
+
+Unauthenticated, the API allows 60 requests an hour per IP. At the default
+15-minute interval that is 4, so there is plenty of headroom; do not poll more
+than once a minute.
 
 The setting persists in `state.json`. The drop folder needs no configuration —
 it is polled whenever the feed is enabled. Set `{ enabled: false }` to stop.

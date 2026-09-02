@@ -199,8 +199,18 @@ function fetchJSON(url){
         chunks.push(d);
       });
       res.on('end', () => {
-        try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8'))); }
-        catch (e){ reject(new Error('feed is not valid JSON: ' + e.message)); }
+        let parsed;
+        try { parsed = JSON.parse(Buffer.concat(chunks).toString('utf8')); }
+        catch (e){ return reject(new Error('feed is not valid JSON: ' + e.message)); }
+        // GitHub's Contents API wraps the file in a base64 envelope. Unwrap it,
+        // so a feed URL can be either the API endpoint or a plain JSON file.
+        // The API matters: raw.githubusercontent.com is CDN-cached for minutes,
+        // so a freshly committed brief would not appear until the cache expired.
+        if (parsed && typeof parsed.content === 'string' && parsed.encoding === 'base64'){
+          try { parsed = JSON.parse(Buffer.from(parsed.content, 'base64').toString('utf8')); }
+          catch (e){ return reject(new Error('feed envelope did not contain JSON: ' + e.message)); }
+        }
+        resolve(parsed);
       });
     });
     req.setTimeout(FEED_TIMEOUT, () => { req.destroy(); reject(new Error('feed timed out')); });
