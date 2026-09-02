@@ -18,12 +18,19 @@ const Bridge = (() => {
   let saveTimer = 0;
   let pending = null;
 
+  // Every caller gets the SAME object, loaded once.
+  //
+  // This matters more than it looks. Mail and Feed both hold the state and both
+  // call saveState with their own reference; if getState handed out a fresh copy
+  // per call, whichever saved last would silently wipe the other's keys — Mail
+  // saves on every message, so the feed's configured URL disappeared on restart
+  // and scheduled briefs quietly stopped arriving. One shared object, one truth.
   async function getState(){
+    if (memory) return memory;
     if (native){
-      try { return await api.getState(); }
+      try { memory = await api.getState(); return memory; }
       catch (e){ console.error("[bridge] getState failed, using local:", e.message); }
     }
-    if (memory) return memory;
     try {
       const raw = localStorage.getItem(LS_KEY);
       memory = raw ? { ...EMPTY, ...JSON.parse(raw) } : { ...EMPTY };
