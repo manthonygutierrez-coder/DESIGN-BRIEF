@@ -1,7 +1,184 @@
 {
   "version": 1,
-  "updated": "2026-09-01T18:55:00Z",
+  "updated": "2026-09-02T01:40:41Z",
   "briefs": [
+    {
+      "id": "2026-09-02-ring-two",
+      "cadence": "weekly",
+      "received": "2026-09-02T01:40:41Z",
+      "discipline": "Interface Design",
+      "brief": {
+        "project": "RING TWO",
+        "client": "An auction mart that has taken every online bid by telephone since 2017",
+        "ask": "For nine years every online bid has come into the ring through the office on a phone, and the clerk who takes them finishes after the September sale. From October the screen has to do her job on its own, in front of buyers standing in somebody else's field looking at a photograph of a tractor they cannot walk round.",
+        "deliver": [
+          "The bidder screen through the states a lot passes: open, holding, bid against you, sold, withdrawn",
+          "The rostrum view, for the 15-inch screen bolted inside the auctioneer's box",
+          "Reconnection — what a bidder sees when the signal returns mid-lot",
+          "Registration and deposit, web, desktop and phone",
+          "A one-page rule card the office can print and hand across the counter"
+        ],
+        "limits": [
+          "A lot runs about forty seconds. There is no room for a confirmation step, and a mis-tap is a binding bid of four thousand pounds.",
+          "Readable at arm's length, outdoors, in daylight, on one bar of signal.",
+          "The auctioneer will look at the rostrum screen twice a lot at most. Everything they need has to be inside those two glances.",
+          "No sound. The shed is too loud for it and the field is too quiet."
+        ],
+        "tone": "Quick · unforgiving · no ceremony"
+      },
+      "clientProfile": {
+        "who": "Nancy Ackroyd",
+        "role": "Mart Manager",
+        "co": "Hallgarth Auction Mart",
+        "dom": "hallgarthmart.co.uk",
+        "frame": "board",
+        "voice": "Nobody here has ever needed a receipt to know what they bought. Do not be the reason that changes.",
+        "refs": [
+          "auction mart ring interior",
+          "used tractors in a field",
+          "chalk sale board numbers",
+          "phone screen in daylight",
+          "cattle shed rafters"
+        ],
+        "site": {
+          "tagline": "Livestock on Tuesdays. Machinery the first Saturday of the month.",
+          "nav": [
+            [
+              "Home",
+              "/"
+            ],
+            [
+              "Sales",
+              "/sales"
+            ],
+            [
+              "Bidding online",
+              "/online"
+            ]
+          ],
+          "pages": {
+            "/": [
+              {
+                "t": "lede",
+                "p": "Two rings, a canteen that opens at half six, and a car park that is full by seven."
+              },
+              {
+                "t": "notice",
+                "h": "Telephone bidding ends after the September sale",
+                "p": "The office will stop relaying bids from absent buyers. From October you bid in the shed or on the screen, and the auctioneer takes both the same way.",
+                "stamp": "Notice to vendors and buyers"
+              },
+              {
+                "t": "prose",
+                "h": "How a lot is sold",
+                "ps": [
+                  "The auctioneer starts where they judge it will start and comes down until somebody moves. Increments are theirs to set and they change them mid-lot when the ring is slow.",
+                  "There is no reserve unless the vendor has entered one on the sheet, and if there is one it is not published."
+                ]
+              }
+            ],
+            "/sales": [
+              {
+                "t": "table",
+                "h": "Autumn calendar",
+                "cols": [
+                  "Sale",
+                  "Ring",
+                  "Starts"
+                ],
+                "rows": [
+                  [
+                    "Store cattle",
+                    "One",
+                    "Tuesdays, 10:00"
+                  ],
+                  [
+                    "Sheep",
+                    "One",
+                    "Tuesdays, 13:30"
+                  ],
+                  [
+                    "Machinery and implements",
+                    "Two",
+                    "First Saturday, 09:30"
+                  ],
+                  [
+                    "Deadstock and small tools",
+                    "Two",
+                    "First Saturday, from 08:00"
+                  ]
+                ],
+                "note": "Machinery viewing is the Friday before, 10:00 to 16:00. The yard is not lit after four."
+              },
+              {
+                "t": "feed",
+                "h": "Recent sales",
+                "items": [
+                  {
+                    "d": "2 Aug",
+                    "h": "Machinery, 411 lots",
+                    "p": "Cleared in five hours twenty. Forty-one lots went to bidders who were not in the yard."
+                  },
+                  {
+                    "d": "5 Jul",
+                    "h": "Machinery, 388 lots",
+                    "p": "Two lots withdrawn on the day. The 1998 baler made more than the new one beside it."
+                  },
+                  {
+                    "d": "7 Jun",
+                    "h": "Machinery, 340 lots",
+                    "p": "First sale where telephone bids passed a hundred. The office ran two handsets."
+                  }
+                ]
+              }
+            ],
+            "/online": [
+              {
+                "t": "spec",
+                "h": "The rules of the online ring",
+                "sub": "These are the same rules that are read out at the start of every sale.",
+                "rows": [
+                  [
+                    "Registration",
+                    "Closes 17:00 the day before. Bank reference, not a card"
+                  ],
+                  [
+                    "Deposit",
+                    "Five hundred pounds, held, returned within three working days if you buy nothing"
+                  ],
+                  [
+                    "A bid",
+                    "Binding the moment the auctioneer takes it. There is no undo and no cooling-off period"
+                  ],
+                  [
+                    "Increments",
+                    "Set in the ring and changed mid-lot at the auctioneer's discretion"
+                  ],
+                  [
+                    "Lot time",
+                    "About forty seconds. A late bid extends nothing"
+                  ],
+                  [
+                    "Buyer's premium",
+                    "4 per cent of the hammer price, minimum twenty-five pounds"
+                  ],
+                  [
+                    "Collection",
+                    "Machinery within seven days. We have no storage and no forklift after the Wednesday"
+                  ]
+                ]
+              },
+              {
+                "t": "notice",
+                "h": "If your signal drops",
+                "p": "The sale does not wait. Any bid already taken from you stands. Nothing you were about to do is remembered, and the office cannot enter a bid on your behalf once telephone bidding has ended.",
+                "stamp": "Read this before you register"
+              }
+            ]
+          }
+        }
+      }
+    },
     {
       "id": "2026-09-01-closing-time",
       "cadence": "hourly",
