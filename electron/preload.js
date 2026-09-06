@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('crossing', {
   feedFetch: (url) => ipcRenderer.invoke('feed:fetch', url),
   feedDrop: () => ipcRenderer.invoke('feed:drop'),
   feedDropDir: () => ipcRenderer.invoke('feed:dropDir'),
+  feedAsset: (url) => ipcRenderer.invoke('feed:asset', url),
 
   // Real path for a dropped File — the only supported way under sandbox.
   pathForFile: (file) => webUtils.getPathForFile(file),

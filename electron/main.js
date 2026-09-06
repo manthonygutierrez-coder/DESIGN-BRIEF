@@ -235,6 +235,63 @@ async function readDrop(){
   return out;
 }
 
+/* Client artwork committed alongside a brief.
+ *
+ * Fetched here and returned as a data: URI, because the renderer's CSP allows
+ * `img-src 'self' data:` and no network at all. Cached on disk so a client's
+ * assets are fetched once and then survive offline, like everything else. */
+const ASSET_MAX_BYTES = 4 * 1024 * 1024;
+const ASSET_TYPES = { '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.webp':'image/webp', '.gif':'image/gif' };
+
+function assetCacheDir(){ return path.join(app.getPath('userData'), 'assets'); }
+
+function fetchBinary(url){
+  return new Promise((resolve, reject) => {
+    let u;
+    try { u = new URL(url); } catch { return reject(new Error('bad asset url')); }
+    const isLocal = u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+    if (u.protocol !== 'https:' && !(u.protocol === 'http:' && isLocal)) return reject(new Error('asset must be https'));
+    const lib = u.protocol === 'https:' ? https : http;
+    const req = lib.get(u, { headers: { 'user-agent': 'PixelCrossing' } }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location){
+        res.resume();
+        return fetchBinary(new URL(res.headers.location, u).href).then(resolve, reject);
+      }
+      if (res.statusCode !== 200){ res.resume(); return reject(new Error('asset HTTP ' + res.statusCode)); }
+      let size = 0; const chunks = [];
+      res.on('data', (d) => {
+        size += d.length;
+        if (size > ASSET_MAX_BYTES){ req.destroy(); return reject(new Error('asset too large')); }
+        chunks.push(d);
+      });
+      res.on('end', () => resolve(Buffer.concat(chunks)));
+    });
+    req.setTimeout(FEED_TIMEOUT, () => { req.destroy(); reject(new Error('asset timed out')); });
+    req.on('error', reject);
+  });
+}
+
+ipcMain.handle('feed:asset', async (_e, url) => {
+  try {
+    const ext = path.extname(new URL(url).pathname).toLowerCase();
+    const mime = ASSET_TYPES[ext];
+    if (!mime) return { ok: false, error: 'unsupported asset type ' + ext };
+
+    const dir = assetCacheDir();
+    await fsp.mkdir(dir, { recursive: true });
+    const key = require('crypto').createHash('sha256').update(url).digest('hex').slice(0, 32) + ext;
+    const cached = path.join(dir, key);
+
+    let buf;
+    try { buf = await fsp.readFile(cached); }
+    catch {
+      buf = await fetchBinary(url);
+      await fsp.writeFile(cached, buf);
+    }
+    return { ok: true, dataURI: 'data:' + mime + ';base64,' + buf.toString('base64'), bytes: buf.length };
+  } catch (e){ return { ok: false, error: e.message }; }
+});
+
 ipcMain.handle('feed:fetch', async (_e, url) => {
   try { return { ok: true, data: await fetchJSON(url) }; }
   catch (e){ return { ok: false, error: e.message }; }

@@ -401,7 +401,25 @@ const Imagery = (() => {
   }
 
   /* Returns a data URL for `query`, varied by `index`. */
+  /* Real artwork, when there is any.
+   *
+   * Everything here is drawn procedurally because the app must work offline.
+   * But when a client arrives with actual designed assets — a routine exporting
+   * from Figma — those are better than anything generated. Registering one
+   * against a reference seed replaces the generated image everywhere that seed
+   * is used: galleries, the image search, the lightbox. Nothing else changes. */
+  const overrides = new Map();
+  function override(query, dataURI){
+    if (typeof query !== "string" || typeof dataURI !== "string") return false;
+    if (!/^data:image\//.test(dataURI)) return false;      // data URIs only; CSP allows no other source
+    overrides.set(query.toLowerCase().trim(), dataURI);
+    return true;
+  }
+  const overrideFor = (q) => overrides.get(String(q).toLowerCase().trim()) || null;
+
   function make(query, index, W = 200, H = 150){
+    const real = overrideFor(query);
+    if (real) return real;
     const R = rngFrom(seedOf(query + "::" + index));
     const m = moodFor(query);
     const cv = document.createElement("canvas");
@@ -622,5 +640,5 @@ const Imagery = (() => {
     return w + " × " + Math.round(w * (0.62 + R() * 0.3));
   }
 
-  return { make, filename, dimensions, mark, initials };
+  return { make, filename, dimensions, mark, initials, override, overrideFor };
 })();

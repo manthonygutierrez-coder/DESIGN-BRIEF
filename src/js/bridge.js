@@ -82,5 +82,6 @@ const Bridge = (() => {
     feedFetch:  native ? (url) => api.feedFetch(url) : async () => ({ ok:false, error:"needs the desktop app" }),
     feedDrop:   native ? () => api.feedDrop()        : async () => ({ ok:false, error:"needs the desktop app" }),
     feedDropDir:native ? () => api.feedDropDir()     : async () => null,
+    feedAsset:  native ? (u) => api.feedAsset(u)     : async () => ({ ok:false, error:"needs the desktop app" }),
   };
 })();

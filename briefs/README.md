@@ -108,6 +108,48 @@ skipped rather than throwing.
 Everything is length-capped and type-checked on ingest — this content comes from
 outside the app and is not trusted to be well-formed.
 
+## Client artwork (`assets`)
+
+A brief may arrive with real designed artwork instead of the generated
+stand-ins. The routine designs it in Figma, exports it, and commits it here.
+
+```json
+"assets": {
+  "markSVG": "<path d=\"M15 47V17h6z\" fill=\"%B%\"/><rect x=\"5\" y=\"5\" width=\"8\" height=\"8\" fill=\"%C%\"/>",
+  "figma": "https://figma.com/design/<key>",
+  "images": [
+    { "ref": "auction mart ring interior", "path": "briefs/assets/hallgarthmart/ring.png" }
+  ]
+}
+```
+
+- **`markSVG`** — the logo's shape elements only, no outer `<svg>` wrapper, on a
+  64-unit square. Use `%B%` / `%C%` / `%G%` for brand, second and ground colours
+  exactly as `src/js/content/marks.js` does; they are substituted from the
+  client's theme at render time so a mark cannot drift out of step with its
+  palette. Registered under the client's domain, and only if that domain has no
+  drawn mark already — a feed record never overwrites one in the repo.
+
+- **`images[].ref`** — must match one of the client's `refs` **verbatim**. The
+  image is registered as an override for that reference seed, so it replaces the
+  procedural stand-in *everywhere* that seed is drawn: site galleries, the image
+  search, the lightbox. That is the whole integration; `sites.js` is untouched.
+
+- **`images[].path`** — repo-relative. Resolved against whatever repo the feed
+  URL points at, so a record never hardcodes an owner or branch. An absolute
+  `url` also works. PNG, JPEG, WebP or GIF; 4MB ceiling each, twelve per brief.
+
+Images are fetched by the **main** process and handed to the renderer as `data:`
+URIs, because the page is allowed `img-src 'self' data:` and no network at all.
+They are cached under `userData/assets/`, so a client's artwork is fetched once
+and then works offline like everything else.
+
+**`markSVG` is sanitised before it touches the DOM** — a strict element and
+attribute whitelist. `script`, `foreignObject`, `image`, `use`, every `href` and
+`on*` handler, `<style>` and `<animate>` are all dropped. Feed content is not
+trusted, and a mark that arrives with nothing drawable in it is rejected rather
+than rendered empty.
+
 ## Writing the routine
 
 A scheduled agent should append a record to `briefs` in `feed.json` and commit.

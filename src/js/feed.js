@@ -66,6 +66,9 @@ const Feed = (() => {
       const norm = normalize(rec);
       if (!norm) continue;
       if (norm.client) registerClient(norm.client);
+      // Artwork first: the mark and images must exist before the mail lands,
+      // or the client's site renders once with generated stand-ins.
+      if (norm.assets) await registerAssets(norm);
       if (Mail.ingest(norm)) added++;
     }
 
@@ -108,6 +111,7 @@ const Feed = (() => {
       received: rec.received || null,
       brief,
       client: rec.clientProfile ? normalizeClient(rec.clientProfile, brief) : null,
+      assets: rec.assets && typeof rec.assets === "object" ? rec.assets : null,
     };
   }
 
@@ -156,6 +160,94 @@ const Feed = (() => {
       site,
       refs: arr(raw.refs, 6, 60).length ? arr(raw.refs, 6, 60) : ["studio desk", "work in progress"],
     };
+  }
+
+  /* ── client artwork ────────────────────────────────────
+   * A brief can arrive with real designed assets rather than generated ones.
+   * Both paths below treat the content as hostile: the SVG is whitelisted
+   * element-by-element before it touches the DOM, and images are fetched in
+   * the main process and handed back as data: URIs.
+   */
+
+  // Only shapes and paint. No script, no foreignObject, no image, no use,
+  // no href of any kind, no event handlers, no <style>.
+  const SVG_TAGS = new Set(["g","path","rect","circle","ellipse","line","polyline",
+    "polygon","defs","lineargradient","radialgradient","stop","clippath","mask",
+    "title","desc","text","tspan"]);
+  const SVG_ATTRS = new Set(["d","x","y","width","height","rx","ry","cx","cy","r",
+    "x1","y1","x2","y2","points","fill","stroke","stroke-width","stroke-linecap",
+    "stroke-linejoin","stroke-dasharray","stroke-miterlimit","opacity","fill-opacity",
+    "stroke-opacity","fill-rule","clip-rule","transform","offset","stop-color",
+    "stop-opacity","gradientunits","gradienttransform","spreadmethod","id",
+    "clip-path","mask","font-size","font-family","font-weight","text-anchor",
+    "letter-spacing","dx","dy"]);
+
+  function sanitizeMarkSVG(markup){
+    if (typeof markup !== "string" || markup.length > 20000) return null;
+    let doc;
+    try {
+      doc = new DOMParser().parseFromString(
+        '<svg xmlns="http://www.w3.org/2000/svg">' + markup + "</svg>", "image/svg+xml");
+    } catch { return null; }
+    if (doc.querySelector("parsererror")) return null;
+    const root = doc.documentElement;
+
+    const walk = (node) => {
+      for (const child of [...node.children]){
+        if (!SVG_TAGS.has(child.tagName.toLowerCase())){ child.remove(); continue; }
+        for (const attr of [...child.attributes]){
+          const n = attr.name.toLowerCase();
+          const bad = !SVG_ATTRS.has(n) || n.startsWith("on") ||
+                      n === "href" || n.endsWith(":href") ||
+                      /url\s*\(|javascript:|expression\s*\(/i.test(attr.value);
+          if (bad) child.removeAttribute(attr.name);
+        }
+        walk(child);
+      }
+    };
+    walk(root);
+    const out = root.innerHTML.trim();
+    return out && /<(path|rect|circle|ellipse|polygon|polyline|line|g|text)\b/i.test(out) ? out : null;
+  }
+
+  // Repo-relative asset paths resolve against whatever repo the feed points at,
+  // so a record never has to hardcode an owner or branch.
+  function assetURL(pathOrUrl){
+    if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+    const u = cfg.url || "";
+    let m = u.match(/api\.github\.com\/repos\/([^/]+)\/([^/]+)\/contents\//i);
+    if (m) return "https://raw.githubusercontent.com/" + m[1] + "/" + m[2] + "/main/" + pathOrUrl.replace(/^\/+/, "");
+    m = u.match(/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\//i);
+    if (m) return "https://raw.githubusercontent.com/" + m[1] + "/" + m[2] + "/" + m[3] + "/" + pathOrUrl.replace(/^\/+/, "");
+    return null;
+  }
+
+  async function registerAssets(rec){
+    const a = rec && rec.assets;
+    if (!a || typeof a !== "object") return { mark: false, images: 0 };
+    let markOK = false, images = 0;
+
+    // The mark follows the same convention as the drawn ones in marks.js:
+    // %B% / %C% / %G% are substituted from the client's theme at render time.
+    if (a.markSVG && rec.client && typeof BRANDMARKS !== "undefined"){
+      const clean = sanitizeMarkSVG(a.markSVG);
+      if (clean && !BRANDMARKS[rec.client.dom]){
+        BRANDMARKS[rec.client.dom] = clean;
+        markOK = true;
+      }
+    }
+
+    for (const img of (Array.isArray(a.images) ? a.images.slice(0, 12) : [])){
+      if (!img || !img.ref || !(img.path || img.url)) continue;
+      const url = assetURL(String(img.path || img.url));
+      if (!url) continue;
+      try {
+        const res = await Bridge.feedAsset(url);
+        if (res && res.ok && Imagery.override(img.ref, res.dataURI)) images++;
+        else if (res && !res.ok) console.warn("[feed] asset skipped:", url, res.error);
+      } catch (e){ console.warn("[feed] asset failed:", url, e.message); }
+    }
+    return { mark: markOK, images };
   }
 
   function slugDomain(co){
