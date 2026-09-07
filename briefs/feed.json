@@ -1,7 +1,179 @@
 {
   "version": 1,
-  "updated": "2026-09-02T01:40:41Z",
+  "updated": "2026-09-07T13:08:24Z",
   "briefs": [
+    {
+      "id": "2026-09-07-one-in-ninety-six",
+      "cadence": "weekly",
+      "received": "2026-09-07T13:08:24Z",
+      "discipline": "3D & Asset",
+      "brief": {
+        "project": "ONE IN NINETY-SIX",
+        "client": "An ironfoundry whose pattern store is being emptied before Christmas",
+        "ask": "The pattern store holds about four thousand timber patterns, of which twenty-four are still in the price list. The insurer will not renew on the building and the whole shed comes down in November, so the range has to be modelled from the patterns while the patterns are still standing — accurate enough for a merchant to order a casting from, and clean enough to put in front of one who has only ever seen the range as a line of text on a fax.",
+        "deliver": [
+          "Twenty-four castings modelled to the finished casting: hopper heads, downpipe and gutter sections, air bricks, gully gratings, boot scrapers",
+          "One PBR material set for weathered iron and one for works primer, shared across the whole range",
+          "A single camera and light rig, delivered as a scene file, that every item in the catalogue is shot on",
+          "Three views of each casting at 2048 px, and a 512 px thumbnail cut from the same render",
+          "Web meshes for the six hopper sizes, glTF, for the ordering page",
+          "A written note recording which dimensions came off a pattern and which off a measured casting"
+        ],
+        "limits": [
+          "A pattern is not the casting. Take the contraction off — one in ninety-six — and the draft angle with it, and write down where you did.",
+          "One light rig for all twenty-four. If a boot scraper needs its own lighting to look like anything, the model is wrong.",
+          "No ground, no wall, no building behind it. A merchant crops these into a price list at forty millimetres wide.",
+          "Each web mesh under 3 MB. They are opened in a yard, on a phone, on the trade counter's wifi."
+        ],
+        "tone": "Heavy · exact · unsentimental"
+      },
+      "clientProfile": {
+        "who": "Selwyn Pryce",
+        "role": "Pattern Shop Manager, forty-one years",
+        "co": "Ambergate Ironfounders",
+        "dom": "ambergateiron.co.uk",
+        "frame": "shop",
+        "voice": "Every pattern in that shed has the name of the man who cut it on the underside, and not one of them is worth insuring, apparently.",
+        "refs": [
+          "cast iron rainwater hopper",
+          "wooden foundry patterns",
+          "green sand casting floor",
+          "primed castings on a pallet",
+          "cast works nameplate"
+        ],
+        "site": {
+          "tagline": "Ironfounders, Ambergate. Rainwater goods and gratings, cast to pattern since 1871.",
+          "nav": [
+            [
+              "Home",
+              "/"
+            ],
+            [
+              "The range",
+              "/range"
+            ]
+          ],
+          "pages": {
+            "/": [
+              {
+                "t": "lede",
+                "p": "Nine tonnes of iron a week, most of it in shapes nobody here has redrawn since the sixties."
+              },
+              {
+                "t": "notice",
+                "h": "The pattern store is being emptied in November",
+                "p": "The insurer has declined to renew on the building and it comes down before Christmas. Patterns still in the price list are being kept. If you hold a pattern number that is not in the list below, write to us this month and say so.",
+                "stamp": "Notice to merchants and specifiers"
+              },
+              {
+                "t": "spec",
+                "h": "What we cast",
+                "rows": [
+                  [
+                    "Metal",
+                    "Grey iron, EN-GJL-200. Ductile to order"
+                  ],
+                  [
+                    "Minimum order",
+                    "One. We will cast one hopper if you need one hopper"
+                  ],
+                  [
+                    "Finish",
+                    "Bare, or one coat of red oxide primer"
+                  ],
+                  [
+                    "Bespoke",
+                    "We will cut a new pattern. Six weeks, and the pattern stays here"
+                  ],
+                  [
+                    "Lead time",
+                    "Four weeks from a stock pattern, eight from a new one"
+                  ]
+                ]
+              }
+            ],
+            "/range": [
+              {
+                "t": "table",
+                "h": "Stock patterns still in the list",
+                "cols": [
+                  "Pattern",
+                  "Size",
+                  "Weight"
+                ],
+                "rows": [
+                  [
+                    "Hopper head, plain",
+                    "100 mm outlet",
+                    "9.4 kg"
+                  ],
+                  [
+                    "Hopper head, moulded",
+                    "75 mm outlet",
+                    "11.2 kg"
+                  ],
+                  [
+                    "Downpipe, round",
+                    "100 mm × 1.83 m",
+                    "18.6 kg"
+                  ],
+                  [
+                    "Gutter, half round",
+                    "125 mm × 1.83 m",
+                    "14.1 kg"
+                  ],
+                  [
+                    "Air brick",
+                    "225 × 75 mm",
+                    "2.6 kg"
+                  ],
+                  [
+                    "Gully grating",
+                    "300 mm square",
+                    "21.0 kg"
+                  ],
+                  [
+                    "Boot scraper, wall pattern",
+                    "230 mm",
+                    "4.8 kg"
+                  ]
+                ],
+                "note": "Weights are taken from the last cast, not from the drawing. They vary by up to three per cent and we will not argue about it."
+              },
+              {
+                "t": "spec",
+                "h": "Ordering against a pattern number",
+                "rows": [
+                  [
+                    "Pattern number",
+                    "Stamped on the back of every casting that has left here since 1871"
+                  ],
+                  [
+                    "Contraction",
+                    "Patterns are cut one in ninety-six oversize. The casting is what you get"
+                  ],
+                  [
+                    "Tolerance",
+                    "± 1.5 mm on any dimension over 300 mm. Iron moves in the sand"
+                  ],
+                  [
+                    "Machining",
+                    "None unless asked for. Flanges come as cast"
+                  ],
+                  [
+                    "Carriage",
+                    "Pallet to site. We do not deliver to a house"
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "assets": {
+        "markSVG": "<path d=\"M8 9h40v7L33 36v16H23V36L8 16z\" fill=\"none\" stroke=\"%C%\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M12 14h40v7L37 41v16H27V41L12 21z\" fill=\"%B%\"/>"
+      }
+    },
     {
       "id": "2026-09-02-ring-two",
       "cadence": "weekly",
