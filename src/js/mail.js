@@ -309,7 +309,7 @@ const Mail = (() => {
         return '<button class="mli' + (m.state === "unread" ? " un" : "") +
           (m.id === selectedId ? " on" : "") + (m.state === "rerolled" ? " dim" : "") +
           '" data-id="' + m.id + '" role="option">' +
-          '<i>' + iconSVG(CATS[m.ci].id, 14) + '</i>' +
+          '<i>' + iconSVG(clientIcon((clientOf(m) || {}).dom, CATS[m.ci].id), 14) + '</i>' +
           '<span class="mli__from">' + esc(c ? c.co : "Client") + '</span>' +
           '<span class="mli__sub">' + esc(subjectOf(m)) +
             (m.state === "rerolled" ? ' <em>(re-rolled)</em>' : "") +

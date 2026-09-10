@@ -55,12 +55,46 @@ const ICON_ART = {
     ".kaaaakaakaaaak.",".kaakaaaaaakaak.","kaaaaaaaaaaaaaak","kkkkkkkkkkkkkkkk",
     "kaaaaaaaaaaaaaak",".kaakaaaaaakaak.",".kaaaakaakaaaak.","..kaaakaakaaak..",
     "...kkaaaaaakk...",".....kkkkkk.....","................","................"]},
+  /* ── client marks ─────────────────────────────────────
+   * One per client, keyed by domain slug. Drawn 16x16 in LibreSprite
+   * and converted with .claude/skills/pixel-assets/png2grid.py.
+   * clientIcon() falls back to the discipline icon when a client has
+   * none, so an unillustrated client is never a missing image. */
+winterbourneandsons:{p:{k:"#14110E",w:"#D8C08A",a:"#8A7040"},g:[
+    "................","................","....kkkkkkkk....","...kwwwwwwwwk...",
+    "...kwwkkkkwwk...","...kwwwwwwwwk...","....kkawwakk....",".....kwwwwk.....",
+    "....kwwwwwwk....",".....kwwaak.....","....kwwwwwwk....",".....kwwaak.....",
+    "....kwwwwwwk....",".....kwwaak.....","......kwak......",".......kk......."]},
+  hallgarthmart:{p:{k:"#14110E",w:"#2E3A34",a:"#E8E4D8"},g:[
+    "................","..kkkkkkkkkkkk..","..kwwwwwwwwwwk..","..kwaawwaaawwk..",
+    "..kwwwwwwwwwwk..","..kwaaawwaawwk..","..kwwwwwwwwwwk..","..kwaawwwaaawk..",
+    "..kwwwwwwwwwwk..","..kkkkkkkkkkkk..","....k......k....","....k......k....",
+    "...k........k...","...k........k...","................","................"]},
+  ardwickbaths:{p:{k:"#1A3A44",w:"#E4E0D0",a:"#3E8FA8",b:"#7FCDE0"},g:[
+    "................",".kkkkkkkkkkkkkk.",".kwwwwwwwwwwwwk.",".kkkkkkkkkkkkkk.",
+    ".kaaaaaaaaaaaak.",".kaabbaaaabbaak.",".kaaaabbaaaaaak.",".kabbaaaabbaaak.",
+    ".kaaaaaabbaaaak.",".kabbaaaaaabbak.",".kaaaaaaaaaaaak.",".kkkkkkkkkkkkkk.",
+    ".kwwwwwwwwwwwwk.",".kkkkkkkkkkkkkk.","................","................"]},
+  ambergateironfounders:{p:{k:"#14110E",w:"#7A7A70",a:"#45453E"},g:[
+    "................","..kkkkkkkkkkkk..","..kwwwwwwwwwwk..","..kwaaaaaaaawk..",
+    "..kwaaaaaaaawk..","...kwaaaaaawk...","....kwaaaawk....",".....kwaawk.....",
+    "......kwwk......","......kaak......","......kaak......","......kaak......",
+    "......kaak......",".....kkaakk.....","......kaak......","................"]},
+
   back:{p:{k:"#0A0A0A",a:"#7CF9C0"},g:[
     "................","................",".......kk.......","......kak.......",
     ".....kaak.......","....kaaakkkkkk..","...kaaaaaaaaaak.","..kaaaaaaaaaaak.",
     "..kaaaaaaaaaaak.","...kaaaaaaaaaak.","....kaaakkkkkk..",".....kaak.......",
     "......kak.......",".......kk.......","................","................"]}
 };
+
+// A client's own icon if one has been drawn, else the discipline's.
+// dom is the client domain; the slug drops dots and any leading www.
+function clientIcon(dom, fallbackId){
+  if (!dom) return fallbackId;
+  const slug = String(dom).toLowerCase().replace(/^www\./, "").replace(/\.[a-z.]+$/, "").replace(/[^a-z0-9]/g, "");
+  return ICON_ART[slug] ? slug : fallbackId;
+}
 
 function iconSVG(id, px){
   const art = ICON_ART[id];
