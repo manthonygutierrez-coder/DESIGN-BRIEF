@@ -1,7 +1,184 @@
 {
   "version": 1,
-  "updated": "2026-09-07T13:08:24Z",
+  "updated": "2026-09-14T13:12:55Z",
   "briefs": [
+    {
+      "id": "2026-09-14-over-the-side",
+      "cadence": "weekly",
+      "received": "2026-09-14T13:12:55Z",
+      "discipline": "Illustration",
+      "brief": {
+        "project": "OVER THE SIDE",
+        "client": "A sea fisheries district whose identification sheet is a photocopy of a photocopy",
+        "ask": "A new byelaw takes effect on 1 January: berried and v-notched hens go back whatever their size, and three minimum sizes rise by five millimetres. The only identification material this district has ever issued is a 1998 sheet that has been photocopied so many times a berried hen is a grey smudge, so the whole list has to be drawn instead — well enough that a crew can tell a healed notch from a torn fin at four in the morning, on a wet deck, with the wheelhouse light off.",
+        "deliver": [
+          "Fourteen painted species plates at final printed size — lobster, crawfish, edible, velvet and spider crab, and the nine finfish on the prohibited list",
+          "A v-notch plate: a fresh cut, a four-year healed cut and a torn fan, drawn side by side at the same angle and the same size",
+          "Measurement diagrams at 1:1 for the five shellfish, showing where the gauge sits and where crews keep putting it instead",
+          "A double-sided wheelhouse card, A4, for lamination: sizes on one side, what goes back on the other",
+          "A one-colour line version of every plate, for the byelaw document and the board at the top of the slipway",
+          "A 40 mm cut of each plate for the margin of the landing declaration book"
+        ],
+        "limits": [
+          "Drawn from animals landed here, not from a book. A lobster's colour is gone twenty minutes out of the water, and what you paint will be held up against one that is still alive.",
+          "Every plate has to work in one colour as well as in full colour, and it is the same drawing in both. The byelaw is printed black only.",
+          "The 1:1 diagrams get used as a gauge when somebody's gauge has gone over the side. A millimetre of licence there is a prosecution that collapses in front of a bench.",
+          "Read on deck at night with the wheelhouse dark. Nothing may depend on a colour difference alone.",
+          "Do not make them handsome. The moment a plate is better looking than it is accurate it has stopped being evidence."
+        ],
+        "tone": "Cold · exact · admissible"
+      },
+      "clientProfile": {
+        "who": "Dilys Crowhurst",
+        "role": "Chief Fishery Officer",
+        "co": "Skerrwick Sea Fisheries District",
+        "dom": "skerrwick-fisheries.gov.uk",
+        "frame": "civic",
+        "voice": "Nobody has ever told me the old sheet was wrong, only that they could not make out what was on it.",
+        "refs": [
+          "berried hen lobster",
+          "fish quay at night",
+          "stacked creels",
+          "brass measuring gauge",
+          "wheelhouse card"
+        ],
+        "site": {
+          "tagline": "Sea Fisheries District. Skerrwick harbour wall to Cullen Point, and six miles out.",
+          "nav": [
+            [
+              "Home",
+              "/"
+            ],
+            [
+              "Sizes and returns",
+              "/sizes"
+            ]
+          ],
+          "pages": {
+            "/": [
+              {
+                "t": "lede",
+                "p": "Ninety-one miles of coast, eleven landing places, two officers and one boat. Four of the landings have no road to them."
+              },
+              {
+                "t": "notice",
+                "h": "The 2027 byelaw takes effect on 1 January",
+                "p": "Berried hens and v-notched hens go back over the side whatever their size. Three minimum sizes rise by five millimetres. Nothing is being phased in and there is no first year of grace.",
+                "stamp": "Notice to licence holders"
+              },
+              {
+                "t": "spec",
+                "h": "The district",
+                "rows": [
+                  [
+                    "Extent",
+                    "Skerrwick harbour wall to Cullen Point, out to six nautical miles"
+                  ],
+                  [
+                    "Officers",
+                    "Two, one boat, one van, and whatever the tide allows"
+                  ],
+                  [
+                    "Landings",
+                    "Eleven. Four of them are beaches"
+                  ],
+                  [
+                    "Inspection",
+                    "At the quay, on the deck, and at the back door of the merchant"
+                  ],
+                  [
+                    "The gauge",
+                    "Ours is the one that counts. It lives on a chain in the van"
+                  ],
+                  [
+                    "Byelaws in force",
+                    "Nine. The oldest is 1937 and it is still the one most often broken"
+                  ]
+                ]
+              }
+            ],
+            "/sizes": [
+              {
+                "t": "table",
+                "h": "Minimum sizes from 1 January",
+                "cols": [
+                  "Species",
+                  "Measured",
+                  "From 1 Jan"
+                ],
+                "rows": [
+                  [
+                    "Lobster",
+                    "Carapace, eye socket to rear edge",
+                    "87 mm"
+                  ],
+                  [
+                    "Crawfish",
+                    "Carapace, eye socket to rear edge",
+                    "115 mm"
+                  ],
+                  [
+                    "Edible crab",
+                    "Widest point of the shell",
+                    "140 mm"
+                  ],
+                  [
+                    "Velvet crab",
+                    "Widest point of the shell",
+                    "70 mm"
+                  ],
+                  [
+                    "Spider crab",
+                    "Carapace length",
+                    "130 mm"
+                  ]
+                ],
+                "note": "Crawfish, velvet crab and spider crab rise five millimetres on 1 January. There is no tolerance and no benefit of the doubt. If it is sitting on the line it goes back."
+              },
+              {
+                "t": "notice",
+                "h": "What goes back, at any size",
+                "p": "Any hen carrying eggs. Any hen with a notch or a cut in the tail fan, healed or fresh. Any animal that has lost both claws. They go back whole, alive, and by hand — not tipped from a box off the rail.",
+                "stamp": "Read on every vessel"
+              },
+              {
+                "t": "spec",
+                "h": "If you are stopped",
+                "rows": [
+                  [
+                    "What we measure with",
+                    "A steel gauge, checked against the district standard each March"
+                  ],
+                  [
+                    "Where we measure",
+                    "On your deck, in front of you, from your box"
+                  ],
+                  [
+                    "Undersize found",
+                    "Returned alive if it will live. Recorded either way"
+                  ],
+                  [
+                    "Berried hen found",
+                    "Returned. It is an offence to land one and it always has been"
+                  ],
+                  [
+                    "Disagreement",
+                    "Measured twice, by you and then by me, and both written down"
+                  ],
+                  [
+                    "Appeal",
+                    "To the committee in writing, within twenty-eight days"
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "assets": {
+        "markSVG": "<path d=\"M25 54 L7 27 Q32 9 57 27 L39 54 Z\" fill=\"%B%\"/><path d=\"M32 54 L16 21.7\" fill=\"none\" stroke=\"%G%\" stroke-width=\"2\"/><path d=\"M32 54 L48 21.7\" fill=\"none\" stroke=\"%G%\" stroke-width=\"2\"/><path d=\"M32 54 L24.5 18.8 Q32 17.6 39.5 18.8 Z\" fill=\"%C%\"/><path d=\"M28.5 16 L32 30 L35.5 16 Z\" fill=\"%G%\"/><rect x=\"26\" y=\"52\" width=\"12\" height=\"7\" rx=\"2\" fill=\"%B%\"/>"
+      }
+    },
     {
       "id": "2026-09-07-one-in-ninety-six",
       "cadence": "weekly",
