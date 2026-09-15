@@ -1,7 +1,173 @@
 {
   "version": 1,
-  "updated": "2026-09-14T13:12:55Z",
+  "updated": "2026-09-15T04:51:21Z",
   "briefs": [
+    {
+      "id": "2026-09-15-hold-still",
+      "cadence": "weekly",
+      "received": "2026-09-15T04:51:21Z",
+      "discipline": "Character Design",
+      "brief": {
+        "project": "HOLD STILL",
+        "client": "A children's MRI unit that anaesthetises a third of its under-sevens because they cannot lie still",
+        "ask": "One under-seven in three goes under a general anaesthetic for their scan, not because the imaging needs it but because no child can hold still for forty minutes in a loud narrow tube with nothing to look at. The new suite opens in March with a head coil mirror and a printed ceiling panel rather than a screen, the panels are nine weeks at the printer, so whatever a child is asked to look at for forty minutes has to be drawn and signed off before the end of December.",
+        "deliver": [
+          "Character turnaround: front, three-quarter and back, drawn at ceiling-panel size and again at 40 mm for the wristband",
+          "Six panel poses, one per sequence, in the order a routine brain scan runs",
+          "The mirror card — the single image that lands in the head coil mirror, proofed reversed",
+          "A one-marker version the play team can put on a whiteboard in under ten seconds",
+          "Two sides of rules: what the character never does, so our communications office can extend it without calling you back"
+        ],
+        "limits": [
+          "Everything on that ceiling is seen in a mirror. Anything that depends on left and right is wrong before it is drawn.",
+          "One ink on the diffuser, and the room runs at eight lux. Two values, light and dark. A mid-tone is nothing.",
+          "No open mouth, no teeth, and it cannot hold the child's gaze. A face that stares back for forty minutes is a face they stop trusting.",
+          "Not a species. Half the children on that table will not see themselves in a fox, and two of them on any given week are frightened of dogs.",
+          "Nothing on the ceiling moves. It has to be worth looking at again at minute thirty-one."
+        ],
+        "tone": "Calm · exact · never cute"
+      },
+      "clientProfile": {
+        "who": "Ruth Tavener",
+        "role": "Superintendent Radiographer, paediatric imaging",
+        "co": "Brayfield Children's Hospital",
+        "dom": "brayfieldchildrens.nhs.uk",
+        "frame": "civic",
+        "voice": "If a child moves at minute thirty-one we run the sequence again from the start, so whatever you draw has to be worth a second look.",
+        "refs": [
+          "MRI scanner bore",
+          "hospital ceiling light panel",
+          "child's plastic wristband",
+          "mirror on an MRI head coil",
+          "dim scan room control window"
+        ],
+        "site": {
+          "tagline": "Paediatric imaging. Ninety-one scans a week, most of them awake.",
+          "nav": [
+            [
+              "Home",
+              "/"
+            ],
+            [
+              "Coming for a scan",
+              "/scan"
+            ]
+          ],
+          "pages": {
+            "/": [
+              {
+                "t": "lede",
+                "p": "Two scanners on the second floor, one of them new in March. Most of what happens here is a child being asked to stay completely still for between thirty and fifty minutes."
+              },
+              {
+                "t": "notice",
+                "h": "Scanner two is out from 16 February",
+                "p": "The room comes apart for eleven days while the new magnet goes in. Urgent paediatric MRI moves to St Cuthbert's for that fortnight, and we will ring every family on the list ourselves rather than write.",
+                "stamp": "Notice to referrers and families"
+              },
+              {
+                "t": "table",
+                "h": "What a scan actually takes",
+                "cols": [
+                  "Examination",
+                  "Sequences",
+                  "Time in the bore"
+                ],
+                "rows": [
+                  [
+                    "Brain, routine",
+                    "Six",
+                    "32 minutes"
+                  ],
+                  [
+                    "Brain with contrast",
+                    "Eight",
+                    "46 minutes"
+                  ],
+                  [
+                    "Spine, whole",
+                    "Seven",
+                    "51 minutes"
+                  ],
+                  [
+                    "Knee or ankle",
+                    "Five",
+                    "24 minutes"
+                  ],
+                  [
+                    "Abdomen, breath-hold",
+                    "Six",
+                    "38 minutes, in pieces"
+                  ]
+                ],
+                "note": "Times run from the first sequence to the last. Add twenty minutes for the coil, the cannula if there is one, and getting a child onto the table without a fuss."
+              }
+            ],
+            "/scan": [
+              {
+                "t": "lede",
+                "p": "Nothing in the scanner touches you and nothing in it hurts. Two children in three under seven manage it awake. The ones who do not are given a general anaesthetic, which is a larger thing than the scan."
+              },
+              {
+                "t": "spec",
+                "h": "Before you come",
+                "sub": "The desk will go through this again on the day, but it is quicker if you have read it.",
+                "rows": [
+                  [
+                    "Eating",
+                    "As normal, unless the office has told you otherwise on the telephone"
+                  ],
+                  [
+                    "Metal",
+                    "Nothing metal past the red line — hair clips, the wire in a bra, the badge on a school jumper"
+                  ],
+                  [
+                    "What to wear",
+                    "Jogging bottoms and a t-shirt with no transfer print on it"
+                  ],
+                  [
+                    "Who comes in",
+                    "One adult, screened at the desk. A second adult waits the other side of the red line"
+                  ],
+                  [
+                    "Noise",
+                    "Loud enough that we give out ear defenders and you hear it anyway. It knocks rather than beeps"
+                  ],
+                  [
+                    "How long",
+                    "Between twenty-four and fifty-one minutes. We will tell you which before you get on the table"
+                  ]
+                ],
+                "note": "Bring the appointment letter. If your child has a favourite thing to look at, tell the play specialist rather than bringing it into the room — almost nothing is allowed past the line."
+              },
+              {
+                "t": "notice",
+                "h": "What staying still actually means",
+                "p": "Blinking and swallowing are fine. Turning your head is not, and neither is talking. A spoiled sequence has to be run again from the beginning, which is why we say forty minutes and mean it.",
+                "stamp": "Read this with your child before the day"
+              }
+            ]
+          }
+        }
+      },
+      "assets": {
+        "markSVG": "<circle cx=\"32\" cy=\"32\" r=\"25\" fill=\"none\" stroke=\"%B%\" stroke-width=\"7\"/><path d=\"M22 44V32a10 10 0 0 1 20 0v12z\" fill=\"%C%\"/>",
+        "images": [
+          {
+            "ref": "hospital ceiling light panel",
+            "path": "briefs/assets/brayfieldchildrens/panel.png"
+          },
+          {
+            "ref": "mirror on an MRI head coil",
+            "path": "briefs/assets/brayfieldchildrens/mirror.png"
+          },
+          {
+            "ref": "child's plastic wristband",
+            "path": "briefs/assets/brayfieldchildrens/wristband.png"
+          }
+        ]
+      }
+    },
     {
       "id": "2026-09-14-over-the-side",
       "cadence": "weekly",

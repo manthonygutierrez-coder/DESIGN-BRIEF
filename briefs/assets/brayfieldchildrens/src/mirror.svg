@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <!-- Element — the head coil mirror. Everything on the ceiling arrives here
+       reversed, which is the whole reason the figure is built on one axis:
+       the reflection and the panel are the same drawing. -->
+
+  <rect width="800" height="600" fill="#0D1417"/>
+
+  <!-- the bore -->
+  <rect x="24" y="8" width="752" height="584" rx="210" fill="#131F24"/>
+  <rect x="72" y="52" width="656" height="496" rx="180" fill="none" stroke="#1E2B31" stroke-width="3"/>
+
+  <!-- head coil, close to the face -->
+  <g fill="#C2C8CA">
+    <rect x="84" y="118" width="28" height="400" rx="14"/>
+    <rect x="688" y="118" width="28" height="400" rx="14"/>
+  </g>
+  <path d="M98 132C98 34 702 34 702 132" fill="none" stroke="#C2C8CA" stroke-width="28" stroke-linecap="round"/>
+  <g fill="#9AA3A7">
+    <rect x="84" y="300" width="28" height="14" rx="7"/>
+    <rect x="688" y="300" width="28" height="14" rx="7"/>
+  </g>
+
+  <!-- the mirror, set at forty-five degrees on the coil -->
+  <g transform="rotate(-3 400 300)">
+    <rect x="228" y="178" width="344" height="244" rx="8" fill="#7E878C"/>
+    <rect x="240" y="190" width="320" height="220" rx="4" fill="#F6F1E2"/>
+
+    <g transform="translate(325 206) scale(0.75)" fill="#16242B">
+      <circle cx="14" cy="132" r="17"/>
+      <circle cx="186" cy="132" r="17"/>
+      <rect x="52" y="174" width="38" height="18" rx="9"/>
+      <rect x="110" y="174" width="38" height="18" rx="9"/>
+      <path d="M20 170V100a80 80 0 0 1 160 0v70a10 10 0 0 1-10 10H30a10 10 0 0 1-10-10z"/>
+      <g stroke="#F6F1E2" stroke-width="9" stroke-linecap="round" fill="none">
+        <path d="M62 114q12-13 24 0"/>
+        <path d="M114 114q12-13 24 0"/>
+        <path d="M78 146h44"/>
+      </g>
+    </g>
+
+    <g fill="#16242B">
+      <rect x="297" y="372" width="26" height="6" rx="3"/>
+      <rect x="333" y="372" width="26" height="6" rx="3"/>
+      <rect x="369" y="372" width="26" height="6" rx="3"/>
+      <rect x="405" y="372" width="26" height="6" rx="3"/>
+    </g>
+    <g fill="none" stroke="#16242B" stroke-width="2">
+      <rect x="441" y="372" width="26" height="6" rx="3"/>
+      <rect x="477" y="372" width="26" height="6" rx="3"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+<!-- Element - the wristband the child is given at the desk, and the sheet the play team hand over afterwards. Print, not the scan room, so the department colours are allowed out. -->
+<rect width="800" height="600" fill="#F2EFE6"/>
+<rect x="60" y="112" width="680" height="96" rx="48" fill="#1F6F72"/>
+<rect x="84" y="128" width="286" height="64" rx="6" fill="#F6F1E2"/>
+<g stroke="#D9D3C5" stroke-width="2"><path d="M100 156h254M100 176h254"/></g>
+<g fill="#F2EFE6" opacity="0.9"><circle cx="706" cy="140" r="5"/><circle cx="706" cy="160" r="5"/><circle cx="706" cy="180" r="5"/></g>
+<g transform="translate(400 130) scale(0.33)" fill="#F6F1E2"><circle cx="14" cy="132" r="17"/><circle cx="186" cy="132" r="17"/><rect x="52" y="174" width="38" height="18" rx="9"/><rect x="110" y="174" width="38" height="18" rx="9"/><path d="M20 170V100a80 80 0 0 1 160 0v70a10 10 0 0 1-10 10H30a10 10 0 0 1-10-10z"/><g stroke="#1F6F72" stroke-width="9" stroke-linecap="round" fill="none"><path d="M62 114q12-13 24 0"/><path d="M114 114q12-13 24 0"/><path d="M78 146h44"/></g></g>
+<g transform="translate(560 130) scale(0.33)" fill="#F6F1E2"><circle cx="14" cy="132" r="17"/><circle cx="186" cy="132" r="17"/><rect x="52" y="174" width="38" height="18" rx="9"/><rect x="110" y="174" width="38" height="18" rx="9"/><path d="M20 170V100a80 80 0 0 1 160 0v70a10 10 0 0 1-10 10H30a10 10 0 0 1-10-10z"/><g stroke="#1F6F72" stroke-width="9" stroke-linecap="round" fill="none"><path d="M62 114q12-13 24 0"/><path d="M114 114q12-13 24 0"/><path d="M78 146h44"/></g></g>
+<g fill="#E9A227"><rect x="496" y="156" width="8" height="8" rx="4"/><rect x="512" y="156" width="8" height="8" rx="4"/><rect x="528" y="156" width="8" height="8" rx="4"/></g>
+<rect x="60" y="268" width="680" height="272" rx="10" fill="#F6F1E2"/>
+<rect x="76" y="284" width="648" height="240" rx="6" fill="none" stroke="#D9D3C5" stroke-width="2" stroke-dasharray="7 7"/>
+<circle cx="200" cy="404" r="84" fill="#1F6F72"/>
+<g transform="translate(158 355) scale(0.42)" fill="#F6F1E2"><circle cx="14" cy="132" r="17"/><circle cx="186" cy="132" r="17"/><rect x="52" y="174" width="38" height="18" rx="9"/><rect x="110" y="174" width="38" height="18" rx="9"/><path d="M20 170V100a80 80 0 0 1 160 0v70a10 10 0 0 1-10 10H30a10 10 0 0 1-10-10z"/><g stroke="#1F6F72" stroke-width="11" stroke-linecap="round" fill="none"><path d="M62 114q12-13 24 0"/><path d="M114 114q12-13 24 0"/><path d="M78 146h44"/></g></g>
+<circle cx="400" cy="404" r="84" fill="#E9A227"/>
+<g transform="translate(358 355) scale(0.42)" fill="#16242B"><circle cx="14" cy="132" r="17"/><circle cx="186" cy="132" r="17"/><rect x="52" y="174" width="38" height="18" rx="9"/><rect x="110" y="174" width="38" height="18" rx="9"/><path d="M20 170V100a80 80 0 0 1 160 0v70a10 10 0 0 1-10 10H30a10 10 0 0 1-10-10z"/><g stroke="#E9A227" stroke-width="11" stroke-linecap="round" fill="none"><path d="M62 114q12-13 24 0"/><path d="M114 114q12-13 24 0"/><path d="M78 146h44"/></g></g>
+<circle cx="600" cy="404" r="84" fill="none" stroke="#1F6F72" stroke-width="5"/>
+<g transform="translate(558 355) scale(0.42)" fill="#1F6F72"><circle cx="14" cy="132" r="17"/><circle cx="186" cy="132" r="17"/><rect x="52" y="174" width="38" height="18" rx="9"/><rect x="110" y="174" width="38" height="18" rx="9"/><path d="M20 170V100a80 80 0 0 1 160 0v70a10 10 0 0 1-10 10H30a10 10 0 0 1-10-10z"/><g stroke="#F6F1E2" stroke-width="11" stroke-linecap="round" fill="none"><path d="M62 114q12-13 24 0"/><path d="M114 114q12-13 24 0"/><path d="M78 146h44"/></g></g>
+<g transform="translate(96 486) scale(0.55)"><circle cx="32" cy="32" r="25" fill="none" stroke="#1F6F72" stroke-width="7"/><path d="M22 44V32a10 10 0 0 1 20 0v12z" fill="#E9A227"/></g>
+</svg>

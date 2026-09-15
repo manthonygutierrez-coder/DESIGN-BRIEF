@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Brayfield Children's Hospital, Imaging. The bore, and the one thing
+       inside it that is not moving. Two colours, flat, symmetrical. -->
+  <circle cx="32" cy="32" r="25" fill="none" stroke="#1F6F72" stroke-width="7"/>
+  <path d="M22 44V32a10 10 0 0 1 20 0v12z" fill="#E9A227"/>
+</svg>
