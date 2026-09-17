@@ -70,6 +70,7 @@ const Mail = (() => {
         (m.projectDir
           ? '<button class="w98btn" data-act="reveal">Show project folder</button>'
           : '<button class="w98btn" data-act="accept">Accept &amp; make project folder</button>') +
+        (typeof Suite !== "undefined" ? '<button class="w98btn" data-act="suite">Open in Design Suite</button>' : "") +
       '</div>'
     );
   }
@@ -394,6 +395,7 @@ const Mail = (() => {
     if (!m) return;
     if (act === "open-brief"){ openBriefAt(m.ci, m.briefIdx); return; }
     if (act === "reveal" && m.projectDir){ Bridge.revealProject(m.projectDir); return; }
+    if (act === "suite" && typeof Suite !== "undefined"){ Suite.launcher(m.id); return; }
     if (act === "accept"){
       const b = briefOf(m);
       const dir = await Bridge.createProject(CATS[m.ci].label, b.project);
@@ -494,7 +496,16 @@ const Mail = (() => {
     return w;
   }
 
-  return { boot, open, restore, issue, ingest, unreadCount, render };
+  // Briefs the player is working on or has delivered — what the design suite
+  // can attach a document to.
+  function jobs(){
+    if (!state) return [];
+    return state.mail
+      .filter((m) => m.state === "read" || m.state === "unread" || m.state === "completed")
+      .map((m) => ({ id: m.id, ci: m.ci, brief: briefOf(m), client: clientOf(m), dir: m.projectDir || null }));
+  }
+
+  return { boot, open, restore, issue, ingest, unreadCount, render, jobs };
 })();
 
 /* Called by the Start menu: taking on work in a discipline.

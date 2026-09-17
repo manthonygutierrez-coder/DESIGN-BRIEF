@@ -29,6 +29,47 @@ npm run build
 Output lands in `build/`. It is **unsigned**, so the first launch needs
 right-click → Open rather than a double-click.
 
+## Two ways to play
+
+The first crossing over asks who is logging on. Each is its own save slot —
+its own state file under `userData/slots/`, its own projects folder — and they
+share nothing at runtime. **Log Off** from the Start menu switches.
+
+| Slot | What it is |
+|---|---|
+| **Studio** | The loop below. Real briefs by mail, real work in your own tools, real files. |
+| **Hustle** | The work made into puzzles, played entirely inside the desktop. In progress: the design suite exists; gigs, research minigames and reputation come next. Output goes to `~/Documents/Pixel Crossing/_hustle/`. |
+
+An existing `state.json` from before slots is moved into Studio on first launch.
+
+## The design suite
+
+Start menu → **Design Suite**, or **Open in Design Suite** on any brief. Apps are
+gated by the brief's discipline; scratch work gets all of them.
+
+| App | For |
+|---|---|
+| Banner | Free canvas: shapes, text, images, eyedropper |
+| Type | Wordmarks and specimens |
+| Pixel | True-resolution sprites; zoom and export by whole numbers only |
+| Layout | A web page built from the same blocks client sites use, viewable in The Web |
+| Swatch | A six-colour palette with a WCAG contrast grid |
+| Cutout | Wand and lasso selections that become object and colour cards |
+
+**Cards** are anything scavenged — colours, cut-out objects, shapes, typefaces,
+and trend / gap / fact notes. Drag one onto the canvas or a layer to apply it.
+Every application records the card on the document; that provenance is what
+Hustle will score against. Until the research minigames exist, **Client kit**
+fills the tray from a client's theme, refs and site.
+
+**Save** writes a `.pxdoc` to the project's `02-process`; **Export PNG** writes
+to `04-final`, so suite output attaches to a reply like anything else. Bonus
+tools (gradient, pen, snap, align, mirror) are always on in Studio and unlock
+over time in Hustle.
+
+`npm test` runs the document model, card and cutout tests (`node:test`, no
+dependencies) — those modules are pure and never touch the DOM.
+
 ## The loop
 
 1. **Start menu → a discipline.** A client takes you on.

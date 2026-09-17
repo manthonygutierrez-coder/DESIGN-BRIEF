@@ -8,6 +8,14 @@ vibe: Balances a loop made of unread mail, four folders, and one honest constrai
 
 # Game Designer — Pixel Crossing
 
+> **Two save slots, two rule sets.** Everything below describes **Studio**, and
+> its rules still hold there. **Hustle** (see README "Two ways to play") is a
+> separate slot that deliberately adds exactly three things Studio does not
+> have: **reputation**, **timers** on research/production puzzles, and a
+> **score** per deliverable computed offline from the cards used (provenance on
+> the suite document). Hustle still has no currency, HP, loot or XP curve, and
+> none of its mechanics may leak into Studio.
+
 Pixel Crossing has one loop, no combat, no HP, no currency, no XP curve. Do not reach for RPG/economy tooling (damage tables, drop rates, prestige sinks) — none of it applies. Everything you design has to fit the loop that already exists in `src/js/`.
 
 ## The actual loop (see README "The loop" for the canonical version)

@@ -11,12 +11,26 @@
 const Bridge = (() => {
   const api = typeof window !== "undefined" ? window.crossing : null;
   const native = !!(api && typeof api.getState === "function");
-  const LS_KEY = "pixel-crossing:state";
+  const LS_BASE = "pixel-crossing:state";
+  let slot = "studio";
+  // Studio keeps the original key so existing browser-tab state is not lost.
+  const lsKey = () => (slot === "studio" ? LS_BASE : LS_BASE + ":" + slot);
   const EMPTY = { version: 1, projectsRoot: null, mail: [], projects: {}, issued: [] };
 
-  let memory = null;      // browser fallback cache
+  let memory = null;      // the one shared state object for the active slot
   let saveTimer = 0;
   let pending = null;
+
+  // Chosen once per session, at logon, before anything reads state. Switching
+  // slots reloads the renderer instead (see Session), so no module ever holds a
+  // reference to the other slot's state.
+  async function useSlot(next){
+    if (next !== "studio" && next !== "hustle") throw new Error("unknown slot " + next);
+    if (memory && next !== slot) throw new Error("slot already in use this session");
+    slot = next;
+    if (native && typeof api.useSlot === "function") await api.useSlot(next);
+    return slot;
+  }
 
   // Every caller gets the SAME object, loaded once.
   //
@@ -32,7 +46,7 @@ const Bridge = (() => {
       catch (e){ console.error("[bridge] getState failed, using local:", e.message); }
     }
     try {
-      const raw = localStorage.getItem(LS_KEY);
+      const raw = localStorage.getItem(lsKey());
       memory = raw ? { ...EMPTY, ...JSON.parse(raw) } : { ...EMPTY };
     } catch { memory = { ...EMPTY }; }
     return memory;
@@ -55,7 +69,7 @@ const Bridge = (() => {
       try { await api.saveState(state); return; }
       catch (e){ console.error("[bridge] saveState failed, using local:", e.message); }
     }
-    try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch { /* quota — nothing to do */ }
+    try { localStorage.setItem(lsKey(), JSON.stringify(state)); } catch { /* quota — nothing to do */ }
   }
 
   const unsupported = (what) => () => {
@@ -65,6 +79,8 @@ const Bridge = (() => {
 
   return {
     native,
+    useSlot,
+    slot: () => slot,
     getState,
     saveState,
     flush,
@@ -83,5 +99,10 @@ const Bridge = (() => {
     feedDrop:   native ? () => api.feedDrop()        : async () => ({ ok:false, error:"needs the desktop app" }),
     feedDropDir:native ? () => api.feedDropDir()     : async () => null,
     feedAsset:  native ? (u) => api.feedAsset(u)     : async () => ({ ok:false, error:"needs the desktop app" }),
+
+    // Design suite. In a browser tab exports download instead of landing in a
+    // project folder, so the suite is still usable for iteration.
+    suiteSave:  native ? (req) => api.suiteSave(req) : async () => ({ ok:false, error:"needs the desktop app" }),
+    suiteOpen:  native ? () => api.suiteOpen()       : async () => ({ ok:false, error:"needs the desktop app" }),
   };
 })();

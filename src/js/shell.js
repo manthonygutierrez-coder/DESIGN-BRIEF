@@ -4,6 +4,7 @@ $("startIco").innerHTML = iconSVG("graphic", 16);
 CATS.forEach((cat, i) => {
   const b = document.createElement("button");
   b.className = "si"; b.type = "button"; b.setAttribute("role", "menuitem");
+  b.dataset.cat = cat.id;
   b.innerHTML = '<i>' + iconSVG(cat.id, 20) + '</i><span></span>';
   b.querySelector("span").textContent = pixelLabel(cat.label);
   b.addEventListener("click", () => { toggleStart(false); requestBrief(i); });
@@ -21,7 +22,7 @@ function toggleStart(open){
   smenu.classList.toggle("on", next);
   startBtn.classList.toggle("on", next);
   startBtn.setAttribute("aria-expanded", String(next));
-  if (next) slist.querySelector(".si").focus();
+  if (next){ const first = slist.querySelector(".si:not([hidden])"); if (first) first.focus(); }
 }
 startBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleStart(); });
 sideScreen.addEventListener("pointerdown", (e) => {
@@ -40,8 +41,13 @@ setInterval(tickClock, 15000);
 const desk = {
   // Crossing over no longer opens a brief; it just lands you on the desktop.
   // Work arrives by mail, from the Start menu.
-  arrive(){ if (typeof Mail !== "undefined") Mail.restore(); },
-  focusTarget(){ return activeWin ? (activeWin.el.querySelector(".w98btn") || activeWin.el) : startBtn; }
+  // Which save slot this is gets decided on the first arrival (see session.js).
+  arrive(){ Session.arrive(); },
+  focusTarget(){
+    const logon = deskEl.querySelector(".logon__opt");
+    if (logon) return deskEl.querySelector(".logon__opt.last") || logon;
+    return activeWin ? (activeWin.el.querySelector(".w98btn") || activeWin.el) : startBtn;
+  }
 };
 
 /* ── parallax on the screen side ────────────────────── */

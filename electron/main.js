@@ -9,20 +9,48 @@ let mainWindow = null;
 
 /* ── paths ─────────────────────────────────────────────── */
 
-const STATE_FILE = () => path.join(app.getPath('userData'), 'state.json');
 const DEFAULT_ROOT = () => path.join(app.getPath('documents'), 'Pixel Crossing');
 
 const IMAGE_EXT = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.tif', '.tiff', '.bmp', '.heic']);
 // The four slots map 1:1 onto the book spread's image areas in the next pass.
 const SLOTS = ['01-concept', '02-process', '03-progress', '04-final'];
 
+/* ── save slots ────────────────────────────────────────
+ * Studio (real work, real mail) and Hustle (the game) share nothing at runtime:
+ * each has its own state file and its own projects folder. The renderer picks a
+ * slot at logon, before it reads any state.
+ */
+
+const SLOT_NAMES = ['studio', 'hustle'];
+let currentSlot = 'studio';
+
+const LEGACY_STATE_FILE = () => path.join(app.getPath('userData'), 'state.json');
+const STATE_FILE = (slot = currentSlot) => path.join(app.getPath('userData'), 'slots', `${slot}.json`);
+
+// Before slots existed there was one state.json. It was always real work, so it
+// becomes Studio — moved once, never copied, so there is only ever one truth.
+async function migrateLegacyState() {
+  const legacy = LEGACY_STATE_FILE();
+  const target = STATE_FILE('studio');
+  try {
+    await fsp.access(legacy);
+  } catch { return; }
+  try {
+    await fsp.access(target);
+    return;                                  // studio already exists: leave both alone
+  } catch { /* target missing: migrate */ }
+  await fsp.mkdir(path.dirname(target), { recursive: true });
+  await fsp.rename(legacy, target);
+  console.log('[slots] migrated state.json into the studio slot');
+}
+
 /* ── state: atomic read/write ──────────────────────────── */
 
 const EMPTY_STATE = { version: 1, projectsRoot: null, mail: [], projects: {}, issued: [] };
 
-async function readState() {
+async function readState(slot = currentSlot) {
   try {
-    return { ...EMPTY_STATE, ...JSON.parse(await fsp.readFile(STATE_FILE(), 'utf8')) };
+    return { ...EMPTY_STATE, ...JSON.parse(await fsp.readFile(STATE_FILE(slot), 'utf8')) };
   } catch (err) {
     if (err.code !== 'ENOENT') console.error('[state] unreadable, starting fresh:', err.message);
     return { ...EMPTY_STATE };
@@ -30,8 +58,8 @@ async function readState() {
 }
 
 // Temp file + rename, so a crash mid-write can never truncate the real state.
-async function writeState(state) {
-  const target = STATE_FILE();
+async function writeState(state, slot = currentSlot) {
+  const target = STATE_FILE(slot);
   const tmp = `${target}.${process.pid}.tmp`;
   await fsp.mkdir(path.dirname(target), { recursive: true });
   await fsp.writeFile(tmp, JSON.stringify(state, null, 2), 'utf8');
@@ -46,7 +74,13 @@ function safeName(s) {
   return String(s).replace(/[\/\\:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim().slice(0, 80);
 }
 
+// Hustle output is game output: it lives under the studio root in its own
+// folder, so real client folders never fill up with practice gigs.
 async function resolveRoot() {
+  if (currentSlot === 'hustle') {
+    const studio = await readState('studio');
+    return path.join(studio.projectsRoot || DEFAULT_ROOT(), '_hustle');
+  }
   const state = await readState();
   return state.projectsRoot || DEFAULT_ROOT();
 }
@@ -127,6 +161,13 @@ function watchRoot(root) {
 
 /* ── ipc ───────────────────────────────────────────────── */
 
+ipcMain.handle('slots:list', () => SLOT_NAMES.slice());
+ipcMain.handle('slots:use', async (_e, slot) => {
+  if (!SLOT_NAMES.includes(slot)) return { ok: false, error: 'unknown slot' };
+  currentSlot = slot;
+  watchRoot(await resolveRoot());
+  return { ok: true, slot };
+});
 ipcMain.handle('state:get', () => readState());
 ipcMain.handle('state:save', (_e, state) => writeState(state));
 
@@ -138,11 +179,12 @@ ipcMain.handle('projects:chooseRoot', async () => {
     properties: ['openDirectory', 'createDirectory'],
   });
   if (res.canceled || !res.filePaths[0]) return null;
-  const state = await readState();
+  // The root is always a Studio setting; Hustle derives its folder from it.
+  const state = await readState('studio');
   state.projectsRoot = res.filePaths[0];
-  await writeState(state);
-  watchRoot(state.projectsRoot);
-  return state.projectsRoot;
+  await writeState(state, 'studio');
+  watchRoot(await resolveRoot());
+  return resolveRoot();
 });
 
 ipcMain.handle('projects:create', (_e, discipline, project) => createProject(discipline, project));
@@ -163,6 +205,65 @@ ipcMain.handle('projects:pickFiles', async () => {
     const st = await fsp.stat(p).catch(() => null);
     return { name: path.basename(p), path: p, size: st ? st.size : 0 };
   }));
+});
+
+
+/* ── design suite: save / export / open ────────────────────
+ * The suite writes into a project's own folders — PNG exports to 04-final,
+ * .pxdoc working files to 02-process — so its output can be attached to a reply
+ * like anything made in outside tools. Writes are confined to the projects root.
+ */
+
+const SUITE_MAX_BYTES = 12 * 1024 * 1024;
+
+function insideRoot(root, target) {
+  const rel = path.relative(root, target);
+  return !!rel && !rel.startsWith('..') && !path.isAbsolute(rel);
+}
+
+ipcMain.handle('suite:save', async (_e, req) => {
+  try {
+    if (!req || typeof req !== 'object') return { ok: false, error: 'bad request' };
+    const slot = SLOTS.includes(req.slot) ? req.slot : '02-process';
+    const base = safeName(req.name || 'untitled').replace(/\.+$/, '') || 'untitled';
+    let buf, ext;
+    if (typeof req.dataURL === 'string') {
+      const m = req.dataURL.match(/^data:image\/png;base64,([A-Za-z0-9+/=]+)$/);
+      if (!m) return { ok: false, error: 'only PNG exports are accepted' };
+      buf = Buffer.from(m[1], 'base64');
+      ext = '.png';
+    } else if (typeof req.text === 'string') {
+      buf = Buffer.from(req.text, 'utf8');
+      ext = '.pxdoc';
+    } else return { ok: false, error: 'nothing to save' };
+    if (buf.length > SUITE_MAX_BYTES) return { ok: false, error: 'file too large' };
+
+    const root = await resolveRoot();
+    const dir = await createProject(req.discipline || 'Scratch', req.project || 'Sketchpad');
+    const target = path.join(dir, slot, base + ext);
+    if (!insideRoot(root, target)) return { ok: false, error: 'outside the projects folder' };
+    await fsp.writeFile(target, buf);
+    return { ok: true, path: target, name: base + ext };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('suite:open', async () => {
+  const res = await dialog.showOpenDialog(mainWindow, {
+    title: 'Open a suite document',
+    defaultPath: await resolveRoot(),
+    properties: ['openFile'],
+    filters: [{ name: 'Pixel Crossing document', extensions: ['pxdoc'] }],
+  });
+  if (res.canceled || !res.filePaths[0]) return { ok: false, canceled: true };
+  try {
+    const st = await fsp.stat(res.filePaths[0]);
+    if (st.size > SUITE_MAX_BYTES) return { ok: false, error: 'file too large' };
+    return { ok: true, name: path.basename(res.filePaths[0]), text: await fsp.readFile(res.filePaths[0], 'utf8') };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
 });
 
 /* ── brief feed ────────────────────────────────────────────
@@ -344,6 +445,7 @@ app.whenReady().then(async () => {
       console.error('[icon] could not set dock icon:', e.message);
     }
   }
+  await migrateLegacyState().catch((e) => console.error('[slots] migration failed:', e.message));
   watchRoot(await resolveRoot());
   createWindow();
   app.on('activate', () => {

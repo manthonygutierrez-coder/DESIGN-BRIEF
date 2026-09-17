@@ -521,5 +521,7 @@ const Sites = (() => {
   function searchURL(q){ return "http://" + SEARCH_HOST + "/?q=" + encodeURIComponent(q); }
   const home = () => "http://" + SEARCH_HOST + "/";
 
-  return { resolve, searchURL, home, SEARCH_HOST };
+  // renderSite/renderBlocks are exposed for the suite's Layout app, so a page
+  // being designed previews in exactly the markup the browser will show.
+  return { resolve, searchURL, home, SEARCH_HOST, renderSite, renderBlocks, FRAME_NAMES: Object.keys(FRAMES) };
 })();

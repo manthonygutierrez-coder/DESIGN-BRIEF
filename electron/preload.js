@@ -1,6 +1,10 @@
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('crossing', {
+  // Save slots: pick one before reading any state.
+  listSlots: () => ipcRenderer.invoke('slots:list'),
+  useSlot: (slot) => ipcRenderer.invoke('slots:use', slot),
+
   getState: () => ipcRenderer.invoke('state:get'),
   saveState: (state) => ipcRenderer.invoke('state:save', state),
 
@@ -25,6 +29,10 @@ contextBridge.exposeInMainWorld('crossing', {
   feedDrop: () => ipcRenderer.invoke('feed:drop'),
   feedDropDir: () => ipcRenderer.invoke('feed:dropDir'),
   feedAsset: (url) => ipcRenderer.invoke('feed:asset', url),
+
+  // Design suite: write into a project folder, or open a saved .pxdoc.
+  suiteSave: (req) => ipcRenderer.invoke('suite:save', req),
+  suiteOpen: () => ipcRenderer.invoke('suite:open'),
 
   // Real path for a dropped File — the only supported way under sandbox.
   pathForFile: (file) => webUtils.getPathForFile(file),

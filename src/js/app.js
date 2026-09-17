@@ -17,15 +17,5 @@ addEventListener("keydown", (e) => {
 setPreview(0);
 sideScreen.inert = true;
 
-// The desktop always has an inbox; the browser only appears once a client
-// has sent you a link.
-Mail.boot().then(() => {
-  addShortcut("mail", "Inbox", "mail", () => Mail.open());
-  Mail.render();
-}).catch((e) => console.error("[mail] boot failed:", e));
-
-// Files landing in a project folder are worth knowing about.
-Bridge.onProjectsChanged(() => { if (typeof Mail !== "undefined") Mail.render(); });
-
-// Scheduled briefs from the feed (repo URL and/or the local _inbox drop).
-Feed.boot().catch((e) => console.error("[feed] boot failed:", e));
+// Nothing that reads saved state boots here any more: the save slot is chosen
+// at logon, on the first crossing over. See session.js.

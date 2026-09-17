@@ -85,11 +85,104 @@ winterbourneandsons:{p:{k:"#14110E",w:"#D8C08A",a:"#8A7040"},g:[
     "................","................",".......kk.......","......kak.......",
     ".....kaak.......","....kaaakkkkkk..","...kaaaaaaaaaak.","..kaaaaaaaaaaak.",
     "..kaaaaaaaaaaak.","...kaaaaaaaaaak.","....kaaakkkkkk..",".....kaak.......",
-    "......kak.......",".......kk.......","................","................"]}
+    "......kak.......",".......kk.......","................","................"]},
+  /* ── design suite: apps and tools ── */
+  "t-select":{p:{k:"#0A0A0A",w:"#FFFFFF"},g:[
+    "................","..k.............","..kk............","..kwk...........",
+    "..kwwk..........","..kwwwk.........","..kwwwwk........","..kwwwwwk.......",
+    "..kwwwwwwk......","..kwwwwwwwk.....","..kwwwwkkkkk....","..kwwkwwk.......",
+    "..kwk.kwwk......","..kk...kwwk.....","..k.....kwk.....",".........k......"]},
+  "t-rect":{p:{k:"#0A0A0A",a:"#E0442B"},g:[
+    "................","................","................","..kkkkkkkkkkkk..",
+    "..kaaaaaaaaaak..","..kaaaaaaaaaak..","..kaaaaaaaaaak..","..kaaaaaaaaaak..",
+    "..kaaaaaaaaaak..","..kaaaaaaaaaak..","..kaaaaaaaaaak..","..kaaaaaaaaaak..",
+    "..kkkkkkkkkkkk..","................","................","................"]},
+  "t-ellipse":{p:{k:"#0A0A0A",a:"#1084D0"},g:[
+    "................",".......kk.......","....kkkkkkkk....","...kkaaaaaakk...",
+    "..kkaaaaaaaakk..","..kaaaaaaaaaak..","..kaaaaaaaaaak..",".kkaaaaaaaaaakk.",
+    ".kkaaaaaaaaaakk.","..kaaaaaaaaaak..","..kaaaaaaaaaak..","..kkaaaaaaaakk..",
+    "...kkaaaaaakk...","....kkkkkkkk....",".......kk.......","................"]},
+  "t-text":{p:{k:"#0A0A0A"},g:[
+    "................","................","..kkkkkkkkkkkk..","..kkkkkkkkkkkk..",
+    "..k....kk....k..",".......kk.......",".......kk.......",".......kk.......",
+    ".......kk.......",".......kk.......",".......kk.......",".......kk.......",
+    ".....kkkkkk.....",".....kkkkkk.....","................","................"]},
+  "t-image":{p:{k:"#0A0A0A",s:"#8FD3FF",y:"#FFD24A",g:"#3C8C3C"},g:[
+    "................","................",".kkkkkkkkkkkkkk.",".kssssssssssssk.",
+    ".kssssssssyyssk.",".ksssssssyyyysk.",".kssssssssyyssk.",".kssssgsssssssk.",
+    ".ksssgggssssssk.",".kssgggggsssgsk.",".ksgggggggsgggk.",".kggggggggggggk.",
+    ".kggggggggggggk.",".kkkkkkkkkkkkkk.","................","................"]},
+  "t-eyedrop":{p:{k:"#0A0A0A",w:"#FFFFFF",a:"#E0442B"},g:[
+    "................","...........kk...","..........kaak..",".........kaaaak.",
+    ".........kkaakk.",".........kwkkk..","........kwk.....",".......kwk......",
+    "......kwk.......",".....kwk........","....kwk.........","...kwk..........",
+    "..kwk...........",".kwk............",".aa.............","................"]},
+  "t-pen":{p:{k:"#0A0A0A",w:"#FFFFFF",a:"#1084D0"},g:[
+    "................","................",".......kk.......","......kwwk......",
+    "......kwwk......",".....kwwwwk.....",".....kwkkwk.....","....kwwkkwwk....",
+    "....kwwwwwwk....",".....kwwwwk.....",".....kkkkkk.....",".....kaaaak.....",
+    ".....kaaaak.....",".....kkkkkk.....","................","................"]},
+  "t-pencil":{p:{k:"#0A0A0A",y:"#F2C94C",e:"#F29BB0",w:"#EAD9B8"},g:[
+    "................","............kk..","...........keek.","..........keek..",
+    ".........kyyk...","........kyyk....",".......kyyk.....","......kyyk......",
+    ".....kyyk.......","....kyyk........","...kyyk.........","..kyyk..........",
+    ".kwwk...........",".kkk............",".k..............","................"]},
+  "t-erase":{p:{k:"#0A0A0A",w:"#FFFFFF",e:"#F29BB0"},g:[
+    "................","................","........kkkkkk..",".......keeeeeek.",
+    "......keeeeeeek.",".....keeeeeeek..","....kwkeeeeek...","...kwwwkeeek....",
+    "..kwwwwwkek.....","..kwwwwwwk......","...kwwwwk.......","....kkkk........",
+    "................","................",".kkkkkkkkkkkkkk.","................"]},
+  "t-fill":{p:{k:"#0A0A0A",w:"#FFFFFF",a:"#1084D0"},g:[
+    "................","................","......kk........",".....kwwk.......",
+    "....kwwwwk......","...kwwwwwwk.....","..kwwwwwwwwk....",".kwwwwwwwwwwk...",
+    "..kwwwwwwwwkak..","...kwwwwwwkaaak.","....kwwwwk.kaak.",".....kwwk...kak.",
+    "......kk.....k..","................","................","................"]},
+  "app-banner":{p:{k:"#0A0A0A",a:"#E0442B",w:"#FFFFFF",b:"#14110E"},g:[
+    "................","................","................","................",
+    "kkkkkkkkkkkkkkkk","kaaaaaaaaaaaaaak","kawwwwwwwabbbbak","kaaaaaaaaabbbbak",
+    "kawwwwwaaabbbbak","kaaaaaaaaabbbbak","kaaaaaaaaaaaaaak","kkkkkkkkkkkkkkkk",
+    "................","................","................","................"]},
+  "app-type":{p:{k:"#0A0A0A",w:"#F4F1E9",a:"#E0442B"},g:[
+    "................",".kkkkkkkkkkkkkk.",".kwwwwwwwwwwwwk.",".kwkkkkkkkkkkwk.",
+    ".kwkkkkkkkkkkwk.",".kwwwwwkkwwwwwk.",".kwwwwwkkwwwwwk.",".kwwwwwkkwwwwwk.",
+    ".kwwwwwkkwwwwwk.",".kwwwwwkkwwwwwk.",".kwwwwkkkkwwwwk.",".kwwwwwwwwwwwwk.",
+    ".kwaaaaaaaaaawk.",".kwwwwwwwwwwwwk.",".kkkkkkkkkkkkkk.","................"]},
+  "app-pixel":{p:{k:"#0A0A0A",a:"#57E0FF",b:"#FF5FA8",c:"#FFE08A"},g:[
+    "................",".kkkkkkkkkkkkkk.",".kaaaabbbbcccck.",".kaaaabbbbcccck.",
+    ".kaaaabbbbcccck.",".kaaaabbbbcccck.",".kbbbbccccaaaak.",".kbbbbccccaaaak.",
+    ".kbbbbccccaaaak.",".kbbbbccccaaaak.",".kccccaaaabbbbk.",".kccccaaaabbbbk.",
+    ".kccccaaaabbbbk.",".kccccaaaabbbbk.",".kkkkkkkkkkkkkk.","................"]},
+  "app-layout":{p:{k:"#0A0A0A",w:"#FFFFFF",b:"#1084D0",s:"#8FAFCB"},g:[
+    "................",".kkkkkkkkkkkkkk.",".kbbbbbbbbbbbbk.",".kbbbbbbbbbbbbk.",
+    ".kkkkkkkkkkkkkk.",".kwwwwwwwwwwwwk.",".kwsssssssssswk.",".kwsssssssssswk.",
+    ".kwsssssssssswk.",".kwwwwwwwwwwwwk.",".kwsssswwsssswk.",".kwsssswwsssswk.",
+    ".kwsssswwsssswk.",".kwwwwwwwwwwwwk.",".kkkkkkkkkkkkkk.","................"]},
+  "app-swatch":{p:{k:"#0A0A0A",a:"#E0442B",b:"#EFA845",c:"#4FD1C5"},g:[
+    "................","................",".kkkk...........",".kaak...........",
+    ".kaak.kkkk......",".kaak.kbbk......",".kaak.kbbk.kkkk.",".kaak.kbbk.kcck.",
+    ".kaak.kbbk.kcck.",".kaak.kbbk.kcck.",".kaak.kbbk.kcck.",".kaak.kbbk.kcck.",
+    ".kaak.kbbk.kcck.",".kaak.kbbk.kcck.",".kkkk.kkkk.kkkk.","................"]},
+  "app-cutout":{p:{k:"#0A0A0A",a:"#E0442B",w:"#FFFFFF"},g:[
+    "................","...kk......kk...","....kk....kk....",".....kk..kk.....",
+    ".....kk..kk.....","......kkkk......",".......ww.......","......kkkk......",
+    "......kkkk......",".....kk..kk.....","..aaaa....aaaa..",".aa..aa..aa..aa.",
+    ".a....a..a....a.",".aa..aa..aa..aa.","..aaaa....aaaa..","................"]},
+  "suite":{p:{k:"#0A0A0A",t:"#E8D9B8",a:"#E0442B",b:"#1084D0",c:"#4FD1C5",d:"#3C8C3C"},g:[
+    "................","................",".....kkkkkk.....","...kkttttttkk...",
+    "..kkttttbbttkk..",".kktaattbbtttkk.",".kttaattttttcck.","kkttttttttttcckk",
+    "kttttttttttttttk","kkttddttttttttkk",".kttddtttkkkttk.",".kkttttttk.ktkk.",
+    "..kktttttkkkkk..","...kkttttttkk...",".....kkkkkk.....","................"]},
+  "logoff":{p:{k:"#0A0A0A",y:"#FFD24A"},g:[
+    "................","................","................","................",
+    "..kkkk..........",".kyyyyk.........","kyykkyykkkkkkkk.","kyk..kyyyyyyyyyk",
+    "kyykkyykkkkkkkkk",".kyyyyk....kyk..","..kkkk.....kkk..","................",
+    "................","................","................","................"]},
 };
 
 // A client's own icon if one has been drawn, else the discipline's.
 // dom is the client domain; the slug drops dots and any leading www.
+ICON_ART["t-pick"] = ICON_ART["t-eyedrop"];
+
 function clientIcon(dom, fallbackId){
   if (!dom) return fallbackId;
   const slug = String(dom).toLowerCase().replace(/^www\./, "").replace(/\.[a-z.]+$/, "").replace(/[^a-z0-9]/g, "");
