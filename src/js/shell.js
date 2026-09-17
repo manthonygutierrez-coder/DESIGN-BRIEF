@@ -7,7 +7,10 @@ CATS.forEach((cat, i) => {
   b.dataset.cat = cat.id;
   b.innerHTML = '<i>' + iconSVG(cat.id, 20) + '</i><span></span>';
   b.querySelector("span").textContent = pixelLabel(cat.label);
-  b.addEventListener("click", () => { toggleStart(false); requestBrief(i); });
+  b.addEventListener("click", () => {
+    toggleStart(false);
+    if (typeof Session !== "undefined" && Session.slot() === "studio") requestBrief(i);
+  });
   slist.appendChild(b);
 });
 slist.insertAdjacentHTML("beforeend", '<div class="ssep"></div>');

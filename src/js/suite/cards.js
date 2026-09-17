@@ -44,18 +44,59 @@ const SuiteCards = (() => {
       value = clip(value, 400);
       if (!value) return null;
     }
+    let tags = Array.isArray(raw.tags) ? raw.tags.filter((t) => typeof t === "string").map((t) => t.toLowerCase().slice(0, 32)) : [];
+    if (raw.kind === "colour") tags = tags.concat(colourTags(value));
+    tags = tags.filter((t, i) => t && tags.indexOf(t) === i).slice(0, 16);
     return {
       id: clip(raw.id, 80) || uid(),
       kind: raw.kind,
       label: clip(raw.label || raw.kind, 60),
       value,
-      tags: Array.isArray(raw.tags) ? raw.tags.filter((t) => typeof t === "string").slice(0, 12).map((t) => t.toLowerCase().slice(0, 24)) : [],
+      tags,
       source: raw.source && typeof raw.source === "object"
         ? { url: clip(raw.source.url, 200), ref: clip(raw.source.ref, 80) } : { url: "", ref: "" },
     };
   }
 
   const card = (kind, label, value, extra = {}) => normalize({ kind, label, value, ...extra });
+
+  /* ── colour families ───────────────────────────────────
+   * Words a person would use for a colour: its hue family, how light or dark
+   * it is, and whether it reads warm or cool. Colour cards carry these, and the
+   * Hustle scorer applies them to every colour actually in a document — so a
+   * brief can ask for "navy" without caring which exact navy you mixed.
+   */
+  function colourTags(hex) {
+    if (typeof hex !== "string" || !HEX.test(hex)) return [];
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
+    const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+    let h = 0;
+    if (d) {
+      if (max === r) h = 60 * (((g - b) / d) % 6);
+      else if (max === g) h = 60 * ((b - r) / d + 2);
+      else h = 60 * ((r - g) / d + 4);
+    }
+    if (h < 0) h += 360;
+    const tags = [];
+    if (l < 0.28) tags.push("dark");
+    if (l > 0.78) tags.push("light");
+    if (s < 0.14 || l < 0.06 || l > 0.97) {
+      tags.push("neutral");
+      tags.push(l < 0.2 ? "black" : l > 0.85 ? "white" : "grey");
+      return tags;
+    }
+    const family = h < 15 || h >= 345 ? "red" : h < 42 ? "orange" : h < 70 ? "yellow" : h < 165 ? "green"
+      : h < 200 ? "teal" : h < 255 ? "blue" : h < 290 ? "purple" : "pink";
+    tags.push(family);
+    if (family === "blue" && l < 0.35) tags.push("navy");
+    if (family === "orange" && l < 0.4) tags.push("brown");
+    tags.push(["red", "orange", "yellow", "pink"].includes(family) ? "warm" : "cool");
+    if (s > 0.7 && l > 0.35 && l < 0.7) tags.push("vivid");
+    // In HSL a pastel keeps its saturation and gains lightness.
+    if (l >= 0.72) tags.push("pastel");
+    return tags;
+  }
 
   /* ── applying a card ───────────────────────────────────── */
   // Dropped on the canvas (no layer under the pointer). `at` is doc space.
@@ -120,6 +161,15 @@ const SuiteCards = (() => {
   function applyToBlock(doc, index, c) {
     const b = doc.blocks[index];
     if (!b || !c) return { ok: false, reason: "nothing there" };
+    // An object card on a picture block becomes that block's picture. The
+    // block asks Imagery for "card:<id>", which the suite registers as an
+    // override, so the site renderer needs no changes to show it.
+    if (c.kind === "object") {
+      if (b.t !== "plate" && b.t !== "gallery") return { ok: false, reason: "drop pictures on a Big picture or Gallery block" };
+      b.q = "card:" + c.id;
+      b.card = c.id;
+      return { ok: true, what: "set the picture" };
+    }
     if (c.kind === "trend" || c.kind === "gap" || c.kind === "fact") {
       if (b.t === "lede") b.p = c.value;
       else if (b.t === "prose") b.ps = [...(b.ps || []), c.value];
@@ -158,7 +208,7 @@ const SuiteCards = (() => {
     return out;
   }
 
-  return { KINDS, INTENT, normalize, card, applyToCanvas, applyToLayer, applyToBlock, debugPack };
+  return { KINDS, INTENT, normalize, card, colourTags, applyToCanvas, applyToLayer, applyToBlock, debugPack };
 })();
 
 if (typeof module !== "undefined") module.exports = SuiteCards;

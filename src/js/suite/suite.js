@@ -31,8 +31,10 @@ const Suite = (() => {
       docs: s.docs && typeof s.docs === "object" ? s.docs : {},
       unlocks: Array.isArray(s.unlocks) ? s.unlocks.filter((u) => A.BONUS[u]) : [],
       swatch: Array.isArray(s.swatch) ? s.swatch.filter((c) => /^#[0-9A-F]{6}$/i.test(c)).slice(0, 6) : [],
+      touched: s.touched && typeof s.touched === "object" ? s.touched : {},
     };
     document.addEventListener("keydown", onKey);
+    S().cards.forEach(registerPicture);
     R.onImageReady(() => editors.forEach((ed) => ed.draw && ed.draw()));
   }
   const S = () => state.suite;
@@ -40,14 +42,21 @@ const Suite = (() => {
   const slot = () => Bridge.slot();
 
   /* ── jobs: what the work is for ────────────────────────── */
-  // Studio jobs are briefs in the mailbox. Hustle has none until gigs exist.
+  // Studio jobs are briefs in the mailbox; Hustle jobs are gigs in progress.
   function jobs() {
-    return slot() === "studio" && typeof Mail !== "undefined" && Mail.jobs ? Mail.jobs() : [];
+    if (slot() === "hustle") return typeof Hustle !== "undefined" ? Hustle.jobs() : [];
+    return typeof Mail !== "undefined" && Mail.jobs ? Mail.jobs() : [];
   }
   const jobById = (id) => jobs().find((j) => j.id === id) || null;
   const catOf = (job) => (job ? CATS[job.ci] : null);
 
   /* ── cards ─────────────────────────────────────────────── */
+  // Object cards can be a Layout block's picture: the block asks Imagery for
+  // "card:<id>", and this makes that seed resolve to the card's image.
+  function registerPicture(c) {
+    if (c && c.kind === "object" && typeof Imagery !== "undefined") Imagery.override("card:" + c.id, c.value);
+  }
+
   function addCards(list) {
     let n = 0;
     for (const raw of list) {
@@ -55,6 +64,7 @@ const Suite = (() => {
       if (!c) continue;
       if (S().cards.some((x) => x.kind === c.kind && x.value === c.value)) continue;
       S().cards.push(c);
+      registerPicture(c);
       n++;
     }
     if (S().cards.length > 150) S().cards.splice(0, S().cards.length - 150);
@@ -77,8 +87,8 @@ const Suite = (() => {
 
   // Which cards an app can use at all. Others still show, dimmed.
   function usable(app, c) {
-    if (app.mode === "pixel") return c.kind === "colour";
-    if (app.mode === "layout") return c.kind === "colour" || C.INTENT.includes(c.kind);
+    if (app.mode === "pixel") return c.kind === "colour" || C.INTENT.includes(c.kind);
+    if (app.mode === "layout") return c.kind !== "shape";
     return true;
   }
 
@@ -107,9 +117,10 @@ const Suite = (() => {
     const cards = S().cards;
     root.querySelector(".su__trayn").textContent = "(" + cards.length + ")";
     const kit = root.querySelector('[data-s="kit"]');
-    if (kit) kit.textContent = job && job.client ? "Client kit" : "Sample kit";
+    // In Hustle, research is how cards are earned; a free kit would skip the game.
+    if (kit) { kit.hidden = slot() === "hustle"; kit.textContent = job && job.client ? "Client kit" : "Sample kit"; }
     list.innerHTML = cards.length ? cards.slice().reverse().map((c) => cardChip(c, app)).join("")
-      : '<p class="su__empty">No cards yet. Research turns up cards; for now, pull a kit.</p>';
+      : '<p class="su__empty">' + (slot() === "hustle" ? "No cards yet. Research a gig to find some: clip facts from sites, cut things out of pictures." : "No cards yet. Pull a client kit to start.") + "</p>";
   }
 
   function refreshTrays() {
@@ -262,6 +273,8 @@ const Suite = (() => {
     const text = JSON.stringify(ed.doc);
     if (text.length > AUTOSAVE_MAX) { setStatus(ed, "Too large to autosave — use Save to keep it."); return; }
     S().docs[ed.docKey] = JSON.parse(text);
+    S().touched = S().touched && typeof S().touched === "object" ? S().touched : {};
+    S().touched[ed.docKey] = Date.now();
     ed.dirty = false;
     save();
   }
@@ -340,6 +353,7 @@ const Suite = (() => {
           '<button class="w98btn" data-s="save">Save</button>' +
           (pixel ? '<select class="su__sel" data-s="xscale" title="Export scale">' + [1, 2, 4, 8, 16].map((s) => '<option value="' + s + '"' + (s === 8 ? " selected" : "") + ">" + s + "×</option>").join("") + "</select>" : "") +
           '<button class="w98btn" data-s="export">Export PNG</button>' +
+          deliverButton(ed) +
         "</div>" +
         '<div class="su__body">' +
           '<div class="su__tools">' +
@@ -399,6 +413,16 @@ const Suite = (() => {
       let last = 0;
       new ResizeObserver(() => { const n = ed.stage.clientWidth + ed.stage.clientHeight; if (Math.abs(n - last) > 40 && last) ed.draw(); last = n; }).observe(ed.stage);
     }
+  }
+
+  function deliverButton(ed) {
+    return slot() === "hustle" && ed.job ? '<button class="w98btn su__deliver" data-s="deliver">Deliver…</button>' : "";
+  }
+
+  function deliver(ed) {
+    flushAutosave(ed);
+    const res = Hustle.deliver(ed.job.id, JSON.parse(JSON.stringify(ed.doc)), ed.appId);
+    if (res && !res.ok) setStatus(ed, res.reason);
   }
 
   function statusHint(ed) {
@@ -703,9 +727,9 @@ const Suite = (() => {
     if (active && ed.w.client.contains(active) && active.closest(".su__props")) active.blur();
     if (!usable(ed.app, c)) { setStatus(ed, ed.app.label + " cannot use a " + c.kind + " card."); return; }
     if (ed.app.mode === "pixel") {
-      ed.fg = c.value; syncFg(ed);
-      mutate(ed, () => C.applyToCanvas(ed.doc, c));
-      setStatus(ed, "Drawing with " + c.label);
+      const res = mutate(ed, () => C.applyToCanvas(ed.doc, c));
+      if (c.kind === "colour") { ed.fg = c.value; syncFg(ed); setStatus(ed, "Drawing with " + c.label); }
+      else setStatus(ed, res.ok ? c.label + ": " + res.what : res.reason);
       return;
     }
     const target = at ? D.hitTest(ed.doc, at.x, at.y) : (ed.sel && D.find(ed.doc, ed.sel));
@@ -746,6 +770,7 @@ const Suite = (() => {
     if (s === "zout") zoomBy(ed, -1);
     if (s === "fit") { fit(ed); ed.render({ panels: false }); }
     if (s === "save") saveDoc(ed);
+    if (s === "deliver") deliver(ed);
     if (s === "export") exportPNG(ed, ed.app.mode === "pixel" ? Number(ed.w.client.querySelector('[data-s="xscale"]').value) : 1);
     if (s === "new") {
       const [, pw, ph] = ed.app.presets[Number(ed.w.client.querySelector('[data-s="preset"]').value) || 0];
@@ -820,7 +845,18 @@ const Suite = (() => {
     readProp(ed, e.target);
     const pre = ed.pre;
     ed.pre = JSON.stringify(ed.doc);
-    if (pre && pre !== ed.pre) { ed.hist.record(pre); changed(ed, { panels: false }); paintLayers(ed); }
+    if (pre && pre !== ed.pre) { ed.hist.record(pre); changed(ed, { panels: false }); paintLayers(ed); syncGeometry(ed); }
+  }
+
+  // A committed edit can move or resize the layer (text re-measures itself);
+  // refresh those fields in place so the panel keeps focus and stays truthful.
+  function syncGeometry(ed) {
+    const l = ed.sel && D.find(ed.doc, ed.sel);
+    if (!l) return;
+    for (const p of ["x", "y", "w", "h", "rot", "size"]) {
+      const el = ed.w.client.querySelector('.su__props [data-p="' + p + '"]');
+      if (el && el !== document.activeElement && l[p] !== undefined) el.value = Math.round(l[p] * 100) / 100;
+    }
   }
 
   const colourVal = (c) => (typeof c === "string" ? c.toLowerCase() : c && c.a ? c.a.toLowerCase() : "#000000");
@@ -920,6 +956,7 @@ const Suite = (() => {
           '<select class="su__sel" data-l="head" title="Headline typeface"></select>' +
           '<span class="su__sep"></span><button class="w98btn" data-s="undo">Undo</button><button class="w98btn" data-s="redo">Redo</button>' +
           '<span class="ml__spacer"></span><button class="w98btn" data-s="save">Save</button><button class="w98btn" data-s="visit">View in The Web</button>' +
+          deliverButton(ed) +
         "</div>" +
         '<div class="su__body">' +
           '<div class="su__lib">' + Object.entries(A.BLOCKS).map(([k, b]) => '<button class="w98btn su__blk" data-add="' + k + '">+ ' + esc(b.label) + "</button>").join("") + "</div>" +
@@ -1027,6 +1064,7 @@ const Suite = (() => {
       if (t.dataset.s === "redo") undo(ed, true);
       if (t.dataset.s === "save") saveDoc(ed);
       if (t.dataset.s === "visit") visitLayout(ed);
+      if (t.dataset.s === "deliver") deliver(ed);
     });
     page.addEventListener("submit", (e) => e.preventDefault(), true);
 
@@ -1138,10 +1176,15 @@ const Suite = (() => {
   }
 
   /* ── Cutout ───────────────────────────────────────────── */
-  function openCutout(job) {
+  function openCutout(job, initial) {
     const key = "suite:cutout";
     let w = getWin(key);
-    if (w) { w.meta.job = job; w.meta.paintSources(); return revealWin(w); }
+    if (w) {
+      w.meta.job = job;
+      w.meta.paintSources();
+      if (initial) w.meta.load(initial.src, initial.label, initial.tags);
+      return revealWin(w);
+    }
     w = createWindow({ key, title: "CUTOUT", iconId: "app-cutout", w: 760, h: 600, minW: 560, minH: 460, onClose: () => editors.delete(key) });
     w.client.classList.add("client--flush");
     w.meta.job = job;
@@ -1204,6 +1247,7 @@ const Suite = (() => {
       img.src = src;
     };
 
+    w.meta.load = load;
     w.meta.paintSources = () => {
       const sel = w.client.querySelector('[data-c="src"]');
       const refs = (w.meta.job && w.meta.job.client && w.meta.job.client.refs) || [];
@@ -1290,6 +1334,7 @@ const Suite = (() => {
     w.meta.paintSources();
     draw();
     setStatus(ed, "Pick a client reference or an object card, then cut out what you need.");
+    if (initial) load(initial.src, initial.label, initial.tags);
     return w;
   }
 
@@ -1336,5 +1381,19 @@ const Suite = (() => {
     return true;
   }
 
-  return { boot, launcher, open, addCards, unlock, cards: () => S().cards.slice() };
+  // The most recently edited document for a job, from whichever app made it.
+  function docFor(jobId, preferApp) {
+    editors.forEach((ed) => { if (ed.job && ed.job.id === jobId) flushAutosave(ed); });
+    const touched = S().touched || {};
+    const keys = Object.keys(S().docs).filter((k) => k.slice(k.indexOf(":") + 1) === jobId);
+    keys.sort((a, b) => (touched[b] || 0) - (touched[a] || 0) || (b.startsWith(preferApp + ":") ? 1 : 0) - (a.startsWith(preferApp + ":") ? 1 : 0));
+    return keys.length ? { appId: keys[0].split(":")[0], doc: D.normalize(S().docs[keys[0]]) } : null;
+  }
+
+  return {
+    boot, launcher, open, addCards, unlock, docFor,
+    cards: () => S().cards.slice(),
+    cutoutFrom: (initial, jobId) => openCutout(jobById(jobId), initial),
+    unlocks: () => S().unlocks.slice(),
+  };
 })();

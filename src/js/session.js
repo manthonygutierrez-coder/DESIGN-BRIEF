@@ -80,10 +80,14 @@ const Session = (() => {
     const banner = document.querySelector(".sbanner span");
     if (banner) banner.textContent = LABELS[slot].name;
     const hint = document.querySelector(".deskhint");
-    if (hint) hint.textContent = slot === "studio" ? "START ▸ PICK A DISCIPLINE" : "NO GIGS POSTED YET — TRY THE SUITE";
+    if (hint) hint.textContent = slot === "studio" ? "START ▸ PICK A DISCIPLINE" : "START ▸ GIGSLIST";
 
     // Discipline items issue real briefs, which is Studio's loop only.
     slist.querySelectorAll("[data-cat]").forEach((el) => { el.hidden = slot !== "studio"; });
+    if (slot === "hustle") {
+      addStartItem("gigslist", "Gigslist", () => Hustle.board());
+      addStartItem("pager", "Pager", () => Hustle.openPager());
+    }
     addStartItem("suite", "Design Suite", () => Suite.launcher());
     addStartItem("logoff", "Log Off " + LABELS[slot].name + "...", logoff);
 
@@ -95,6 +99,11 @@ const Session = (() => {
       Feed.boot().catch((e) => console.error("[feed] boot failed:", e));
     }
     await Suite.boot().catch((e) => console.error("[suite] boot failed:", e));
+    if (slot === "hustle") {
+      await Hustle.boot().catch((e) => console.error("[hustle] boot failed:", e));
+      addShortcut("gigslist", "Gigslist", "gigslist", () => Hustle.board());
+      addShortcut("pager", "Pager", "pager", () => Hustle.openPager());
+    }
     addShortcut("suite", "Design Suite", "suite", () => Suite.launcher());
     if (slot === "studio") Mail.restore();
 

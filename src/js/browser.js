@@ -14,6 +14,9 @@ const Web = (() => {
   let hist = [], cursor = -1;
   let favs = [];                  // [{label, url}]
   let typedHistory = [];          // URL bar dropdown
+  let homeURL = null;             // null: the image search
+  let tools = null;               // an optional research provider (Hustle)
+  const navListeners = [];
 
   function key(){ return "browser"; }
 
@@ -61,6 +64,9 @@ const Web = (() => {
     paint(page);
   }
 
+  function home(){ return homeURL || Sites.home(); }
+  function currentURL(){ return cursor >= 0 ? hist[cursor] : null; }
+
   function back(){ if (cursor > 0){ cursor--; paint(Sites.resolve(hist[cursor], ctx)); } }
   function forward(){ if (cursor < hist.length - 1){ cursor++; paint(Sites.resolve(hist[cursor], ctx)); } }
   function reload(){ if (cursor >= 0) paint(Sites.resolve(hist[cursor], ctx)); }
@@ -94,6 +100,7 @@ const Web = (() => {
           '<button class="w98btn" data-b="go">Go</button>' +
         '</div>' +
         '<div class="ie__favs"><span class="ie__favlbl">Resources</span><span class="ie__favlist"></span></div>' +
+        '<div class="ie__tools" hidden></div>' +
         '<div class="ie__view" tabindex="0"></div>' +
         '<div class="ie__status"><span class="ie__msg">Done</span><span class="ie__zone">Internet zone</span></div>' +
       '</div>';
@@ -109,7 +116,7 @@ const Web = (() => {
     });
     paintFavs();
     if (cursor >= 0) paint(Sites.resolve(hist[cursor], ctx));
-    else go(Sites.home());
+    else go(home());
     return w;
   }
 
@@ -130,6 +137,24 @@ const Web = (() => {
     w.client.querySelector(".ie__msg").textContent = "Done";
     w.client.querySelector('[data-b="back"]').disabled = cursor <= 0;
     w.client.querySelector('[data-b="fwd"]').disabled = cursor >= hist.length - 1;
+    paintTools();
+    for (const fn of navListeners){
+      try { fn(page); } catch (e){ console.error("[web] navigate listener:", e); }
+    }
+  }
+
+  /* ── research tools ──────────────────────────────────────
+   * A provider can add a toolbar row, take over clicks in the page while it
+   * is clipping, handle its own [data-hx] buttons, and add actions to the
+   * image lightbox. The browser knows nothing about what any of it means. */
+  function paintTools(){
+    const row = el(".ie__tools");
+    if (!row) return;
+    const html = tools ? tools.html(currentURL()) : "";
+    row.hidden = !html;
+    row.innerHTML = html || "";
+    const view = el(".ie__view");
+    if (view) view.classList.toggle("ie__view--clip", !!(tools && tools.clipping()));
   }
 
   function paintFavs(){
@@ -152,6 +177,15 @@ const Web = (() => {
 
   /* ── interaction ─────────────────────────────────────── */
   function onSubmit(e){
+    // Any page can offer a search form that navigates: data-go is the URL
+    // prefix the query is appended to.
+    const goForm = e.target.closest("form[data-go]");
+    if (goForm){
+      e.preventDefault();
+      const q = (goForm.querySelector("input") || {}).value || "";
+      if (q.trim()) go(goForm.dataset.go + encodeURIComponent(q.trim()));
+      return;
+    }
     const form = e.target.closest("[data-search]");
     if (!form) return;
     e.preventDefault();
@@ -160,13 +194,22 @@ const Web = (() => {
   }
 
   function onClick(e){
+    if (tools){
+      const hx = e.target.closest("[data-hx]");
+      if (hx){ e.preventDefault(); tools.click(hx, currentURL()); paintTools(); return; }
+      const inView = e.target.closest(".ie__view");
+      // Links, searches and pictures still work while clipping; everything
+      // else on the page becomes something to clip.
+      const live = e.target.closest("[data-url],[data-q],[data-img],form,input,button,a");
+      if (inView && !live && tools.clipping()){ e.preventDefault(); tools.clip(e.target, currentURL()); return; }
+    }
     const b = e.target.closest("[data-b]");
     if (b && !b.disabled){
       const a = b.dataset.b;
       if (a === "back") back();
       else if (a === "fwd") forward();
       else if (a === "reload") reload();
-      else if (a === "home") go(Sites.home());
+      else if (a === "home") go(home());
       else if (a === "stop") { const m = el(".ie__msg"); if (m) m.textContent = "Stopped"; }
       else if (a === "go") go(el(".ie__url").value);
       else if (a === "drop"){
@@ -199,9 +242,26 @@ const Web = (() => {
     w.client.innerHTML =
       '<div class="lb"><img src="' + Imagery.make(q, i, 640, 460) + '" alt="">' +
       '<div class="lb__meta"><b>' + Imagery.filename(q, i).replace(/[&<>]/g, "") + '</b>' +
-      '<span>' + Imagery.dimensions(q, i) + ' · from a search for “' + q.replace(/[&<>]/g, "") + '”</span></div></div>';
+      '<span>' + Imagery.dimensions(q, i) + ' · from a search for “' + q.replace(/[&<>]/g, "") + '”</span></div>' +
+      (tools && tools.lightbox ? '<div class="lb__acts">' + tools.lightbox(q, i) + "</div>" : "") +
+      "</div>";
+    if (tools){
+      w.client.addEventListener("click", (e) => {
+        const hx = e.target.closest("[data-hx]");
+        if (hx){ e.preventDefault(); tools.click(hx, currentURL(), { q, i, src: w.client.querySelector(".lb img").src }); }
+      });
+    }
     return w;
   }
 
-  return { visit, open, unlock, addFav, isUnlocked: () => unlocked };
+  return {
+    visit, open, unlock, addFav, go, currentURL,
+    isUnlocked: () => unlocked,
+    setHome: (url) => { homeURL = url; },
+    setTools: (provider) => { tools = provider; paintTools(); },
+    refreshTools: paintTools,
+    onNavigate: (fn) => { navListeners.push(fn); },
+    // Re-render the current page in place, e.g. after the state behind it changed.
+    repaint: () => { if (cursor >= 0 && getWin(key())) paint(Sites.resolve(hist[cursor], ctx)); },
+  };
 })();

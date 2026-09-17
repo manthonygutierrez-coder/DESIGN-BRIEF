@@ -181,6 +181,24 @@ winterbourneandsons:{p:{k:"#14110E",w:"#D8C08A",a:"#8A7040"},g:[
 
 // A client's own icon if one has been drawn, else the discipline's.
 // dom is the client domain; the slug drops dots and any leading www.
+// Hustle: the pager, the gig board, a job ticket.
+Object.assign(ICON_ART, {
+  pager:{p:{k:"#0A0A0A",b:"#3A3A44",s:"#9BE7A8",t:"#1F5A2B",w:"#C8C8D0"},g:[
+    "................","................","..kkkkkkkkkkkk..",".kbbbbbbbbbbbbk.",
+    ".kbkkkkkkkkkkbk.",".kbksssssssskbk.",".kbksttsttsskbk.",".kbksssssssskbk.",
+    ".kbkkkkkkkkkkbk.",".kbbbbbbbbbbbbk.",".kbwwbbwwbbwwbk.",".kbbbbbbbbbbbbk.",
+    "..kkkkkkkkkkkk..","................","................","................"]},
+  gigslist:{p:{k:"#0A0A0A",w:"#FFFFFF",l:"#8A8A96",p:"#7B2FBE",r:"#E0442B"},g:[
+    "................",".......rr.......","......rrrr......",".kkkkkkrrkkkkkk.",
+    ".kwwwwwwkwwwwwk.",".kwppppwwwwwwwk.",".kwwwwwwwwwwwwk.",".kwllllllllllwk.",
+    ".kwllllllwwwwwk.",".kwwwwwwwwwwwwk.",".kwppppppwwwwwk.",".kwllllllllllwk.",
+    ".kwllllwwwwwwwk.",".kwwwwwwwwwwwwk.",".kkkkkkkkkkkkkk.","................"]},
+  ticket:{p:{k:"#0A0A0A",y:"#F2D27A",r:"#C2452C",d:"#8A6A2A"},g:[
+    "................","................","................","kkkkkkkkkkkkkkkk",
+    "kyyyyyyykyyyyyyk","kyrrrrryyyyyyyyk","kyyyyyyykyydddyk",".kyddddyyyyyyyk.",
+    ".kyyyyyykyydddk.","kyddddyyyyyyyyyk","kyyyyyyykyyyyyyk","kkkkkkkkkkkkkkkk",
+    "................","................","................","................"]},
+});
 ICON_ART["t-pick"] = ICON_ART["t-eyedrop"];
 
 function clientIcon(dom, fallbackId){

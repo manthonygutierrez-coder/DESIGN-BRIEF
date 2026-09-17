@@ -99,6 +99,8 @@ const Mail = (() => {
   }
 
   function issue(ci, opts = {}){
+    // Only a logged-on Studio session has a mailbox to issue into.
+    if (!state) return null;
     const briefIdx = pickBrief(ci);
     const key = ci + ":" + briefIdx;
     if (!state.issued.includes(key)) state.issued.push(key);

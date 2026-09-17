@@ -59,3 +59,24 @@ test("debug pack builds from a real client", () => {
   for (const k of ["colour", "type", "object", "shape"]) assert.ok(kinds.has(k), "has " + k);
   assert.ok(pack.every((c) => C.normalize(c)));
 });
+
+test("colour families", () => {
+  const has = (hex, ...want) => { const t = C.colourTags(hex); for (const w of want) assert.ok(t.includes(w), hex + " should be " + w + " (got " + t + ")"); };
+  has("#1B2A4A", "blue", "navy", "dark", "cool");
+  has("#FF7A1A", "orange", "warm", "vivid");
+  has("#FFFFFF", "neutral", "white");
+  has("#0A0A0A", "neutral", "black");
+  has("#F7B6C8", "pink", "pastel", "warm");
+  assert.ok(C.card("colour", "x", "#FF7A1A").tags.includes("orange"), "colour cards carry their family");
+});
+
+test("object cards become a picture block's image", () => {
+  const doc = D.create({ mode: "layout" });
+  D.addBlock(doc, { t: "plate", q: "", cap: "" });
+  D.addBlock(doc, { t: "lede", p: "x" });
+  const pic = C.card("object", "Banner", PNG);
+  assert.ok(C.applyToBlock(doc, 0, pic).ok);
+  assert.equal(doc.blocks[0].q, "card:" + pic.id);
+  assert.equal(C.applyToBlock(doc, 1, pic).ok, false);
+  assert.deepEqual(D.cardsUsed(doc), [pic.id]);
+});

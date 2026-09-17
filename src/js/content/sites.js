@@ -244,6 +244,17 @@ const Sites = (() => {
         "</div></section>";
     },
 
+    // A brand's banner ad. The brand is only named, never linked: finding the
+    // site means working out its address and typing it in.
+    ad(b){
+      const art = /^[a-z]+$/.test(b.art || "") ? b.art : "plain";
+      return '<aside class="blk blk--ad ad--' + art + '" title="' + attr(b.brand) + '">' +
+        '<span class="ad__art" aria-hidden="true"></span>' +
+        '<span class="ad__txt"><b class="ad__brand">' + esc2(b.brand) + "</b>" +
+        '<span class="ad__line">' + esc2(b.line || "") + "</span></span>" +
+        '<span class="ad__tag">ADVERTISEMENT</span></aside>';
+    },
+
     contact(b, c){
       return '<section class="blk blk--contact">' + head(b) +
         '<div class="ctc"><p>' +
@@ -490,12 +501,25 @@ const Sites = (() => {
 
   /* ── resolution ──────────────────────────────────────── */
 
+  // Extra hosts — sites made of live state rather than client data (a gig
+  // board, a search engine). A renderer gets the parsed URL and returns a page.
+  const hosts = new Map();
+  function registerHost(host, render){
+    if (typeof render === "function") hosts.set(String(host).toLowerCase(), render);
+  }
+
   // ctx: { client, refs } — whatever brief the browser was opened from.
   function resolve(url, ctx){
     const u = normalize(url);
     if (!u) return { title: "Cannot find server", html: notFound(url), url: String(url) };
-    const host = u.hostname.toLowerCase();
+    const host = u.hostname.toLowerCase().replace(/^www\./, "");
     const suggested = (ctx && ctx.refs) || [];
+
+    const custom = hosts.get(host);
+    if (custom){
+      const page = custom(u, ctx);
+      if (page) return page;
+    }
 
     if (host === SEARCH_HOST){
       const q = u.searchParams.get("q");
@@ -523,5 +547,5 @@ const Sites = (() => {
 
   // renderSite/renderBlocks are exposed for the suite's Layout app, so a page
   // being designed previews in exactly the markup the browser will show.
-  return { resolve, searchURL, home, SEARCH_HOST, renderSite, renderBlocks, FRAME_NAMES: Object.keys(FRAMES) };
+  return { resolve, searchURL, home, SEARCH_HOST, renderSite, renderBlocks, registerHost, esc: esc2, attr, FRAME_NAMES: Object.keys(FRAMES) };
 })();

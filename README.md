@@ -38,9 +38,37 @@ share nothing at runtime. **Log Off** from the Start menu switches.
 | Slot | What it is |
 |---|---|
 | **Studio** | The loop below. Real briefs by mail, real work in your own tools, real files. |
-| **Hustle** | The work made into puzzles, played entirely inside the desktop. In progress: the design suite exists; gigs, research minigames and reputation come next. Output goes to `~/Documents/Pixel Crossing/_hustle/`. |
+| **Hustle** | The work made into puzzles, played entirely inside the desktop. See **Hustle** below. Output goes to `~/Documents/Pixel Crossing/_hustle/`. |
 
 An existing `state.json` from before slots is moved into Studio on first launch.
+
+## Hustle
+
+Every step of a job is a small puzzle, and all of it happens on the desktop.
+
+1. **Find work.** `gigslist.org` has small jobs from real-sounding people. Not every
+   business posts: some only advertise, and hovering an ad names the brand. Work out
+   its address, type it in, and you have found a prospect you can pitch.
+2. **Get the brief.** Clients talk to you on the **Pager**. You pick the questions;
+   they only have so much attention. Whatever you never ask about still counts when
+   the work is scored — the ticket just shows it as `???`. With enough reputation,
+   businesses start sending you complete briefs instead.
+3. **Research, against the clock.** Turn on clipping in the browser and click the
+   passages that matter: facts on the client's site, trends on rival sites. A useless
+   clip costs five seconds. Cut objects and colours out of image-search pictures —
+   cards inherit what the search was about. **Compare rivals** is a deduction grid:
+   once you have clipped everything a rival does, the rest of its column fills in,
+   and the row nobody does is the gap. Guessing early is allowed; a wrong guess costs.
+4. **Make it** in the design suite with the cards you found, then **Deliver**.
+5. **The review** scores the work line by line — needs (70), limits (20), the gap
+   (10), minus lateness — and reputation unlocks bonus suite tools, follow-up jobs
+   from happy clients, and businesses that come to you.
+
+The rules are pure modules with tests: `hustle/dialogue.js`, `hustle/research.js`,
+`hustle/score.js`. Everything the game is made of — sites, gigs, conversations,
+research answers, the crawler's index, ads — is data in `hustle/content.js`, and a
+content test checks that every research answer really appears on its page and that
+every gap can be proven.
 
 ## The design suite
 
