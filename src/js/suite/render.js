@@ -47,8 +47,9 @@ const SuiteRender = (() => {
     return { w: Math.ceil(w), h: Math.ceil(lines.length * l.size * 1.15) };
   }
 
-  function drawLayer(ctx, l) {
+  function drawLayer(ctx, l, opts = {}) {
     if (l.hidden) return;
+    if (l.type === "subject" && !opts.editor) return;       // never part of the picture
     ctx.save();
     ctx.globalAlpha = l.opacity;
     ctx.translate(l.x + l.w / 2, l.y + l.h / 2);
@@ -72,7 +73,7 @@ const SuiteRender = (() => {
         ctx.save();
         ctx.scale(l.w / l.box, l.h / l.box);
         const p = new Path2D(l.d);
-        if (fill) { ctx.fillStyle = paintOf(ctx, l.fill, l.box, l.box); ctx.fill(p); }
+        if (fill) { ctx.fillStyle = paintOf(ctx, l.fill, l.box, l.box); ctx.fill(p, l.fillRule === "evenodd" ? "evenodd" : "nonzero"); }
         if (stroke) { ctx.lineWidth = l.strokeW * l.box / Math.max(l.w, l.h); ctx.stroke(p); }
         ctx.restore();
       }
@@ -81,6 +82,28 @@ const SuiteRender = (() => {
       if (img) ctx.drawImage(img, 0, 0, l.w, l.h);
       else { ctx.fillStyle = "#D8D8D8"; ctx.fillRect(0, 0, l.w, l.h); }
       if (stroke) ctx.strokeRect(l.strokeW / 2, l.strokeW / 2, l.w - l.strokeW, l.h - l.strokeW);
+    } else if (l.type === "subject") {
+      // A dashed box with its name on a tab: where you drew them, nothing more.
+      const z = opts.zoom || 1;
+      ctx.setLineDash([6 / z, 4 / z]);
+      ctx.lineWidth = 1.5 / z;
+      ctx.strokeStyle = "rgba(106,47,176,.9)";
+      ctx.strokeRect(0, 0, l.w, l.h);
+      ctx.setLineDash([]);
+      // The name tab sits outside the box when there is room, so it never
+      // covers the drawing; a narrow box gets an initial instead of a name.
+      const fs = 8 / z, pad = 3 / z, tabH = fs + 2 * pad;
+      ctx.font = "700 " + fs + "px Silkscreen, monospace";
+      let text = String(l.label).split(" — ")[0];
+      if (ctx.measureText(text).width + 2 * pad > l.w + 10 / z) text = text.charAt(0);
+      const tw = ctx.measureText(text).width + 2 * pad;
+      const docH = opts.docH || Infinity;
+      const ty = l.y >= tabH ? -tabH : l.y + l.h + tabH <= docH ? l.h : l.h - tabH;
+      ctx.fillStyle = "rgba(106,47,176,.9)";
+      ctx.fillRect(0, ty, tw, tabH);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.textBaseline = "top";
+      ctx.fillText(text, pad, ty + pad);
     } else if (l.type === "text") {
       ctx.font = fontOf(l);
       if ("letterSpacing" in ctx) ctx.letterSpacing = (l.track || 0) + "px";
@@ -114,7 +137,8 @@ const SuiteRender = (() => {
     } else {
       if (doc.bg) { ctx.fillStyle = paintOf(ctx, doc.bg, doc.w, doc.h); ctx.fillRect(0, 0, doc.w, doc.h); }
       else if (opts.checker !== false) checker(ctx, doc.w, doc.h, 10);
-      for (const l of doc.layers) drawLayer(ctx, l);
+      const lo = Object.assign({ docH: doc.h }, opts);
+      for (const l of doc.layers) drawLayer(ctx, l, lo);
     }
     ctx.restore();
   }
@@ -145,6 +169,19 @@ const SuiteRender = (() => {
 
   return {
     draw, drawLayer, measureText, toPNG, thumb, imageFor,
+    // One layer on its own, onto a fresh canvas — the shape builder's masks
+    // and the likeness check both start here.
+    layerMask(l, w, h, scale = 1, ox = 0, oy = 0) {
+      const cv = document.createElement("canvas");
+      cv.width = Math.max(1, Math.ceil(w * scale)); cv.height = Math.max(1, Math.ceil(h * scale));
+      const ctx = cv.getContext("2d", { willReadFrequently: true });
+      ctx.setTransform(scale, 0, 0, scale, -ox * scale, -oy * scale);
+      drawLayer(ctx, Object.assign({}, l, { opacity: 1 }));
+      const data = ctx.getImageData(0, 0, cv.width, cv.height).data;
+      const mask = new Uint8Array(cv.width * cv.height);
+      for (let i = 0; i < mask.length; i++) mask[i] = data[i * 4 + 3] >= 128 ? 1 : 0;
+      return { mask, w: cv.width, h: cv.height, scale, ox, oy };
+    },
     onImageReady: (cb) => { onImageReady = cb; },
   };
 })();

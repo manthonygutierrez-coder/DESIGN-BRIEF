@@ -9,17 +9,23 @@
 .room{position:absolute;inset:0;perspective:620px;perspective-origin:50% 44%;overflow:hidden}
 .room__in{position:absolute;inset:0;transform-style:preserve-3d;
   transform:translate3d(calc(var(--px,0) * 14px),calc(var(--py,0) * 10px),0);transition:transform .5s cubic-bezier(.2,.8,.3,1)}
-.plane{position:absolute;background-image:
+/* The grid runs by sliding an already-drawn layer (transform), never by
+ * redrawing it (background-position): each plane is several screens of pixels,
+ * and repainting all four every frame held the desk to a few frames a second. */
+.plane{position:absolute;overflow:hidden}
+.plane::before{content:"";position:absolute;inset:0;background-image:
     repeating-linear-gradient(to right,rgba(124,249,192,.30) 0 1px,transparent 1px 54px),
-    repeating-linear-gradient(to bottom,rgba(124,249,192,.30) 0 1px,transparent 1px 54px);
-  background-position:0 0;}
-.plane--floor{left:-60%;width:220%;top:52%;height:150%;transform-origin:top center;transform:rotateX(79deg);animation:runz 22s linear infinite}
-.plane--ceil{left:-60%;width:220%;bottom:52%;height:150%;transform-origin:bottom center;transform:rotateX(-79deg);animation:runz 22s linear infinite}
-.plane--l{top:-60%;height:220%;left:0;width:150%;transform-origin:left center;transform:rotateY(-79deg);opacity:.75;animation:runx 26s linear infinite}
-.plane--r{top:-60%;height:220%;right:0;width:150%;transform-origin:right center;transform:rotateY(79deg);opacity:.75;animation:runx 26s linear infinite}
+    repeating-linear-gradient(to bottom,rgba(124,249,192,.30) 0 1px,transparent 1px 54px)}
+.plane--floor{left:-60%;width:220%;top:52%;height:150%;transform-origin:top center;transform:rotateX(79deg)}
+.plane--ceil{left:-60%;width:220%;bottom:52%;height:150%;transform-origin:bottom center;transform:rotateX(-79deg)}
+.plane--l{top:-60%;height:220%;left:0;width:150%;transform-origin:left center;transform:rotateY(-79deg);opacity:.75}
+.plane--r{top:-60%;height:220%;right:0;width:150%;transform-origin:right center;transform:rotateY(79deg);opacity:.75}
 .plane--back{inset:14% 14%;opacity:.5;transform:translateZ(-260px)}
-@keyframes runz{to{background-position:0 108px}}
-@keyframes runx{to{background-position:108px 0}}
+/* one loop of travel (108px, two cells) hangs past the edge it slides away from */
+.plane--floor::before,.plane--ceil::before{top:-108px;animation:runz 22s linear infinite}
+.plane--l::before,.plane--r::before{left:-108px;animation:runx 26s linear infinite}
+@keyframes runz{to{transform:translate3d(0,108px,0)}}
+@keyframes runx{to{transform:translate3d(108px,0,0)}}
 .horizon{position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(58% 48% at 50% 46%,rgba(4,9,10,.96) 0%,rgba(4,9,10,.74) 42%,transparent 100%)}
 .bloom{position:absolute;inset:0;pointer-events:none;z-index:2;
@@ -168,5 +174,5 @@
 }
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.001ms !important;animation-iteration-count:1 !important}
-  .plane{animation:none !important}
+  .plane::before,.g-half::before{animation:none !important}
 }

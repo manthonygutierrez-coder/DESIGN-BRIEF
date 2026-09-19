@@ -408,17 +408,24 @@ const Imagery = (() => {
    * from Figma — those are better than anything generated. Registering one
    * against a reference seed replaces the generated image everywhere that seed
    * is used: galleries, the image search, the lightbox. Nothing else changes. */
+  // One image, or several: a search for a character shows a spread of
+  // official art rather than the same picture twenty-four times.
   const overrides = new Map();
   function override(query, dataURI){
-    if (typeof query !== "string" || typeof dataURI !== "string") return false;
-    if (!/^data:image\//.test(dataURI)) return false;      // data URIs only; CSP allows no other source
-    overrides.set(query.toLowerCase().trim(), dataURI);
+    if (typeof query !== "string") return false;
+    const list = (Array.isArray(dataURI) ? dataURI : [dataURI])
+      .filter((u) => typeof u === "string" && /^data:image\//.test(u));   // data URIs only; CSP allows no other source
+    if (!list.length) return false;
+    overrides.set(query.toLowerCase().trim(), list);
     return true;
   }
-  const overrideFor = (q) => overrides.get(String(q).toLowerCase().trim()) || null;
+  const overrideFor = (q, index = 0) => {
+    const list = overrides.get(String(q).toLowerCase().trim());
+    return list ? list[Math.abs(index | 0) % list.length] : null;
+  };
 
   function make(query, index, W = 200, H = 150){
-    const real = overrideFor(query);
+    const real = overrideFor(query, index);
     if (real) return real;
     const R = rngFrom(seedOf(query + "::" + index));
     const m = moodFor(query);

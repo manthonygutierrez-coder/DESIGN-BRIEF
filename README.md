@@ -49,10 +49,21 @@ Every step of a job is a small puzzle, and all of it happens on the desktop.
 1. **Find work.** `gigslist.org` has small jobs from real-sounding people. Not every
    business posts: some only advertise, and hovering an ad names the brand. Work out
    its address, type it in, and you have found a prospect you can pitch.
-2. **Get the brief.** Clients talk to you on the **Pager**. You pick the questions;
-   they only have so much attention. Whatever you never ask about still counts when
-   the work is scored — the ticket just shows it as `???`. With enough reputation,
-   businesses start sending you complete briefs instead.
+2. **Get the brief, on a call.** Clients meet you over video. You pick the
+   questions; they only have so much attention, and an **hourglass runs on every
+   pause** — let it empty and they fill the silence themselves, which costs a pip
+   and closes whatever window was open. Two silences back to back and they wrap up
+   on their own. You can turn the glass over once ("sorry, give me a second") at the
+   cost of a pip; reputation buys more flips.
+
+   Clipping is live during the call, so you can open their site mid-conversation and
+   read while they wait — a wrong clip burns sand. That reading is what unlocks the
+   **windows**: some replies contradict the client's own pages, and the question that
+   catches it appears only during that glass, and only if you clipped the fact that
+   proves it. Catch it and it is free and reveals a requirement nothing else will.
+   Whatever you never ask about still counts when the work is scored — the ticket
+   just shows it as `???`. With enough reputation, businesses send complete briefs
+   instead.
 3. **Research, against the clock.** Turn on clipping in the browser and click the
    passages that matter: facts on the client's site, trends on rival sites. A useless
    clip costs five seconds. Cut objects and colours out of image-search pictures —
@@ -64,11 +75,45 @@ Every step of a job is a small puzzle, and all of it happens on the desktop.
    (10), minus lateness — and reputation unlocks bonus suite tools, follow-up jobs
    from happy clients, and businesses that come to you.
 
-The rules are pure modules with tests: `hustle/dialogue.js`, `hustle/research.js`,
-`hustle/score.js`. Everything the game is made of — sites, gigs, conversations,
+The rules are pure modules with tests: `hustle/dialogue.js`, `hustle/meeting.js`
+(the glass, the windows and the flips, wrapped around a dialogue tree),
+`hustle/research.js`, `hustle/score.js`. Faces are drawn, never fetched:
+`content/portraits.js` hashes a handle into a person and renders them four ways —
+a contacts head, a live call frame in a room painted from their own site's colours,
+an About-page photograph, and a clipped card that carries their palette into the
+suite. Everything the game is made of — sites, gigs, conversations,
 research answers, the crawler's index, ads — is data in `hustle/content.js`, and a
 content test checks that every research answer really appears on its page and that
 every gap can be proven.
+
+## Paper Moon Relay: drawing the OTP on-model
+
+The first gig's anime has a real canon. Toma Arakawa and Kiyoshi Mori are
+designed in `content/characters.js` (signature, key style details, named
+palettes, on-model rules) with pixel model sheets (front, side and bust)
+generated from `tools/characters/*.py` into `content/characters.art.js`:
+
+    python3 tools/characters/export.py      # grids, PNGs, and LibreSprite .ase files
+    node tools/character-bible.mjs out.html # the shareable character bible
+
+In the game they live on the official site `papermoonrelay.tv` (model sheets
+at whole-number scale, profiles, a key visual) and in the image search. Nell's
+fan site adds drawing notes and exact colour picks.
+
+Official art is never traceable and never a card. You **pin** it to the
+**reference board**, a PureRef-style panel that stays faint and click-through
+while you draw. Hover its header, hold <kbd>`</kbd> or click **REF** in the
+tray to use it; <kbd>H</kbd> flips it, <kbd>G</kbd> greys it; drag it to a
+screen edge to dock, or onto the taskbar to tuck it away. Drag an official
+pin's tab onto the canvas to mark where you are drawing that character. Then
+draw them by eye with the pen and the **shape builder** (drag across shapes
+to merge them, alt-drag to cut).
+
+`hustle/likeness.js` judges the result without any lines: it scales your
+drawing to the sheet and scores silhouette, colour regions (is each one in the
+right place, in the right colour?), and proportions, with the relative scale
+of the pair checked against canon, 172 to 178 cm. Pasting official art in as
+an image scores nothing.
 
 ## The design suite
 

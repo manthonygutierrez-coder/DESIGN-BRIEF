@@ -87,6 +87,7 @@ const Session = (() => {
     if (slot === "hustle") {
       addStartItem("gigslist", "Gigslist", () => Hustle.board());
       addStartItem("pager", "Pager", () => Hustle.openPager());
+      addStartItem("roomedit", "Room Editor", () => RoomEdit.open());
     }
     addStartItem("suite", "Design Suite", () => Suite.launcher());
     addStartItem("logoff", "Log Off " + LABELS[slot].name + "...", logoff);
@@ -99,10 +100,15 @@ const Session = (() => {
       Feed.boot().catch((e) => console.error("[feed] boot failed:", e));
     }
     await Suite.boot().catch((e) => console.error("[suite] boot failed:", e));
+    // The reference board is a drawing tool, so both slots get one.
+    if (typeof RefBoard !== "undefined") await RefBoard.boot().catch((e) => console.error("[refboard] boot failed:", e));
     if (slot === "hustle") {
+      // Paper Moon Relay's official art answers the image search in Hustle.
+      if (typeof Characters !== "undefined") Characters.register();
       await Hustle.boot().catch((e) => console.error("[hustle] boot failed:", e));
       addShortcut("gigslist", "Gigslist", "gigslist", () => Hustle.board());
       addShortcut("pager", "Pager", "pager", () => Hustle.openPager());
+      addShortcut("roomedit", "Room Editor", "roomedit", () => RoomEdit.open());
     }
     addShortcut("suite", "Design Suite", "suite", () => Suite.launcher());
     if (slot === "studio") Mail.restore();

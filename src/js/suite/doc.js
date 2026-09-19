@@ -17,7 +17,9 @@
 
 const SuiteDoc = (() => {
   const MODES = ["free", "pixel", "layout"];
-  const TYPES = ["rect", "ellipse", "text", "image", "path"];
+  // "subject" marks where a character was drawn, for the on-model score. It is
+  // editor-only: never exported, never a colour, never part of the picture.
+  const TYPES = ["rect", "ellipse", "text", "image", "path", "subject"];
   const MAX = { layers: 200, blocks: 40, text: 400, src: 6 * 1024 * 1024, dim: 4096, pixelDim: 128, palette: 32, name: 80 };
   const HEX = /^#[0-9A-Fa-f]{6}$/;
 
@@ -78,7 +80,8 @@ const SuiteDoc = (() => {
     };
     if (type === "text") Object.assign(base, { text: "Text", font: "Archivo", size: 32, weight: 700, track: 0, align: "left" });
     if (type === "image") Object.assign(base, { src: "", fill: null });
-    if (type === "path") Object.assign(base, { d: "M0 0H64V64H0Z", box: 64 });
+    if (type === "path") Object.assign(base, { d: "M0 0H64V64H0Z", box: 64, fillRule: "nonzero" });
+    if (type === "subject") Object.assign(base, { fill: null, ref: { id: "", pose: "front" }, label: "Subject" });
     return sanitizeLayer(Object.assign(base, props, { type, id: props.id || base.id }));
   }
 
@@ -138,9 +141,12 @@ const SuiteDoc = (() => {
     return { x: dx * Math.cos(a) - dy * Math.sin(a) + l.w / 2, y: dx * Math.sin(a) + dy * Math.cos(a) + l.h / 2 };
   }
 
-  function contains(l, px, py) {
+  function contains(l, px, py, tol = 4) {
     const p = toLocal(l, px, py);
     if (p.x < 0 || p.y < 0 || p.x > l.w || p.y > l.h) return false;
+    // A subject box only takes clicks on its edge and its label, so the
+    // drawing inside it stays reachable.
+    if (l.type === "subject") return p.x < tol || p.y < Math.max(tol, 12) || p.x > l.w - tol || p.y > l.h - tol;
     if (l.type === "ellipse") {
       const rx = l.w / 2, ry = l.h / 2;
       return ((p.x - rx) ** 2) / (rx * rx || 1) + ((p.y - ry) ** 2) / (ry * ry || 1) <= 1;
@@ -149,10 +155,10 @@ const SuiteDoc = (() => {
   }
 
   // Topmost visible, unlocked layer under the point.
-  function hitTest(doc, px, py) {
+  function hitTest(doc, px, py, tol) {
     for (let i = doc.layers.length - 1; i >= 0; i--) {
       const l = doc.layers[i];
-      if (!l.hidden && !l.locked && contains(l, px, py)) return l;
+      if (!l.hidden && !l.locked && contains(l, px, py, tol)) return l;
     }
     return null;
   }
@@ -254,13 +260,13 @@ const SuiteDoc = (() => {
       else { out.add(p.a); out.add(p.b); }
     };
     addPaint(doc.bg);
-    for (const l of doc.layers) if (!l.hidden) { addPaint(l.fill); if (l.strokeW > 0) addPaint(l.stroke); }
+    for (const l of doc.layers) if (!l.hidden && l.type !== "subject") { addPaint(l.fill); if (l.strokeW > 0) addPaint(l.stroke); }
     for (const c of doc.bitmap) if (c) out.add(c);
     return [...out];
   }
 
   const usesGradient = (doc) =>
-    [doc.bg, ...doc.layers.filter((l) => !l.hidden).map((l) => l.fill)].some((p) => p && typeof p === "object");
+    [doc.bg, ...doc.layers.filter((l) => !l.hidden && l.type !== "subject").map((l) => l.fill)].some((p) => p && typeof p === "object");
 
   function cardsUsed(doc) {
     const ids = new Set(doc.meta.intent || []);
@@ -323,8 +329,15 @@ const SuiteDoc = (() => {
       out.src = /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(src) ? src : "";
     }
     if (l.type === "path") {
-      out.d = /^[MmLlHhVvCcSsQqTtAaZz0-9.,\s-]*$/.test(l.d || "") ? str(l.d, 20000) : "";
+      out.d = /^[MmLlHhVvCcSsQqTtAaZz0-9.,\s-]*$/.test(l.d || "") ? str(l.d, 40000) : "";
       out.box = num(l.box, 64, 1, 4096);
+      out.fillRule = l.fillRule === "evenodd" ? "evenodd" : "nonzero";
+    }
+    if (l.type === "subject") {
+      const r = l.ref && typeof l.ref === "object" ? l.ref : {};
+      out.ref = { id: str(r.id, 20).replace(/[^a-z]/g, ""), pose: ["front", "side", "bust"].includes(r.pose) ? r.pose : "front" };
+      out.label = str(l.label, 60, "Subject");
+      out.fill = null; out.stroke = null; out.strokeW = 0;
     }
     return out;
   }
@@ -366,6 +379,7 @@ const SuiteDoc = (() => {
     create, layer, find, add, update, remove, restack, duplicate,
     toLocal, contains, hitTest, align, snap,
     getPx, setPx, fill, line,
+    subjects: (doc) => doc.layers.filter((l) => l.type === "subject" && !l.hidden),
     addBlock, moveBlock, removeBlock,
     colours, usesGradient, cardsUsed,
     history, normalize, serialize, parse, sanitizeLayer, site,

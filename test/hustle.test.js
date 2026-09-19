@@ -172,3 +172,39 @@ test("content: every research match is really on its page", () => {
     assert.equal(Res.proven(gig, H.sites, found), gig.features.find((f) => f.gap).id, id + ": gap is provable");
   }
 });
+
+test("score: the on-model need is graded by likeness, and pasted art zeroes it", () => {
+  const gig = { needs: [{ id: "onmodel", label: "On-model", missed: "Off-model", subjects: ["toma", "kiyoshi"], weight: 1 }], limits: [] };
+  const doc = D.create({ w: 100, h: 50 });
+  D.add(doc, D.layer("rect", { fill: "#FF7A1A" }));
+  const line = (likeness) => Score.score({ gig, doc, cards: [], likeness }).lines.find((l) => l.kind === "need");
+
+  const both = line({ subjects: { toma: { quality: 0.9 }, kiyoshi: { quality: 0.7 } }, scaleOK: true, pasted: false });
+  assert.equal(both.pts, 56, "70 × (0.9 + 0.7) / 2");
+  assert.ok(both.ok && /Toma 90% · Kiyoshi 70%/.test(both.text) && /relative scale ✓/.test(both.text));
+
+  const one = line({ subjects: { toma: { quality: 0.9 } }, scaleOK: null, pasted: false });
+  assert.equal(one.pts, 32);
+  assert.ok(!one.ok && /Kiyoshi not marked/.test(one.text));
+
+  const off = line({ subjects: { toma: { quality: 0.8 }, kiyoshi: { quality: 0.8 } }, scaleOK: false, pasted: false });
+  assert.equal(off.pts, Math.round(70 * 0.8 * 0.85));
+
+  const pasted = line({ subjects: { toma: { quality: 1 }, kiyoshi: { quality: 1 } }, scaleOK: true, pasted: true });
+  assert.equal(pasted.pts, 0);
+  assert.match(pasted.text, /Pasted official art/);
+
+  assert.equal(line(undefined).pts, 0, "no report, nothing drawn");
+});
+
+test("subject markers never become part of the picture", () => {
+  const doc = D.create({ w: 100, h: 50 });
+  D.add(doc, D.layer("rect", { fill: "#FF7A1A" }));
+  const sj = D.add(doc, D.layer("subject", { x: 10, y: 5, w: 30, h: 40, ref: { id: "toma", pose: "front" }, label: "Toma — front" }));
+  assert.deepEqual(D.colours(doc).sort(), ["#FF7A1A", "#FFFFFF"]);
+  assert.equal(D.subjects(doc).length, 1);
+  assert.equal(D.hitTest(doc, 25, 25).type, "rect", "the inside of the box is not the box");
+  assert.equal(D.hitTest(doc, 11, 25).id, sj.id, "its edge is");
+  const back = D.parse(D.serialize(doc));
+  assert.deepEqual(back.layers[1].ref, { id: "toma", pose: "front" });
+});

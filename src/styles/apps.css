@@ -502,3 +502,33 @@
   .ml__folders{flex-basis:96px}
   .ml__body{flex-direction:column}
 }
+
+/* An About page with faces on it. The client leads; the rest of the team
+   sits in the grid behind them. */
+.prs{display:flex;flex-direction:column;gap:8px}
+/* The client leads and is the largest face on the page; the rest of the team
+   sits behind them. Cap the grid photos so the hierarchy cannot invert on a
+   wide window. */
+.blk--people .ppl{grid-template-columns:repeat(auto-fill,150px);justify-content:start}
+.prs__f{display:block;width:150px;max-width:100%;height:auto;border:1px solid var(--line);image-rendering:auto}
+.prs--lead{grid-column:1/-1;flex-direction:row;gap:18px;align-items:flex-start;
+  padding-bottom:14px;border-bottom:1px solid var(--line)}
+.prs--lead .prs__f{width:184px;max-width:184px;flex:none;border:2px solid var(--brand)}
+.prs--lead .prs__t b{font-size:17px}
+.prs--lead .prs__t p{max-width:52ch}
+@media (max-width:520px){ .prs--lead{flex-direction:column} .prs--lead .prs__f{width:100%;max-width:100%} }
+
+/* ── official model sheets ───────────────────────────── */
+.blk--sheet{text-align:left}
+.sheet{display:flex;flex-wrap:wrap;align-items:flex-end;gap:22px;padding:14px;background:#F4EFE6;
+  border:1px solid var(--line);background-image:repeating-linear-gradient(0deg,rgba(42,30,36,.06) 0 1px,transparent 1px 12px)}
+.sheet__fig{margin:0;display:flex;flex-direction:column;align-items:center;gap:6px}
+.sheet__fig img{image-rendering:pixelated;display:block}
+.sheet__fig figcaption{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6E6552}
+.sheet__h{margin:8px 0 0;font-family:var(--mono);font-size:12px;color:var(--dim)}
+.sheet--lineup{position:relative;justify-content:center;gap:40px}
+.sheet--lineup::after{content:"";position:absolute;left:8px;right:8px;top:calc(14px + var(--eye));border-top:1px dashed rgba(194,69,44,.7)}
+.sheet__fig[data-pose]:hover img{outline:1px dotted rgba(42,30,36,.4)}
+
+/* Official art is pixel art: keep it hard-edged wherever it is scaled. */
+.ifr img,.lb img,.fr-studio__hero img{image-rendering:pixelated}

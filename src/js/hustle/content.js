@@ -22,6 +22,10 @@
  */
 
 const HUSTLE = (() => {
+  // The anime's canon lives in content/characters.js; the official site and
+  // the fan site both quote it rather than restating it.
+  const PMR = typeof Characters !== "undefined" ? Characters
+    : typeof require !== "undefined" ? require("../content/characters.js") : null;
   const GIGSLIST = "gigslist.org";
   const CRAWLER = "crawler.web";
 
@@ -29,6 +33,76 @@ const HUSTLE = (() => {
   const ADS = {
     kiln: { t: "ad", brand: "Kettle & Kiln", line: "Paint a mug. We fire it. Thursdays run late.", art: "kiln" },
     dial: { t: "ad", brand: "HyperDial", line: "56K OF PURE FREEDOM. First month free!!", art: "dial" },
+  };
+
+  /* ── the people ────────────────────────────────────────
+   * A handle is a person: portraits.js hashes it into a face, and `look`
+   * pins whatever an author cares about so nobody important is left to a
+   * dice roll. `room` is what is behind them on a call, drawn in their own
+   * site's colours. `pause` is how long they will sit in a silence before
+   * filling it themselves — the size of the hourglass.
+   */
+  const people = {
+
+    batonpass_nell: {
+      name: "Nell", role: "Webmistress", co: "The Baton Pass", dom: "thebatonpass.net",
+      pause: 14000,
+      look: { skin: "#E0A87C", hair: "#3A2A1E", style: "long", specs: "none",
+              extra: "none", build: "narrow", age: "young", facial: "none", band: "#FF7A1A" },
+      // Too close to the camera, the way a teenager at a laptop is.
+      frame: { dy: 0.06, dh: 0.88 },
+      room: [
+        { p: "poster", x: 0.02, y: 0.06, w: 0.22, h: 0.48 },
+        { p: "shelf",  x: 0.70, y: 0.12, w: 0.28, h: 0.26 },
+        { p: "poster", x: 0.74, y: 0.48, w: 0.22, h: 0.34 },
+      ],
+      bio: "Sixteen when the shrine went up, seventeen now, and it has been the best thing on her desktop ever since. Hand-codes every page in Notepad because that is how she learned and she is not stopping. Answers every email, usually within the hour, usually in lowercase.",
+      lore: "Wears the orange sweatband because Toma does. Will tell you this unprompted.",
+      team: [
+        { n: "Marisa", r: "Episode guide", p: "Writes the recaps the night each episode airs. Has never once been on a call." },
+        { n: "kuro_9", r: "Forum moderator", p: "Deletes the spam at four in the morning. Nobody knows their name, or asks." },
+      ],
+    },
+
+    thimble_ines: {
+      name: "Ines Varga", role: "Solo developer", co: "Thimblewick", dom: "thimblewickgame.net",
+      pause: 10000,
+      look: { skin: "#C98B5F", hair: "#1B1512", style: "bun", specs: "square",
+              extra: "none", build: "regular", age: "mid", facial: "none" },
+      room: [
+        { p: "monitor",   x: 0.03, y: 0.20, w: 0.20, h: 0.30 },
+        { p: "corkboard", x: 0.70, y: 0.08, w: 0.28, h: 0.40 },
+        { p: "plant",     x: 0.76, y: 0.56, w: 0.20, h: 0.32 },
+      ],
+      bio: "Four years in, funded out of her own savings and one contract that ended well. Writes the devlog on Fridays whether there is news or not. Says \u201cshe is not cute, she is competent\u201d about her shopkeeper and means it about the studio too.",
+      lore: "Spent a week on thread physics nobody will notice. Does not regret it.",
+      team: [
+        { n: "Halden", r: "Music, on contract", p: "Two tracks so far, both good. Lives four time zones away and sends files at three in the morning." },
+        { n: "This role", r: "Character art, on contract", p: "Open. It is the job you are being interviewed for, and there is no art department behind it." },
+      ],
+    },
+
+    kettleandkiln: {
+      name: "Priya Anand", role: "Owner", co: "Kettle & Kiln", dom: "kettleandkiln.com",
+      pause: 9000,
+      look: { skin: "#A56A44", hair: "#1B1512", style: "bob", specs: "none",
+              extra: "collar", build: "regular", age: "mid", facial: "none" },
+      // Standing back from it, over by the counter, half looking at the shop.
+      frame: { dx: 0.34, dy: 0.15, dw: 0.44, dh: 0.82 },
+      room: [
+        { p: "shelf", x: 0.02, y: 0.10, w: 0.24, h: 0.34 },
+        { p: "shelf", x: 0.02, y: 0.52, w: 0.24, h: 0.30 },
+        { p: "door",  x: 0.76, y: 0.02, w: 0.24, h: 0.72 },
+        { p: "clock", x: 0.62, y: 0.06, w: 0.10, h: 0.14 },
+      ],
+      bio: "Opened on Corder Street in 2019 with one wheel, a secondhand kiln and a card machine that is still slow. Fires on Mondays herself because nobody else is allowed near it. Takes the call from the shop floor, which you can hear.",
+      lore: "Still thinks about the gradient on the last menu somebody made her.",
+      team: [
+        { n: "Dev", r: "Front of house", p: "Knows every regular by their mug. Genuinely — he can name the mug before the person." },
+        { n: "Marta", r: "Glazes", p: "Mixes them in the back. Will not write the recipes down, and nobody has pushed it." },
+        { n: "Sam", r: "Thursdays", p: "Runs Kiln Night. Teaches beginners without once making them feel like beginners." },
+      ],
+    },
   };
 
   /* ── sites ─────────────────────────────────────────────── */
@@ -47,7 +121,7 @@ const HUSTLE = (() => {
         tagline: "a Toma × Kiyoshi shrine — Paper Moon Relay",
         strap: "best viewed at 800×600 · you are visitor #004417",
         foot: "fan site. not affiliated with the studio. please don't sue me i'm sixteen",
-        nav: [["Home", "/"], ["Characters", "/characters"], ["Rules", "/rules"]],
+        nav: [["Home", "/"], ["Characters", "/characters"], ["Rules", "/rules"], ["Who runs this", "/about"]],
         pages: {
           "/": [
             { t: "notice", h: "Under construction (forever)", p: "The old banner is gone because my host deleted the image folder. A new one is coming. Soon. Probably.", stamp: "SORRY" },
@@ -63,6 +137,39 @@ const HUSTLE = (() => {
               { n: "Toma Arakawa", r: "Anchor leg, Hoshizora High", p: "Never runs without the orange sweatband his sister gave him." },
               { n: "Kiyoshi Mori", r: "Third leg, Kurohama → Hoshizora", p: "Still wears his navy Kurohama track jacket after the transfer. Won't say why." },
             ] },
+            { t: "prose", h: "drawing toma (for fan artists)", ps: [
+              "The cowlick at his crown never lies flat, not even under the band.",
+              "The band's tails flick out on his right. The chipped front tooth only shows when he grins.",
+              "Official art is on papermoonrelay.tv. Look at it, don't screenshot it. The studio sends takedowns.",
+            ] },
+            { t: "prose", h: "drawing kiyoshi", ps: [
+              "The fringe covers his left eye. Always his left.",
+              "Beauty mark under his right eye. Collar zipped to the chin, every time.",
+              "He's taller: Toma's sweatband sits at Kiyoshi's eye line. Get that wrong and the forum will tell you.",
+            ] },
+            { t: "swatches", h: "colour picks for fan artists", note: "picked by hand off the blu-ray, so they're right. use these.", items: [
+              { c: "#FF7A1A", n: "Toma's band" }, { c: "#3A2418", n: "Toma's hair" }, { c: "#E2A97E", n: "Toma's skin" },
+              { c: "#C7832B", n: "Toma's eyes" }, { c: "#7EC8F0", n: "Hoshizora sky" }, { c: "#F6F7F2", n: "Kit white" },
+              { c: "#F2C94C", n: "The star" }, { c: "#1B2A4A", n: "Kiyoshi's jacket" }, { c: "#3FB8AF", n: "The wave" },
+              { c: "#14161C", n: "Kiyoshi's hair" }, { c: "#F1D2BC", n: "Kiyoshi's skin" }, { c: "#8A94A6", n: "Kiyoshi's eyes" },
+            ] },
+            ADS.dial,
+          ],
+          "/about": [
+            { t: "prose", h: "who runs this", ps: [
+              "hi it's just me!! i have had this site since i was 14 and i am not stopping.",
+              "everything here is hand-coded in notepad. if something is broken it is broken because i broke it, and i will fix it, eventually.",
+            ] },
+            { t: "people", h: "the shrine staff (lol)", items: [
+              { n: "Nell", r: "Webmistress", seed: "batonpass_nell", lead: true,
+                p: "Runs it, writes it, breaks it. Orange sweatband, because Toma. Pager is faster than email." },
+              { n: "Marisa", r: "Episode guide", seed: "batonpass_nell:marisa",
+                look: { skin: "#F2C9A8", hair: "#6B4A2B", style: "ponytail", specs: "round", facial: "none", extra: "none", age: "young", build: "narrow" },
+                p: "Writes the recaps the night each episode airs. Has never once been on a call." },
+              { n: "kuro_9", r: "Forum moderator", seed: "batonpass_nell:kuro9",
+                look: { skin: "#C98B5F", hair: "#1B1512", style: "beanie", specs: "square", facial: "none", extra: "none", age: "young", build: "regular" },
+                p: "Deletes the spam at four in the morning. Nobody knows their name, or asks." },
+            ] },
             ADS.dial,
           ],
           "/rules": [
@@ -70,11 +177,54 @@ const HUSTLE = (() => {
               { q: "Can I post spoilers?", a: "Please don't yet. We have no spoiler system, so episode 12 talk goes in the one forum thread with a warning on it." },
               { q: "Can I use the banner on my site?", a: "When there is one! Link back to the shrine." },
               { q: "Why is the site orange?", a: "Toma. Obviously." },
+              { q: "Where's the official art?", a: "papermoonrelay.tv. Look all you want, but draw your own. No screenshots in fan works." },
             ] },
           ],
         },
       },
       refs: ["relay baton", "running track at dusk", "orange sweatband", "navy track jacket"],
+    },
+
+    /* The anime's own site: model sheets, profiles, and a firm line on fan works. */
+    "papermoonrelay.tv": {
+      who: "Production Committee", role: "", co: "Paper Moon Relay", dom: "papermoonrelay.tv", frame: "studio",
+      theme: {
+        bg: "#0F1420", panel: "#182033", ink: "#F4EFE6", dim: "#9AA3B8", line: "#2A3450",
+        brand: "#FF7A1A", brand2: "#1B2A4A", link: "#FFB27A", onBrand: "#0F1420",
+        head: "'Instrument Serif', Georgia, serif", body: "Georgia, serif", mark: "orbit", markText: "PM",
+      },
+      site: {
+        tagline: "Twelve legs of a relay. One hand-off.",
+        foot: "© Paper Moon Relay Production Committee. Fan works welcome; screenshots are not.",
+        nav: [["Home", "/"], ["Toma", "/characters/toma"], ["Kiyoshi", "/characters/kiyoshi"], ["Story", "/story"]],
+        pages: {
+          "/": [
+            { t: "lede", p: PMR ? PMR.SERIES.premise : "" },
+            { t: "sheet", h: "Anchor and third leg", lineup: ["toma", "kiyoshi"], eyeline: 16, note: "Drawn to one scale. Toma's sweatband sits at Kiyoshi's eye line." },
+            { t: "notice", h: "Fan works", p: "Draw them as much as you like. Please don't post screenshots or our art as your own: we do send takedowns.", stamp: "PLEASE" },
+          ],
+          "/characters/toma": [
+            { t: "lede", p: PMR ? "\u201c" + PMR.CAST.toma.line + "\u201d" : "" },
+            { t: "sheet", char: "toma", h: "Toma Arakawa" },
+            { t: "spec", h: "Profile", rows: [["School", "Hoshizora High, second year"], ["Leg", "Anchor"], ["Height", "172 cm"], ["Age", "16"], ["Signature", "An orange sweatband, always on"]] },
+            { t: "prose", h: "About", ps: PMR ? PMR.CAST.toma.about : [] },
+          ],
+          "/characters/kiyoshi": [
+            { t: "lede", p: PMR ? "\u201c" + PMR.CAST.kiyoshi.line + "\u201d" : "" },
+            { t: "sheet", char: "kiyoshi", h: "Kiyoshi Mori" },
+            { t: "spec", h: "Profile", rows: [["School", "Kurohama Technical → Hoshizora High"], ["Leg", "Third"], ["Height", "178 cm"], ["Age", "17"], ["Signature", "A Kurohama track jacket, zipped to the chin"]] },
+            { t: "prose", h: "About", ps: PMR ? PMR.CAST.kiyoshi.about : [] },
+          ],
+          "/story": [
+            { t: "table", h: "Episodes", cols: ["Ep", "Title"], rows: [
+              ["1", "Four Legs Short"], ["2", "Lane Four"], ["3", "The Exchange Zone"], ["4", "Rain Delay"],
+              ["5", "Mei's Band"], ["6", "Kurohama"], ["7", "Transfer"], ["8", "Two Jackets"],
+              ["9", "Counting Steps"], ["10", "Don't Look Back"], ["11", "Heat Haze"], ["12", "Paper Moon"],
+            ] },
+          ],
+        },
+      },
+      refs: ["paper moon relay key visual", "paper moon relay"],
     },
 
     /* Rival 1: the big community site. */
@@ -158,7 +308,7 @@ const HUSTLE = (() => {
       site: {
         tagline: "a cosy game about mending other people's clothes",
         foot: "demo out this winter",
-        nav: [["Devlog", "/"], ["Art rules", "/art"]],
+        nav: [["Devlog", "/"], ["Art rules", "/art"], ["The studio", "/about"]],
         pages: {
           "/": [
             { t: "feed", h: "Devlog", items: [
@@ -170,6 +320,21 @@ const HUSTLE = (() => {
               "She wears a green cardigan with one button missing and keeps a yellow tape measure around her neck. Her hair is grey and pinned up.",
             ] },
             ADS.kiln,
+          ],
+          "/about": [
+            { t: "prose", h: "The studio", ps: [
+              "Thimblewick is one person and a laptop that has been through two batteries.",
+              "Four years in, funded out of savings. There is no art department. When the devlog says I, it means all of it.",
+            ] },
+            { t: "people", h: "Who is on this", items: [
+              { n: "Ines Varga", r: "Everything except the music", seed: "thimble_ines", lead: true,
+                p: "Design, code, writing, the devlog. Fridays are for the devlog whether there is news or not." },
+              { n: "Halden", r: "Music, on contract", seed: "thimble_ines:halden",
+                look: { skin: "#E0A87C", hair: "#3A2A1E", style: "shortback", specs: "none", facial: "stubble", extra: "none", age: "mid", build: "regular" },
+                p: "Two tracks so far, both good. Four time zones away, sends files at three in the morning." },
+              { n: "This role", r: "Character art, on contract",
+                p: "Open — no photograph, because there is nobody in it. It is the job, and there is nobody behind it to hand the work to." },
+            ] },
           ],
           "/art": [
             { t: "spec", h: "Art rules", rows: [
@@ -241,13 +406,29 @@ const HUSTLE = (() => {
       site: {
         tagline: "Pottery painting and tea, on Corder Street",
         cart: "Book a table",
-        nav: [["Home", "/"], ["Kiln Night", "/kiln-night"]],
+        nav: [["Home", "/"], ["Kiln Night", "/kiln-night"], ["The people here", "/about"]],
         pages: {
           "/": [
             { t: "lede", p: "Pick a mug, paint it, leave it with us. We fire it in our own kiln and you collect it in a week." },
             { t: "products", h: "Bisque to paint", items: [
               { name: "Mug", meta: "350ml", price: "£8", ref: "terracotta mugs" },
               { name: "Small plate", meta: "18cm", price: "£10", ref: "hand painted plate" },
+            ] },
+          ],
+          "/about": [
+            { t: "lede", p: "Four of us, and the kiln, which counts. We opened on Corder Street in 2019 with one wheel and a secondhand kiln, and the card machine is still slow." },
+            { t: "people", h: "The people here", items: [
+              { n: "Priya Anand", r: "Owner", seed: "kettleandkiln", lead: true,
+                p: "Fires on Mondays herself because nobody else is allowed near it. On the shop floor the rest of the week." },
+              { n: "Dev", r: "Front of house", seed: "kettleandkiln:dev",
+                look: { skin: "#7C4B2E", hair: "#1B1512", style: "crop", specs: "none", facial: "stubble", extra: "collar", age: "mid", build: "regular" },
+                p: "Knows every regular by their mug — he can name the mug before the person." },
+              { n: "Marta", r: "Glazes", seed: "kettleandkiln:marta",
+                look: { skin: "#F2C9A8", hair: "#B4B4BA", style: "bun", specs: "round", facial: "none", extra: "none", age: "older", build: "regular" },
+                p: "Mixes them in the back. Will not write the recipes down, and nobody has pushed it." },
+              { n: "Sam", r: "Thursdays", seed: "kettleandkiln:sam",
+                look: { skin: "#C98B5F", hair: "#5A2E2E", style: "curls", specs: "none", facial: "none", extra: "earrings", age: "young", build: "narrow" },
+                p: "Runs Kiln Night. Teaches beginners without once making them feel like beginners." },
             ] },
           ],
           "/kiln-night": [
@@ -324,40 +505,66 @@ const HUSTLE = (() => {
       ],
       dialogue: {
         patience: 6,
+        pause: 14000,
+        filler: ["...", "r u still there?? my connection is bad sometimes", "sorry i thought it froze"],
         opening: ["omg hi!! thank u for replying", "ok so i run a fan site for paper moon relay and my banner got deleted"],
         options: {
           ship: { ask: "Who's the pairing?", reply: ["TOMA AND KIYOSHI", "toma arakawa x kiyoshi mori. tomakiyo. the only ship"], reveals: ["names"] },
           site: { ask: "What's the site called?", reply: ["The Baton Pass!!", "the name has to be on it or ppl won't know where they are"], reveals: ["sitename"] },
           size: { ask: "Where does the banner go, and what size is it?", reply: ["top of every page", "728 by 90, the normal size", "and not too many colours, it looks messy that small"], reveals: ["size", "palette"] },
           colours: { ask: "Do any colours mean something to them?", reply: ["YES ok toma is orange and kiyoshi is navy", "it's on my characters page if u want the lore"], reveals: ["colours"] },
+          onmodel: { ask: "Should they look exactly like they do in the show?", reply: ["YES. on-model or the forum eats me alive", "but no screenshots!! the studio takes fan sites down for that", "u have to actually draw them"], reveals: ["onmodel"] },
           vibe: { ask: "What should it feel like?", reply: ["like. the end of a race. when it's getting dark", "u know?"] },
           ep12: { ask: "Is that a particular episode?", requires: ["vibe"], reply: ["EPISODE 12", "the relay final is at dusk and kiyoshi hands toma the baton for the first time. i cried"], reveals: ["dusk"] },
           pay: { ask: "Is there any room in the budget?", reply: ["uh", "it's $20 and credit... i'm saving for a con ticket"], cost: 2 },
           done: { ask: "That's everything I need. I'll get started.", reply: ["YAY ok ty!!!", "the site is thebatonpass.net if u need anything"], end: true, cost: 0 },
         },
         leave: ["sorry my mum is calling me for dinner", "just make it cool!! byeee"],
+        challenges: {
+          // Her site says why the last banner vanished. If you read that
+          // before the call, you can ask the question she does not know to
+          // answer: forty pages still point at the old filename.
+          filename: {
+            after: "size", needsFact: "deleted",
+            ask: "Your host deleted the last one \u2014 what were the old pages pointing at?",
+            reply: ["oh", "ok so every page still links /images/banner.gif", "if u name it banner.gif i don't have to edit 40 pages by hand"],
+            reveals: ["filename"],
+          },
+        },
       },
       needs: [
+        { id: "filename", label: "Delivered as banner.gif \u2014 40 pages link to it",
+          missed: "It isn't named banner.gif, so forty pages stay broken", text: ["banner.gif"], weight: 1 },
         { id: "names", label: "Toma and Kiyoshi, both, by name", missed: "Toma and Kiyoshi aren't both named on it", text: ["toma", "kiyoshi"], weight: 3 },
         { id: "sitename", label: "The site's name: The Baton Pass", missed: "The site's name isn't on it", text: ["the baton pass"], weight: 2 },
         { id: "colours", label: "Their colours: Toma's orange, Kiyoshi's navy", missed: "Toma's orange and Kiyoshi's navy aren't both there", all: ["orange", "navy"], weight: 2 },
         { id: "dusk", label: "Episode 12's final, at dusk", missed: "Nothing of episode 12's dusk final", tags: ["dusk"], weight: 2 },
+        // Judged by eye against the model sheets: mark where you drew each of
+        // them by dropping their pin on the canvas. See hustle/likeness.js.
+        { id: "onmodel", label: "Toma and Kiyoshi, on-model — drawn, not screenshotted", missed: "They don't look like themselves", subjects: ["toma", "kiyoshi"], weight: 3 },
       ],
       limits: [
         { id: "size", rule: "size", w: 728, h: 90, label: "Banner size, 728 × 90" },
-        { id: "palette", rule: "maxColours", value: 6, label: "Six colours or fewer" },
+        { id: "palette", rule: "maxColours", value: 12, label: "Twelve colours or fewer" },
       ],
       facts: [
         { id: "sweatband", where: "thebatonpass.net", label: "Toma's orange sweatband", match: ["orange sweatband"], tags: ["toma", "orange-lore"] },
         { id: "jacket", where: "thebatonpass.net", label: "Kiyoshi's navy jacket", match: ["navy kurohama track jacket"], tags: ["kiyoshi", "navy-lore"] },
         { id: "ep12", where: "thebatonpass.net", label: "Ep 12: the final at dusk", match: ["episode 12", "at dusk"], tags: ["ep12", "dusk"] },
         { id: "deleted", where: "thebatonpass.net", label: "Why the banner is gone", match: ["host deleted"], tags: ["history"] },
+        { id: "cowlick", where: "thebatonpass.net", label: "Toma's cowlick never lies flat", match: ["cowlick"], tags: ["toma-look"] },
+        { id: "fringe", where: "thebatonpass.net", label: "Kiyoshi's fringe: always his left eye", match: ["fringe covers his left eye"], tags: ["kiyoshi-look"] },
+        { id: "eyeline", where: "thebatonpass.net", label: "Toma's band at Kiyoshi's eye line", match: ["sweatband sits at kiyoshi's eye line"], tags: ["scale"] },
+        { id: "toma-height", where: "papermoonrelay.tv", label: "Toma: 172 cm", match: ["172 cm"], tags: ["scale", "toma"] },
+        { id: "kiyoshi-height", where: "papermoonrelay.tv", label: "Kiyoshi: 178 cm", match: ["178 cm"], tags: ["scale", "kiyoshi"] },
       ],
       refs: [
         { q: "relay baton", tags: ["baton"] },
         { q: "running track at dusk", tags: ["dusk", "track"] },
         { q: "orange sweatband", tags: ["orange-lore"] },
         { q: "navy track jacket", tags: ["navy-lore"] },
+        { q: "toma arakawa", tags: ["toma"] },
+        { q: "kiyoshi mori", tags: ["kiyoshi"] },
       ],
       competitors: ["moonrelayfans.org", "hoshizora-anchor.net"],
       features: [
@@ -390,6 +597,8 @@ const HUSTLE = (() => {
       invite: ["ok so. everyone loves the banner", "the rest of my site looks terrible next to it now lol", "could u redo the homepage?? i can pay $40 this time"],
       dialogue: {
         patience: 5,
+        pause: 13000,
+        filler: ["...", "hello?? did i lag", "ok i'll just wait"],
         opening: ["ok so what do u need to know"],
         options: {
           banner: { ask: "Should the banner I made lead the page?", reply: ["YES obviously", "it's the best thing on the site"], reveals: ["banner"] },
@@ -449,15 +658,27 @@ const HUSTLE = (() => {
       ],
       dialogue: {
         patience: 5,
+        pause: 10000,
+        filler: ["...", "I do have to get back to the build."],
         opening: ["Hi, thanks for getting in touch.", "What do you need from me?"],
         options: {
           who: { ask: "Who is the shopkeeper?", reply: ["Mrs. Pell. Retired tailor, sixty-eight.", "She is not cute. She is competent."], reveals: ["elder"] },
           look: { ask: "What does she wear?", reply: ["A green cardigan and a yellow tape measure around her neck.", "Grey hair, pinned up."], reveals: ["cardigan", "tape", "hair"] },
-          rules: { ask: "Are there technical rules for sprites?", reply: ["32 by 32, eight colours at most, dark outline.", "It's all on the Art rules page."], reveals: ["size", "palette", "outline"] },
+          rules: { ask: "Are there technical rules for sprites?", reply: ["32 by 32, eight colours at most.", "It's all on the Art rules page."], reveals: ["size", "palette"] },
           style: { ask: "Should she look like other cosy game shopkeepers?", reply: ["Honestly I haven't looked.", "I just don't want her to be generic."] },
           done: { ask: "Got it. I'll send her over soon.", reply: ["Thank you."], end: true, cost: 0 },
         },
         leave: ["I have to get back to the build. The devlog has everything."],
+        challenges: {
+          // Eight colours, and a dark outline on everything that moves. Both
+          // are on her art rules page, and only one of them is a number.
+          outline: {
+            after: "rules", needsFact: "rules",
+            ask: "Eight colours including the outline, or eight plus it?",
+            reply: ["Including.", "Everyone gets that wrong and sends me nine. Dark 1px, on everything that moves."],
+            reveals: ["outline"],
+          },
+        },
       },
       needs: [
         { id: "elder", label: "She reads as older — a retired tailor", missed: "She doesn't read as a retired tailor", tags: ["elder"], weight: 2 },
@@ -512,7 +733,9 @@ const HUSTLE = (() => {
       invite: ["Hi — Priya from Kettle & Kiln.", "A couple of people mentioned your work. We need a poster for Open Kiln Night. Brief below."],
       dialogue: {
         patience: 5,
-        opening: ["Hello! You found us.", "What can I help with?"],
+        pause: 9000,
+        filler: ["Sorry \u2014 one second.", "...right. Where were we?"],
+        opening: ["Hello! You found us.", "Sorry about the noise, we're open. What can I help with?"],
         options: {
           what: { ask: "Is there anything you need designed?", reply: ["Actually, yes. A poster for Open Kiln Night.", "It's our Thursday evening, and nobody knows about it."], reveals: ["title"] },
           when: { ask: "When is it, and what does it cost?", requires: ["what"], reply: ["Every Thursday after six.", "£12 covers your piece and the firing."], reveals: ["day", "price"] },
@@ -521,8 +744,20 @@ const HUSTLE = (() => {
           done: { ask: "Lovely — I'll put something together.", reply: ["Wonderful, thank you."], end: true, cost: 0 },
         },
         leave: ["Sorry, someone just walked in. Email me!"],
+        challenges: {
+          // Her own page says the twelve pounds covers the glaze firing. It
+          // does not say it covers the piece, and nobody has ever asked.
+          bisque: {
+            after: "when", needsFact: "thursdays",
+            ask: "Your site says \u00a312 covers the glaze firing \u2014 is the piece itself extra?",
+            reply: ["...Yes. It is.", "Nobody ever asks, and then they're surprised at the counter.", "Put 'from \u00a312' on it. I should have said."],
+            reveals: ["frombisque"],
+          },
+        },
       },
       needs: [
+        { id: "frombisque", label: "\u201cfrom \u00a312\u201d \u2014 the piece is extra",
+          missed: "It reads \u00a312 flat, and people find that out at the counter", text: ["from \u00a312"], weight: 1 },
         { id: "title", label: "It says Open Kiln Night", missed: "It doesn't say Open Kiln Night", text: ["open kiln night"], weight: 3 },
         { id: "day", label: "Thursdays", missed: "It doesn't say when", text: ["thursday"], weight: 1 },
         { id: "price", label: "£12", missed: "The price isn't on it", text: ["12"], weight: 1 },
@@ -571,6 +806,7 @@ const HUSTLE = (() => {
 
   /* ── the crawler's index ───────────────────────────────── */
   const index = [
+    { dom: "papermoonrelay.tv", title: "Paper Moon Relay — official site", snippet: "Twelve legs of a relay. One hand-off. Characters, story, and a note about fan works.", keywords: ["paper moon relay", "official", "anime", "toma", "kiyoshi", "toma arakawa", "kiyoshi mori", "characters", "model sheet"] },
     { dom: "thebatonpass.net", title: "The Baton Pass — a Toma × Kiyoshi shrine", snippet: "Fan site for Paper Moon Relay. 212 members. Under construction.", keywords: ["paper moon relay", "fan site", "toma", "kiyoshi", "tomakiyo", "anime", "shrine"] },
     { dom: "moonrelayfans.org", title: "Moon Relay Fans", snippet: "The largest Paper Moon Relay community on the web. Episode guide, forum, fan fiction.", keywords: ["paper moon relay", "fan site", "fans", "community", "anime", "episode guide", "forum"] },
     { dom: "hoshizora-anchor.net", title: "Anchor Leg — just Toma", snippet: "A site about Toma Arakawa. Gallery and episode guide.", keywords: ["paper moon relay", "fan site", "toma", "anime", "gallery"] },
@@ -585,7 +821,7 @@ const HUSTLE = (() => {
   /* Domains that answer but hold nothing: an ad can point at a dead end. */
   const parked = ["hyperdial.net", "hyperdial.com"];
 
-  return { GIGSLIST, CRAWLER, ADS, sites, gigs, listings, index, parked };
+  return { GIGSLIST, CRAWLER, ADS, people, sites, gigs, listings, index, parked };
 })();
 
 if (typeof module !== "undefined") module.exports = HUSTLE;

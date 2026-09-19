@@ -49,6 +49,14 @@ const Sites = (() => {
 
   function themeOf(c){ return Object.assign({}, DEFAULT_THEME, c.theme || {}); }
 
+  // portraits.js lights a room differently depending on how dark it is.
+  function portraitTheme(t){
+    const n = parseInt(String(t.bg).slice(1), 16);
+    const lum = (((n >> 16) & 255) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114) / 255;
+    return { bg: t.bg, panel: t.panel, ink: t.ink, dim: t.dim, line: t.line,
+             brand: t.brand, brand2: t.brand2, dark: lum < 0.5 };
+  }
+
   function themeVars(t){
     return [
       "--bg:" + t.bg, "--panel:" + t.panel, "--ink:" + t.ink, "--dim:" + t.dim,
@@ -213,7 +221,7 @@ const Sites = (() => {
     swatches(b){
       return '<section class="blk blk--sw">' + head(b) + sub(b) +
         '<div class="sws">' + b.items.map((s) =>
-          '<div class="sw"><span class="sw__c" style="background:' + attr(s.c) +
+          '<div class="sw"' + (/^#[0-9A-Fa-f]{6}$/.test(s.c || "") ? ' data-hex="' + s.c.toUpperCase() + '"' : "") + '><span class="sw__c" style="background:' + attr(s.c) +
             (s.tex ? ";background-image:" + attr(s.tex) : "") + '"></span>' +
           '<b class="sw__n">' + esc2(s.n) + "</b>" +
           (s.m ? '<span class="sw__m">' + esc2(s.m) + "</span>" : "") + "</div>").join("") +
@@ -236,12 +244,54 @@ const Sites = (() => {
         (b.cap ? '<p class="plate__cap">' + esc2(b.cap) + "</p>" : "") + "</section>";
     },
 
-    people(b){
+    // An About page. An item with a `seed` gets a photograph: the same person
+    // portraits.js draws on a call, shot in this site's own colours. Which is
+    // the point of the block — the face on your screen is either on this page
+    // or it is not, and either way that is a fact about who you are talking to.
+    people(b, c){
+      const t = themeOf(c);
+      const shot = (p) => {
+        if (!p.seed || typeof Portraits === "undefined") return "";
+        const who = (typeof HUSTLE !== "undefined" && HUSTLE.people && HUSTLE.people[p.seed]) || {};
+        const src = Portraits.photo(p.seed, p.look || who.look, {
+          theme: portraitTheme(t), room: p.room || who.room,
+          frame: p.plate || who.plate, w: 132, h: 158,
+        });
+        return '<img class="prs__f" src="' + src + '" width="132" height="158" alt="" loading="lazy">';
+      };
       return '<section class="blk blk--people">' + head(b) +
         '<div class="ppl">' + b.items.map((p) =>
-          '<div class="prs"><b>' + esc2(p.n) + "</b><span>" + esc2(p.r) + "</span>" +
-          (p.p ? "<p>" + esc2(p.p) + "</p>" : "") + "</div>").join("") +
-        "</div></section>";
+          '<div class="prs' + (p.lead ? " prs--lead" : "") + '">' + shot(p) +
+          '<div class="prs__t"><b>' + esc2(p.n) + "</b><span>" + esc2(p.r) + "</span>" +
+          (p.p ? "<p>" + esc2(p.p) + "</p>" : "") + "</div></div>").join("") +
+        "</div>" + note(b) + "</section>";
+    },
+
+    // Official model sheets: every pose at one whole-number scale, so the
+    // figures are crisp and their heights compare honestly. `lineup` stands
+    // several characters side by side on one baseline with a height guide.
+    sheet(b){
+      if (typeof Characters === "undefined") return "";
+      const scale = Math.max(1, Math.min(4, Math.round(b.scale || 3)));
+      const fig = (id, pose, label) => Characters.has(id, pose)
+        ? '<figure class="sheet__fig" data-pose="' + attr(id + ":" + pose) + '"><img src="' + Characters.art(id, pose, { scale }) +
+          '" alt="" width="' + Characters.pose(id, pose).w * scale + '" height="' + Characters.pose(id, pose).h * scale + '">' +
+          "<figcaption>" + esc2(label) + "</figcaption></figure>"
+        : "";
+      if (Array.isArray(b.lineup)){
+        // The figures share one baseline and one canvas height, so a guide at
+        // a canvas row lines up across all of them.
+        return '<section class="blk blk--sheet">' + head(b) + sub(b) +
+          '<div class="sheet sheet--lineup" style="--eye:' + (b.eyeline ? b.eyeline * scale : -99) + 'px">' +
+          b.lineup.map((id) => fig(id, "front", Characters.CAST[id].name + " · " + Characters.CAST[id].height + " cm")).join("") +
+          "</div>" + note(b) + "</section>";
+      }
+      const c = Characters.CAST[b.char];
+      if (!c) return "";
+      return '<section class="blk blk--sheet">' + head(b) + sub(b) +
+        '<div class="sheet">' + fig(b.char, "front", "front") + fig(b.char, "side", "side") + fig(b.char, "bust", "bust") + "</div>" +
+        '<p class="sheet__h">' + esc2(c.name) + " · " + c.height + " cm · " + esc2(Characters.SCHOOLS[c.school].name) +
+          (c.transfer ? " → " + esc2(Characters.SCHOOLS[c.transfer].name) : "") + "</p>" + note(b) + "</section>";
     },
 
     // A brand's banner ad. The brand is only named, never linked: finding the

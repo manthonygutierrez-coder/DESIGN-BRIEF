@@ -15,8 +15,10 @@ const SuiteApps = (() => {
     banner: {
       label: "Banner", icon: "app-banner", mode: "free", blurb: "Banners, posters, marks, social cards",
       presets: [["Leaderboard", 728, 90], ["Rectangle", 300, 250], ["Social card", 1200, 630], ["Square post", 1080, 1080], ["Poster", 600, 850]],
-      tools: ["select", "rect", "ellipse", "text", "image", "eyedrop"],
-      bonus: ["gradient", "pen", "snap", "align"],
+      // Pen and shape builder are core: drawing a character by eye needs them
+      // from the first gig.
+      tools: ["select", "rect", "ellipse", "pen", "build", "text", "image", "eyedrop"],
+      bonus: ["gradient", "snap", "align"],
       for: ["graphic", "illustrative", "motion"],
     },
     type: {
@@ -57,7 +59,8 @@ const SuiteApps = (() => {
     text: { label: "Text", key: "t" },
     image: { label: "Place image", key: "i" },
     eyedrop: { label: "Eyedropper", key: "e" },
-    pen: { label: "Pen (bonus)", key: "p" },
+    pen: { label: "Pen — click points, click the first to close", key: "p" },
+    build: { label: "Shape builder — drag across shapes to merge, alt-drag to cut", key: "m" },
     pencil: { label: "Pencil", key: "b" },
     erase: { label: "Eraser", key: "e" },
     fill: { label: "Fill", key: "g" },
@@ -66,7 +69,7 @@ const SuiteApps = (() => {
 
   const BONUS = {
     gradient: "Two-colour gradient fills",
-    pen: "Pen tool for custom shapes",
+
     snap: "Snap to a 10px grid",
     align: "Align to canvas or selection",
     mirror: "Mirror drawing across the centre",

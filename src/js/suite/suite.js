@@ -11,7 +11,8 @@
  */
 
 const Suite = (() => {
-  const D = SuiteDoc, R = SuiteRender, C = SuiteCards, A = SuiteApps, X = SuiteCutout;
+  const D = SuiteDoc, R = SuiteRender, C = SuiteCards, A = SuiteApps, X = SuiteCutout, Sh = SuiteShapes;
+  const SHAPES = ["rect", "ellipse", "path"];
   const FONTS = ["Archivo", "Instrument Serif", "Silkscreen", "VT323", "Georgia", "Helvetica Neue", "Courier New", "Times New Roman"];
   const AUTOSAVE_MAX = 3 * 1024 * 1024;
   // wm.js's esc() leaves quotes alone; card labels land inside attributes here,
@@ -26,7 +27,9 @@ const Suite = (() => {
   async function boot() {
     state = await Bridge.getState();
     const s = state.suite && typeof state.suite === "object" ? state.suite : {};
+    // Keep keys other modules own (the reference board's pins live here too).
     state.suite = {
+      ...s,
       cards: (Array.isArray(s.cards) ? s.cards : []).map(C.normalize).filter(Boolean),
       docs: s.docs && typeof s.docs === "object" ? s.docs : {},
       unlocks: Array.isArray(s.unlocks) ? s.unlocks.filter((u) => A.BONUS[u]) : [],
@@ -102,7 +105,8 @@ const Suite = (() => {
     const dim = app && !usable(app, c) ? " dim" : "";
     return '<div class="cd cd--' + c.kind + dim + '" draggable="true" data-card="' + esc(c.id) + '" title="' +
       esc(c.label + " — " + (c.kind === "object" ? "image" : c.value)) + '">' + face +
-      '<span class="cd__l">' + esc(c.label) + '</span><button class="cd__x" data-uncard="' + esc(c.id) + '" aria-label="Remove card">×</button></div>';
+      '<span class="cd__l">' + esc(c.label) + '</span><button class="cd__x" data-uncard="' + esc(c.id) + '" aria-label="Remove card">×</button>' +
+      (c.kind === "object" && typeof RefBoard !== "undefined" ? '<button class="cd__pin" data-pincard="' + esc(c.id) + '" title="Pin to the reference board">PIN</button>' : "") + "</div>";
   }
 
   function trayHTML() {
@@ -138,6 +142,8 @@ const Suite = (() => {
       e.dataTransfer.effectAllowed = "copy";
     });
     root.addEventListener("click", (e) => {
+      const pinB = e.target.closest("[data-pincard]");
+      if (pinB) { e.stopPropagation(); const c = cardById(pinB.dataset.pincard); if (c) RefBoard.pin({ src: c.value, label: c.label }); return; }
       const x = e.target.closest("[data-uncard]");
       if (x) { e.stopPropagation(); removeCard(x.dataset.uncard); return; }
       if (e.target.closest('[data-s="kit"]')) { addCards(clientKit(job)); return; }
@@ -208,6 +214,15 @@ const Suite = (() => {
     open(appId, jobId, doc);
   }
 
+  function confirmBox(title, text, okLabel, onOK) {
+    const w = createWindow({ key: "suite-confirm-" + Date.now(), title, iconId: "suite", w: 380, h: 190, minW: 300, minH: 160 });
+    w.client.innerHTML = '<p class="su__alert"></p><p class="su__row"><button class="w98btn" data-ok></button><button class="w98btn" data-no>Go back</button></p>';
+    w.client.querySelector(".su__alert").textContent = text;
+    w.client.querySelector("[data-ok]").textContent = okLabel;
+    w.client.querySelector("[data-ok]").addEventListener("click", () => { closeWin(w); onOK(); });
+    w.client.querySelector("[data-no]").addEventListener("click", () => closeWin(w));
+  }
+
   function alertBox(title, text) {
     const w = createWindow({ key: "suite-alert-" + Date.now(), title, iconId: "suite", w: 340, h: 170, minW: 280, minH: 150 });
     w.client.innerHTML = '<p class="su__alert"></p><p><button class="w98btn" data-ok>OK</button></p>';
@@ -243,7 +258,7 @@ const Suite = (() => {
 
     const ed = {
       key, docKey, appId, app, job, doc: d, hist: D.history(), sel: null,
-      tool: app.tools[0] || null, zoom: 1, fg: "#0A0A0A", mirror: false, snap: false, gradient: false,
+      tool: app.tools[0] || null, zoom: 1, fg: app.mode === "free" ? (d.palette[0] || "#E0442B") : "#0A0A0A", mirror: false, snap: false, gradient: false,
       bonus: A.bonusFor(appId, slot(), S().unlocks), pen: [], blockSel: -1, pre: null, status: "",
     };
     const title = app.label.toUpperCase() + " — " + (job ? job.brief.project : "SCRATCH");
@@ -336,7 +351,7 @@ const Suite = (() => {
   function mountCanvas(ed) {
     const { app } = ed;
     const pixel = app.mode === "pixel";
-    const tools = app.tools.concat(ed.bonus.includes("pen") ? ["pen"] : []);
+    const tools = app.tools.slice();
     ed.w.client.innerHTML =
       '<div class="su' + (pixel ? " su--pixel" : "") + '">' +
         '<div class="su__bar">' +
@@ -358,7 +373,7 @@ const Suite = (() => {
         '<div class="su__body">' +
           '<div class="su__tools">' +
             tools.map((t) => '<button class="su__tool" data-tool="' + t + '" title="' + esc(A.TOOLS[t].label + " (" + A.TOOLS[t].key.toUpperCase() + ")") + '">' + iconSVG("t-" + t, 20) + "</button>").join("") +
-            (pixel ? '<input type="color" class="su__fg" data-s="fg" title="Colour">' : "") +
+            '<input type="color" class="su__fg" data-s="fg" title="Current colour — new shapes, the pen and the shape builder use it">' +
             ed.bonus.filter((b) => ["snap", "mirror", "gradient"].includes(b)).map((b) =>
               '<label class="su__bonus" title="' + esc(A.BONUS[b]) + '"><input type="checkbox" data-bonus="' + b + '">' + b.toUpperCase() + "</label>").join("") +
           "</div>" +
@@ -399,8 +414,13 @@ const Suite = (() => {
     wireTray(root, ed.job, (c) => dropCard(ed, c, null));
     wirePointer(ed);
 
-    ed.stage.addEventListener("dragover", (e) => { if (e.dataTransfer.types.includes("text/x-pxcard")) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; } });
+    ed.stage.addEventListener("dragover", (e) => {
+      const t = e.dataTransfer.types;
+      if (t.includes("text/x-pxcard") || t.includes("text/x-pxpin")) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; }
+    });
     ed.stage.addEventListener("drop", (e) => {
+      const pin = e.dataTransfer.getData("text/x-pxpin");
+      if (pin) { e.preventDefault(); dropPin(ed, pin, docPoint(ed, e)); return; }
       const id = e.dataTransfer.getData("text/x-pxcard");
       if (!id) return;
       e.preventDefault();
@@ -408,19 +428,49 @@ const Suite = (() => {
     });
 
     // Fit once the window has laid out.
-    requestAnimationFrame(() => { fit(ed); ed.render(); ed.paintTray(); setStatus(ed, statusHint(ed)); });
+    requestAnimationFrame(() => { fit(ed); ed.render(); ed.paintTray(); syncFg(ed); setStatus(ed, statusHint(ed)); });
     if (typeof ResizeObserver !== "undefined") {
       let last = 0;
       new ResizeObserver(() => { const n = ed.stage.clientWidth + ed.stage.clientHeight; if (Math.abs(n - last) > 40 && last) ed.draw(); last = n; }).observe(ed.stage);
     }
   }
 
+  // An official pin dropped on the canvas marks where you drew that character:
+  // a labelled box, sized to the pose's proportions, and nothing else.
+  function dropPin(ed, pinId, at) {
+    const pin = typeof RefBoard !== "undefined" ? RefBoard.get(pinId) : null;
+    if (!pin) return;
+    if (ed.app.mode !== "free") { setStatus(ed, "Subjects are marked on a Banner or Type canvas."); return; }
+    if (!pin.char || typeof Characters === "undefined" || !Characters.has(pin.char, pin.pose)) {
+      setStatus(ed, "That pin is just for looking at. Only official art marks who you drew.");
+      return;
+    }
+    const ref = Characters.reference(pin.char, pin.pose);
+    const h = Math.round(Math.min(ed.doc.h * 0.92, 260)), w = Math.max(8, Math.round(h * ref.w / ref.h));
+    const first = Characters.CAST[pin.char].name.split(" ")[0];
+    mutate(ed, () => {
+      const l = D.add(ed.doc, D.layer("subject", {
+        name: "Subject: " + first + " (" + pin.pose + ")", label: first + " — " + pin.pose,
+        ref: { id: pin.char, pose: pin.pose },
+        x: Math.round(at.x - w / 2), y: Math.round(Math.max(0, Math.min(ed.doc.h - h, at.y - h / 2))), w, h,
+      }));
+      if (l) ed.sel = l.id;
+    });
+    ed.render();
+    setStatus(ed, "Marked where you're drawing " + first + ". Draw him inside the box, by eye. The box is never exported.");
+  }
+
   function deliverButton(ed) {
     return slot() === "hustle" && ed.job ? '<button class="w98btn su__deliver" data-s="deliver">Deliver…</button>' : "";
   }
 
-  function deliver(ed) {
+  function deliver(ed, confirmed) {
     flushAutosave(ed);
+    const warnings = !confirmed && Hustle.preflight ? Hustle.preflight(ed.job.id, ed.doc) : [];
+    if (warnings.length) {
+      confirmBox("Before you send it", warnings.join(" "), "Deliver anyway", () => deliver(ed, true));
+      return;
+    }
     const res = Hustle.deliver(ed.job.id, JSON.parse(JSON.stringify(ed.doc)), ed.appId);
     if (res && !res.ok) setStatus(ed, res.reason);
   }
@@ -461,7 +511,7 @@ const Suite = (() => {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, cv.width, cv.height);
     ctx.imageSmoothingEnabled = doc.mode !== "pixel";
-    R.draw(ctx, doc, { scale: ed.zoom * dpr });
+    R.draw(ctx, doc, { scale: ed.zoom * dpr, editor: true, zoom: ed.zoom });
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (doc.mode === "pixel") {
@@ -493,6 +543,12 @@ const Suite = (() => {
       ctx.beginPath(); ctx.moveTo(l.w * z / 2, 0); ctx.lineTo(l.w * z / 2, -16); ctx.stroke();
       ctx.beginPath(); ctx.arc(l.w * z / 2, -18, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       ctx.restore();
+    }
+    if (ed.buildPath && ed.buildPath.length > 1) {
+      ctx.strokeStyle = "#FF5FA8"; ctx.lineWidth = 2; ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ed.buildPath.forEach((p, i) => (i ? ctx.lineTo(p.x * ed.zoom, p.y * ed.zoom) : ctx.moveTo(p.x * ed.zoom, p.y * ed.zoom)));
+      ctx.stroke(); ctx.setLineDash([]);
     }
     if (ed.pen.length) {
       ctx.strokeStyle = "#1084D0"; ctx.lineWidth = 1.5;
@@ -556,7 +612,7 @@ const Suite = (() => {
 
       if (ed.tool === "rect" || ed.tool === "ellipse") {
         const pre = JSON.stringify(doc);
-        const fill = ed.doc.palette[0] || (ed.tool === "rect" ? "#E0442B" : "#1084D0");
+        const fill = ed.fg || ed.doc.palette[0] || (ed.tool === "rect" ? "#E0442B" : "#1084D0");
         const l = D.add(doc, D.layer(ed.tool, { x: p.x, y: p.y, w: 1, h: 1, fill }));
         if (!l) return;
         ed.sel = l.id;
@@ -589,6 +645,14 @@ const Suite = (() => {
         return;
       }
 
+      if (ed.tool === "build") {
+        drag = { mode: "build", pre: JSON.stringify(doc), cut: e.altKey, crossed: [] };
+        ed.buildPath = [p];
+        crossAt(ed, drag, p);
+        ed.draw();
+        return;
+      }
+
       if (ed.tool === "pen") {
         const first = ed.pen[0];
         if (first && ed.pen.length > 2 && Math.hypot(first.x - p.x, first.y - p.y) < 8 / ed.zoom) { finishPen(ed); return; }
@@ -601,6 +665,15 @@ const Suite = (() => {
       if (!drag) return;
       const p = docPoint(ed, e);
       const doc = ed.doc;
+      if (drag.mode === "build") {
+        const last = ed.buildPath[ed.buildPath.length - 1];
+        // sample along the stroke so a fast drag cannot skip a thin shape
+        const steps = Math.max(1, Math.ceil(Math.hypot(p.x - last.x, p.y - last.y) / 2));
+        for (let i = 1; i <= steps; i++) crossAt(ed, drag, { x: last.x + (p.x - last.x) * i / steps, y: last.y + (p.y - last.y) * i / steps });
+        ed.buildPath.push(p);
+        ed.draw();
+        return;
+      }
       const grid = ed.snap ? 10 : 0;
 
       if (drag.mode === "paint") {
@@ -646,6 +719,11 @@ const Suite = (() => {
       if (!drag) return;
       const d = drag;
       drag = null;
+      if (d.mode === "build") {
+        ed.buildPath = null;
+        buildShapes(ed, d.crossed, d.cut);
+        return;
+      }
       if (d.mode === "create") {
         const l = ed.sel && D.find(ed.doc, ed.sel);
         if (l && l.w < 4 && l.h < 4) Object.assign(l, { w: 120, h: 80 });
@@ -663,6 +741,80 @@ const Suite = (() => {
     cv.addEventListener("dblclick", () => { if (ed.tool === "pen" && ed.pen.length > 2) finishPen(ed); });
   }
 
+  // The topmost shape under a point, for the shape builder's stroke.
+  function crossAt(ed, drag, p) {
+    for (let i = ed.doc.layers.length - 1; i >= 0; i--) {
+      const l = ed.doc.layers[i];
+      if (l.hidden || l.locked || !SHAPES.includes(l.type)) continue;
+      if (D.contains(l, p.x, p.y)) { if (!drag.crossed.includes(l.id)) drag.crossed.push(l.id); return; }
+    }
+  }
+
+  /* Merge: every shape the stroke crossed becomes one path. Cut (alt): the
+   * topmost crossed shape is punched out of the others. Both work on masks at
+   * twice the document's resolution, then trace back to vector paths that
+   * keep their holes. */
+  function buildShapes(ed, ids, cut) {
+    const doc = ed.doc;
+    const layers = ids.map((id) => D.find(doc, id)).filter(Boolean);
+    if (layers.length < 2) {
+      ed.draw();
+      setStatus(ed, cut ? "Alt-drag from a shape across the ones it should cut." : "Drag across two or more overlapping shapes to merge them.");
+      return;
+    }
+    const S = 2;
+    let bx = Infinity, by = Infinity, bx1 = -Infinity, by1 = -Infinity;
+    for (const l of layers) {
+      const a = (l.rot || 0) * Math.PI / 180, cx = l.x + l.w / 2, cy = l.y + l.h / 2;
+      for (const [dx, dy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+        const x = cx + (dx * l.w / 2) * Math.cos(a) - (dy * l.h / 2) * Math.sin(a);
+        const y = cy + (dx * l.w / 2) * Math.sin(a) + (dy * l.h / 2) * Math.cos(a);
+        bx = Math.min(bx, x); by = Math.min(by, y); bx1 = Math.max(bx1, x); by1 = Math.max(by1, y);
+      }
+    }
+    bx = Math.floor(bx) - 1; by = Math.floor(by) - 1;
+    const bw = Math.ceil(bx1) + 1 - bx, bh = Math.ceil(by1) + 1 - by;
+    const maskOf = (l) => R.layerMask(l, bw, bh, S, bx, by);
+    const toLayer = (mask, w, h, like, name) => {
+      const loops = Sh.contours(mask, w, h).map((l) => Sh.simplify(l, 0.6)).filter((l) => l.length >= 3);
+      if (!loops.length) return null;
+      const tp = Sh.toPath(loops, 64);
+      return D.layer("path", {
+        name, d: tp.d, box: 64, fillRule: "evenodd",
+        x: Math.round((bx + tp.bounds.x / S) * 100) / 100, y: Math.round((by + tp.bounds.y / S) * 100) / 100,
+        w: Math.max(1, tp.bounds.w / S), h: Math.max(1, tp.bounds.h / S),
+        fill: like.fill, stroke: like.stroke, strokeW: like.strokeW, opacity: like.opacity, card: like.card,
+      });
+    };
+    mutate(ed, () => {
+      if (!cut) {
+        const ms = layers.map(maskOf);
+        const merged = ms.slice(1).reduce((m, x) => Sh.union(m, x.mask), ms[0].mask);
+        const at = Math.min(...layers.map((l) => doc.layers.indexOf(l)));
+        const made = toLayer(merged, ms[0].w, ms[0].h, layers[0], "Merged shape");
+        if (!made) return;
+        doc.layers = doc.layers.filter((l) => !ids.includes(l.id));
+        doc.layers.splice(Math.min(at, doc.layers.length), 0, made);
+        ed.sel = made.id;
+      } else {
+        const top = layers.reduce((a, b) => (doc.layers.indexOf(b) > doc.layers.indexOf(a) ? b : a));
+        const knife = maskOf(top);
+        for (const l of layers) {
+          if (l === top) continue;
+          const m = maskOf(l);
+          const left = Sh.cut(m.mask, knife.mask);
+          const i = doc.layers.indexOf(l);
+          const made = Sh.count(left) ? toLayer(left, m.w, m.h, l, l.name) : null;
+          if (made) doc.layers.splice(i, 1, made); else doc.layers.splice(i, 1);
+        }
+        doc.layers = doc.layers.filter((l) => l !== top);
+        ed.sel = null;
+      }
+    });
+    ed.render();
+    setStatus(ed, cut ? "Cut." : "Merged " + layers.length + " shapes into one.");
+  }
+
   function finishPen(ed) {
     const pts = ed.pen;
     ed.pen = [];
@@ -672,7 +824,7 @@ const Suite = (() => {
     const bw = Math.max(1, Math.max(...xs) - x0), bh = Math.max(1, Math.max(...ys) - y0);
     const d = pts.map((p, i) => (i ? "L" : "M") + ((p.x - x0) / bw * 64).toFixed(1) + " " + ((p.y - y0) / bh * 64).toFixed(1)).join("") + "Z";
     mutate(ed, () => {
-      const l = D.add(ed.doc, D.layer("path", { d, box: 64, x: Math.round(x0), y: Math.round(y0), w: Math.round(bw), h: Math.round(bh), fill: ed.doc.palette[0] || "#14110E" }));
+      const l = D.add(ed.doc, D.layer("path", { d, box: 64, x: Math.round(x0), y: Math.round(y0), w: Math.round(bw), h: Math.round(bh), fill: ed.fg || ed.doc.palette[0] || "#14110E" }));
       if (l) ed.sel = l.id;
     });
     ed.tool = "select";
@@ -732,6 +884,7 @@ const Suite = (() => {
       else setStatus(ed, res.ok ? c.label + ": " + res.what : res.reason);
       return;
     }
+    if (c.kind === "colour") { ed.fg = c.value; syncFg(ed); }
     const target = at ? D.hitTest(ed.doc, at.x, at.y) : (ed.sel && D.find(ed.doc, ed.sel));
     const res = mutate(ed, () => (target
       ? C.applyToLayer(ed.doc, target.id, c, { stroke: shift })
@@ -758,7 +911,8 @@ const Suite = (() => {
     if (t.dataset.pal) {
       const c = t.dataset.pal;
       if (e.altKey) { mutate(ed, () => { ed.doc.palette = ed.doc.palette.filter((x) => x !== c); }); return; }
-      if (ed.app.mode === "pixel") { ed.fg = c; syncFg(ed); return; }
+      ed.fg = c; syncFg(ed);
+      if (ed.app.mode === "pixel") return;
       if (ed.sel) mutate(ed, () => D.update(ed.doc, ed.sel, e.shiftKey ? { stroke: c, strokeW: D.find(ed.doc, ed.sel).strokeW || 2 } : { fill: c }));
       return;
     }
@@ -876,6 +1030,12 @@ const Suite = (() => {
       el.querySelector('[data-p="docname"]').value = doc.meta.name;
       return;
     }
+    if (l.type === "subject") {
+      el.innerHTML = '<div class="su__row">' + n("x", l.x, "X") + n("y", l.y, "Y") + n("w", l.w, "W") + n("h", l.h, "H") + "</div>" +
+        '<p class="su__hint">Marks where you drew ' + esc(l.label) + ". The on-model check compares what you drew inside it with the model sheet. Never exported.</p>" +
+        '<div class="su__row su__acts"><button class="w98btn su__sm" data-act="del">Remove marker</button></div>';
+      return;
+    }
     const grad = l.fill && typeof l.fill === "object";
     let h = '<div class="su__row">' + n("x", l.x, "X") + n("y", l.y, "Y") + n("w", l.w, "W") + n("h", l.h, "H") + "</div>" +
       '<div class="su__row">' + n("rot", l.rot, "Rotate°") +
@@ -919,7 +1079,7 @@ const Suite = (() => {
     el.innerHTML = ed.doc.layers.length ? ed.doc.layers.slice().reverse().map((l) =>
       '<div class="su__ly' + (l.id === ed.sel ? " on" : "") + (l.hidden ? " off" : "") + '" data-layer="' + l.id + '">' +
         '<button class="su__eye" data-eye="' + l.id + '" title="Show / hide">' + (l.hidden ? "○" : "●") + "</button>" +
-        "<span>" + esc(l.type === "text" ? "“" + l.text.slice(0, 18) + "”" : l.name) + "</span>" +
+        "<span>" + esc(l.type === "text" ? "“" + l.text.slice(0, 18) + "”" : l.type === "subject" ? "◇ " + l.label : l.name) + "</span>" +
         (l.card ? '<em title="Made with a card">◆</em>' : "") + "</div>").join("")
       : '<p class="su__hint">No layers yet.</p>';
   }
@@ -1250,7 +1410,9 @@ const Suite = (() => {
     w.meta.load = load;
     w.meta.paintSources = () => {
       const sel = w.client.querySelector('[data-c="src"]');
-      const refs = (w.meta.job && w.meta.job.client && w.meta.job.client.refs) || [];
+      // Official art is for looking at, never for cutting up: it stays off this list.
+      const refs = ((w.meta.job && w.meta.job.client && w.meta.job.client.refs) || [])
+        .filter((r) => !(typeof Characters !== "undefined" && Characters.poseFor(r, 0)));
       const objs = S().cards.filter((c) => c.kind === "object");
       sel.innerHTML = '<option value="">Choose a picture…</option>' +
         (refs.length ? '<optgroup label="Client references">' + refs.map((r, i) => '<option value="ref:' + i + '">' + esc(r) + "</option>").join("") + "</optgroup>" : "") +
@@ -1263,7 +1425,7 @@ const Suite = (() => {
       if (t.name === "cutmode") ed.mode = t.value;
       if (t.dataset.c === "src" && t.value) {
         if (t.value.startsWith("ref:")) {
-          const ref = w.meta.job.client.refs[Number(t.value.slice(4))];
+          const ref = ((w.meta.job.client.refs) || []).filter((r) => !(typeof Characters !== "undefined" && Characters.poseFor(r, 0)))[Number(t.value.slice(4))];
           load(Imagery.make(ref, 1, 480, 360), ref, ["reference"]);
         } else {
           const c = cardById(t.value.slice(5));
@@ -1360,7 +1522,7 @@ const Suite = (() => {
       return;
     }
     if (!mod && !e.altKey) {
-      const tool = ed.app.tools.concat(ed.bonus.includes("pen") ? ["pen"] : []).find((t) => A.TOOLS[t].key === e.key.toLowerCase());
+      const tool = ed.app.tools.find((t) => A.TOOLS[t].key === e.key.toLowerCase());
       if (tool) { ed.tool = tool; ed.pen = []; ed.render({ panels: false }); }
     }
   }
