@@ -212,6 +212,12 @@ Object.assign(ICON_ART, {
     "......kkkkkk....","................","..pp..pp..pp....","...........pp...",
     "............pp..",".............p..","................","................"]},
 });
+// The taskbar's Arrange button: two windows side by side.
+ICON_ART.arrange = {p:{k:"#0A0A0A",b:"#000080",c:"#1084D0",w:"#FFFFFF",s:"#808080"},g:[
+  "................","kkkkkkk..kkkkkkk","kbbbbck..kbbbbck","kkkkkkk..kkkkkkk",
+  "kwwwwwks.kwwwwwk","kwwwwwks.kwwwwwk","kwwwwwks.kwwwwwk","kwwwwwks.kwwwwwk",
+  "kwwwwwks.kwwwwwk","kwwwwwks.kwwwwwk","kwwwwwks.kwwwwwk","kkkkkkks.kkkkkkk",
+  ".sssssss..ssssss","................","................","................"]};
 ICON_ART["t-pick"] = ICON_ART["t-eyedrop"];
 
 function clientIcon(dom, fallbackId){

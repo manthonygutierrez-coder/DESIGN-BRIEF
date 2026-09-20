@@ -131,6 +131,27 @@
 .su__page{min-height:100%;pointer-events:auto}
 .su__page .site{min-height:100%}
 .su__bedit .su__f{margin-bottom:6px}
+/* a label beside a control in a toolbar */
+.su__lab{display:flex;align-items:center;gap:5px}
+.su__lab span{font-size:7px;letter-spacing:.06em;color:#44444C}
+.su__libh{font-size:7px;letter-spacing:.12em;color:#44444C;padding:3px 2px 2px}
+/* the preview is where you pick a block: outline on hover, solid when chosen */
+.su__page [data-block]{cursor:pointer;outline-offset:3px}
+.su__page [data-block]:hover{outline:2px dashed rgba(16,132,208,.65)}
+.su__page [data-block].is-sel{outline:2px solid #1084D0}
+.su__page [data-block].is-drop{outline:3px solid #FF5FA8;background-color:rgba(255,95,168,.08)}
+.su__bname{margin:0 0 6px;font-size:9px;letter-spacing:.04em;color:var(--w-nav)}
+/* list items: one small card each, every field labelled */
+.su__items{display:flex;flex-direction:column;gap:4px}
+.su__itemsh{font-size:7px;color:#44444C;letter-spacing:.06em}
+.su__item{background:#fff;border:1px solid;border-color:var(--w-sh) var(--w-hi) var(--w-hi) var(--w-sh);padding:3px 4px 4px}
+.su__itemh{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.su__itemh b{font-size:8px;color:var(--w-nav)}
+.su__if{display:grid;grid-template-columns:52px minmax(0,1fr);align-items:center;gap:4px;margin-top:2px}
+.su__if span{font-size:7px;color:#44444C;letter-spacing:.04em}
+.su__if input{min-width:0;box-sizing:border-box;width:100%}
+.su__if input[type=color]{width:44px;height:20px;padding:0}
+.su__iadd{align-self:flex-start}
 
 /* ── swatch ──────────────────────────────────────────── */
 .su__sw6{display:flex;gap:4px;align-items:center}

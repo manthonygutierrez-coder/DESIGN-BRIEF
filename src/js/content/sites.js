@@ -315,10 +315,13 @@ const Sites = (() => {
     },
   };
 
+  // In the Layout app's preview (c.editMarks) every block's root carries its
+  // index, so a click or a dropped card can find the block it landed on.
   function renderBlocks(list, c){
-    return (list || []).map((b) => {
+    return (list || []).map((b, i) => {
       const fn = BLOCKS[b.t];
-      return fn ? fn(b, c) : "";
+      const html = fn ? fn(b, c) : "";
+      return c && c.editMarks && html ? html.replace(/^<([a-z0-9]+)/i, '<$1 data-block="' + i + '"') : html;
     }).join("");
   }
 

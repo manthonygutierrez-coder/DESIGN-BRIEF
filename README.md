@@ -57,7 +57,8 @@ Every step of a job is a small puzzle, and all of it happens on the desktop.
    cost of a pip; reputation buys more flips.
 
    Clipping is live during the call, so you can open their site mid-conversation and
-   read while they wait — a wrong clip burns sand. That reading is what unlocks the
+   read while they wait — **Their site** puts the browser beside the call, not over
+   it — and a wrong clip burns sand. That reading is what unlocks the
    **windows**: some replies contradict the client's own pages, and the question that
    catches it appears only during that glass, and only if you clipped the fact that
    proves it. Catch it and it is free and reveals a requirement nothing else will.
@@ -66,7 +67,9 @@ Every step of a job is a small puzzle, and all of it happens on the desktop.
    instead.
 3. **Research, against the clock.** Turn on clipping in the browser and click the
    passages that matter: facts on the client's site, trends on rival sites. A useless
-   clip costs five seconds. Cut objects and colours out of image-search pictures —
+   clip costs five seconds. What each clip was worth rises off the passage, and the
+   toolbar counts what the site holds for the gig (`Here: 2/7 clipped`), so you know
+   when a page is done. Cut objects and colours out of image-search pictures —
    cards inherit what the search was about. **Compare rivals** is a deduction grid:
    once you have clipped everything a rival does, the rest of its column fills in,
    and the row nobody does is the gap. Guessing early is allowed; a wrong guess costs.
@@ -125,8 +128,8 @@ gated by the brief's discipline; scratch work gets all of them.
 | Banner | Free canvas: shapes, text, images, eyedropper |
 | Type | Wordmarks and specimens |
 | Pixel | True-resolution sprites; zoom and export by whole numbers only |
-| Layout | A web page built from the same blocks client sites use, viewable in The Web |
-| Swatch | A six-colour palette with a WCAG contrast grid |
+| Layout | A web page built from the same blocks client sites use, viewable in The Web. Click a block in the page to edit it; drop a card on a block to write it in |
+| Swatch | A six-colour palette with a WCAG contrast grid, sent to the drawing nearest the front |
 | Cutout | Wand and lasso selections that become object and colour cards |
 
 **Cards** are anything scavenged — colours, cut-out objects, shapes, typefaces,
@@ -177,7 +180,9 @@ src/
     core.js        shared state and element refs
     world.js       discipline picker and scene preview
     icons.js       16×16 pixel icons, run-length grids → SVG
-    wm.js          generic Win98 window manager (drag, resize, min/max/close, cascade)
+    wmgeom.js      window geometry: open where it covers least, tile, cascade, snap
+    wm.js          generic Win98 window manager (drag, resize from any edge, snap to
+                   a half, min/max/close, Arrange menu on the taskbar)
     brief-doc.js   the brief document and its typewriter reveal
     shell.js       Start menu, taskbar, clock
     mail.js        the inbox and its state machine

@@ -304,6 +304,7 @@ const Hustle = (() => {
       if (Characters.has(cid, pose)) {
         RefBoard.pin({ src: Characters.art(cid, pose, { scale: 1 }), label: Characters.CAST[cid].name + " — " + pose, char: cid, pose });
         flash(fig, "hit");
+        floatNote(fig, "Pinned to your ref board", "pin");
         webStatus("Pinned " + Characters.CAST[cid].name + " (" + pose + ") to your reference board. Look, don't copy.");
         return;
       }
@@ -314,6 +315,7 @@ const Hustle = (() => {
       const name = (sw.querySelector(".sw__n") || {}).textContent || sw.dataset.hex;
       const n = Suite.addCards([{ kind: "colour", label: name.slice(0, 60), value: sw.dataset.hex, tags: ["colour-pick"], source: { url, ref: "pick:" + sw.dataset.hex } }]);
       flash(sw, n ? "hit" : "dupe");
+      floatNote(sw, n ? "+ Colour card" : "Already a card", n ? "hit" : "dupe");
       webStatus(n ? "Colour card: " + name + " " + sw.dataset.hex : "Already on a card: " + name);
       return;
     }
@@ -328,18 +330,22 @@ const Hustle = (() => {
       if (gs.stage === "briefing" && gs.dlg && !gs.dlg.ended) {
         gs.dlg.sand -= CLIP_MISS * 500;              // and they are still waiting
         flash(el, "miss");
+        floatNote(el, "Nothing useful — they're waiting", "miss");
         webStatus("Nothing useful there — and they're still on the line.");
       } else if (gs.research) {
         gs.research.left = Math.max(0, gs.research.left - CLIP_MISS);
         flash(el, "miss");
+        floatNote(el, "Nothing useful  −" + CLIP_MISS + "s", "miss");
         webStatus("Nothing useful there. −" + CLIP_MISS + "s");
       }
     } else if (hit.kind === "dupe") {
       flash(el, "dupe");
+      floatNote(el, "Already on a card", "dupe");
       webStatus("Already on a card: " + hit.item.label);
     } else {
       gs.found = Res.record(gs.found, hit);
       flash(el, "hit");
+      floatNote(el, "+ " + (hit.kind === "fact" ? "Fact" : "Trend") + " card: " + hit.item.label, "hit");
       if (hit.kind === "fact") {
         Suite.addCards([{ kind: "fact", label: hit.item.label, value: text.slice(0, 400), tags: hit.item.tags.concat(["fact"]), source: { url, ref: "fact:" + hit.item.id } }]);
         webStatus("Fact card: " + hit.item.label);
@@ -352,7 +358,8 @@ const Hustle = (() => {
     save();
     renderTicket(id);
     renderCompare(id);
-    if (gs.research.left <= 0) endResearch(id, "time");
+    Web.refreshTools();                              // the "found here" count
+    if (gs.research && gs.research.left <= 0) endResearch(id, "time");
   }
 
   function flash(el, kind) {
@@ -360,6 +367,33 @@ const Hustle = (() => {
     void el.offsetWidth;
     el.classList.add("hx-" + kind);
     setTimeout(() => el.classList.remove("hx-" + kind), 900);
+  }
+
+  // What a clip was worth, rising off the passage itself — where you are
+  // looking — instead of only in the status bar at the foot of the window.
+  function floatNote(el, text, kind) {
+    const win = el.closest(".w98");
+    if (!win) return;
+    const wr = win.getBoundingClientRect(), r = el.getBoundingClientRect();
+    const n = document.createElement("div");
+    n.className = "hx-float hx-float--" + kind;
+    n.textContent = text.length > 60 ? text.slice(0, 57) + "…" : text;
+    n.style.left = Math.round(Math.max(8, Math.min(r.left - wr.left + 10, wr.width - 240))) + "px";
+    n.style.top = Math.round(Math.max(34, Math.min(r.top - wr.top - 26, wr.height - 40))) + "px";
+    win.appendChild(n);
+    setTimeout(() => n.remove(), 1600);
+  }
+
+  // How much of what this site holds for the gig is already on cards. Every
+  // fact names the site it is on, so the count is exact.
+  function foundHere(id, host) {
+    if (!host) return null;
+    const gig = gigOf(id), found = gsOf(id).found || Res.emptyFound();
+    const facts = (gig.facts || []).filter((f) => String(f.where || "").toLowerCase() === host);
+    const trends = (gig.competitors || []).includes(host) ? Res.relevantTrends(gig, H.sites, host) : [];
+    const got = facts.filter((f) => found.facts.includes(f.id)).length +
+      trends.filter((t) => ((found.trends || {})[host] || []).includes(t.id)).length;
+    return { got, total: facts.length + trends.length };
   }
 
   function webStatus(text) {
@@ -574,6 +608,11 @@ const Hustle = (() => {
         parts.push('<span class="hx-tb__gig"><b>' + esc(gig.short) + '</b> <span class="hx-tb__t" data-hx-timer="' + rid + '">' + timerText(rid) + "</span></span>");
         parts.push('<button class="w98btn" data-hx="ticket" data-gig="' + rid + '">Ticket</button>');
         parts.push('<button class="w98btn" data-hx="compare" data-gig="' + rid + '">Compare rivals</button>');
+        const here = foundHere(rid, host);
+        if (here) {
+          parts.push('<span class="hx-tb__here' + (here.total && here.got === here.total ? " done" : "") + '" title="What this site holds for ' + esc(gig.short) + '">' +
+            (here.total ? "Here: " + here.got + "/" + here.total + " clipped" : "Nothing here for this gig") + "</span>");
+        }
       } else {
         const pid = activeGigs()[0];
         if (pid) parts.push('<span class="hx-tb__gig"><b>' + esc(gigOf(pid).short) + '</b> <span class="hx-tb__t" data-hx-timer="' + pid + '">' + timerText(pid) + '</span></span><button class="w98btn" data-hx="suite" data-gig="' + pid + '">Design Suite</button>');
@@ -888,6 +927,8 @@ const Hustle = (() => {
       const gig = gigOf(id);
       focusId = id; clipping = true;
       Web.visit("http://" + gig.poster.site + "/", siteForWeb(id, gig.poster.site));
+      // They are still on the line: the site opens beside the call, not over it.
+      pairWins(getWin(callKey(id)), getWin("browser"));
     }
   }
 

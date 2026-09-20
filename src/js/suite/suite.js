@@ -21,7 +21,6 @@ const Suite = (() => {
 
   let state = null;
   const editors = new Map();        // window key -> editor
-  let lastEditor = null;            // the Swatch app applies palettes here
 
   /* ── state ─────────────────────────────────────────────── */
   async function boot() {
@@ -264,12 +263,10 @@ const Suite = (() => {
     const title = app.label.toUpperCase() + " — " + (job ? job.brief.project : "SCRATCH");
     ed.w = createWindow({
       key, title, iconId: app.icon, w: app.mode === "layout" ? 980 : 940, h: 640, minW: 640, minH: 440,
-      className: "w98--suite", onClose: () => { flushAutosave(ed); editors.delete(key); if (lastEditor === ed) lastEditor = null; },
+      className: "w98--suite", onClose: () => { flushAutosave(ed); editors.delete(key); },
     });
     ed.w.client.classList.add("client--flush");
     editors.set(key, ed);
-    lastEditor = ed;
-    ed.w.el.addEventListener("pointerdown", () => { lastEditor = ed; }, true);
 
     if (app.mode === "layout") mountLayout(ed); else mountCanvas(ed);
     return ed.w;
@@ -1093,7 +1090,8 @@ const Suite = (() => {
   }
 
   /* ── layout editor ────────────────────────────────────── */
-  function layoutClient(ed) {
+  // editing: mark every block in the render, for the editor's own preview.
+  function layoutClient(ed, editing) {
     const doc = ed.doc, site = doc.site || D.site();
     const base = ed.job && ed.job.client;
     const slug = (doc.meta.name || "page").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "").slice(0, 30) || "page";
@@ -1103,26 +1101,33 @@ const Suite = (() => {
       theme: { brand: site.brand, link: site.brand, head: "'" + site.head + "', Georgia, serif" },
       site: { tagline: site.tagline, nav: [["Home", "/"]], pages: { "/": doc.blocks } },
       refs: base && base.refs && base.refs.length ? base.refs : ["fan art", "poster", "illustration"],
+      editMarks: !!editing,
     };
   }
 
+  /* The page is edited where you see it: click a block in the preview to edit
+   * it, drop a card on a block to write it in. Settings for the whole page sit
+   * together, labelled, in the PAGE panel. */
   function mountLayout(ed) {
     ed.w.client.innerHTML =
       '<div class="su su--layout">' +
         '<div class="su__bar">' +
-          '<input class="su__name" data-s="name" maxlength="80" title="Site name">' +
-          '<select class="su__sel" data-l="frame" title="Site frame">' + Sites.FRAME_NAMES.map((f) => "<option>" + f + "</option>").join("") + "</select>" +
-          '<input type="color" data-l="brand" title="Brand colour">' +
-          '<select class="su__sel" data-l="head" title="Headline typeface"></select>' +
+          '<label class="su__lab"><span>Site name</span><input class="su__name" data-s="name" maxlength="80"></label>' +
           '<span class="su__sep"></span><button class="w98btn" data-s="undo">Undo</button><button class="w98btn" data-s="redo">Redo</button>' +
           '<span class="ml__spacer"></span><button class="w98btn" data-s="save">Save</button><button class="w98btn" data-s="visit">View in The Web</button>' +
           deliverButton(ed) +
         "</div>" +
         '<div class="su__body">' +
-          '<div class="su__lib">' + Object.entries(A.BLOCKS).map(([k, b]) => '<button class="w98btn su__blk" data-add="' + k + '">+ ' + esc(b.label) + "</button>").join("") + "</div>" +
+          '<div class="su__lib"><div class="su__libh">ADD A BLOCK</div>' +
+            Object.entries(A.BLOCKS).map(([k, b]) => '<button class="w98btn su__blk" data-add="' + k + '">+ ' + esc(b.label) + "</button>").join("") + "</div>" +
           '<div class="su__stage su__stage--page"><div class="su__page"></div></div>' +
           '<div class="su__side">' +
-            '<div class="su__panel"><div class="su__ph">PAGE</div><div class="su__row"><label class="su__f su__f--wide"><span>Tagline</span><input data-l="tagline" maxlength="160"></label></div></div>' +
+            '<div class="su__panel"><div class="su__ph">PAGE</div><div class="su__row">' +
+              '<label class="su__f su__f--wide"><span>Tagline</span><input data-l="tagline" maxlength="160"></label>' +
+              '<label class="su__f"><span>Site style</span><select class="su__sel" data-l="frame">' + Sites.FRAME_NAMES.map((f) => "<option>" + f + "</option>").join("") + "</select></label>" +
+              '<label class="su__f su__f--inline"><span>Brand colour</span><input type="color" data-l="brand"></label>' +
+              '<label class="su__f su__f--wide"><span>Headline font</span><select class="su__sel" data-l="head"></select></label>' +
+            "</div></div>" +
             '<div class="su__panel"><div class="su__ph">BLOCKS</div><div class="su__blocks"></div></div>' +
             '<div class="su__panel su__panel--grow"><div class="su__ph">EDIT BLOCK</div><div class="su__bedit"></div></div>' +
           "</div>" +
@@ -1134,6 +1139,18 @@ const Suite = (() => {
     const root = ed.w.client;
     const page = root.querySelector(".su__page");
     ed.paintTray = () => paintTray(root, ed.app, ed.job);
+
+    const markSel = () => {
+      page.querySelectorAll("[data-block]").forEach((el) => el.classList.toggle("is-sel", Number(el.dataset.block) === ed.blockSel));
+    };
+    const paintPage = () => { page.innerHTML = Sites.renderSite(layoutClient(ed, true), "/"); markSel(); };
+    const selectBlock = (i, scroll) => {
+      ed.blockSel = i;
+      paintBlocks(); paintBlockEdit(); markSel();
+      const el = scroll && page.querySelector('[data-block="' + i + '"]');
+      if (el) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    };
+    const listOf = (b) => { const spec = b && A.BLOCKS[b.t]; return spec && spec.list ? spec.list : null; };
 
     const paintBar = () => {
       const site = ed.doc.site || (ed.doc.site = D.site());
@@ -1147,7 +1164,7 @@ const Suite = (() => {
     };
 
     ed.render = (opts = {}) => {
-      page.innerHTML = Sites.renderSite(layoutClient(ed), "/");
+      paintPage();
       if (opts.panels !== false) { paintBlocks(); paintBlockEdit(); paintBar(); }
       root.querySelector('[data-s="undo"]').disabled = !ed.hist.canUndo();
       root.querySelector('[data-s="redo"]').disabled = !ed.hist.canRedo();
@@ -1157,23 +1174,46 @@ const Suite = (() => {
       root.querySelector(".su__blocks").innerHTML = ed.doc.blocks.length ? ed.doc.blocks.map((b, i) =>
         '<div class="su__ly' + (i === ed.blockSel ? " on" : "") + '" data-bsel="' + i + '"><span>' + (i + 1) + ". " + esc((A.BLOCKS[b.t] || { label: b.t }).label) +
           (b.h ? " — " + esc(String(b.h).slice(0, 16)) : "") + "</span>" + (b.card ? "<em>◆</em>" : "") +
-          '<button class="w98btn su__sm" data-bmove="' + i + '" data-d="-1">↑</button><button class="w98btn su__sm" data-bmove="' + i + '" data-d="1">↓</button>' +
-          '<button class="w98btn su__sm" data-bdel="' + i + '">×</button></div>').join("")
-        : '<p class="su__hint">Add blocks from the left. The preview is the real site renderer.</p>';
+          '<button class="w98btn su__sm" data-bmove="' + i + '" data-d="-1" title="Move up">↑</button><button class="w98btn su__sm" data-bmove="' + i + '" data-d="1" title="Move down">↓</button>' +
+          '<button class="w98btn su__sm" data-bdel="' + i + '" title="Delete block">×</button></div>').join("")
+        : '<p class="su__hint">Empty page. Add a block from the list on the left.</p>';
     };
 
     const paintBlockEdit = () => {
       const el = root.querySelector(".su__bedit");
       const b = ed.doc.blocks[ed.blockSel];
       const spec = b && A.BLOCKS[b.t];
-      if (!spec) { el.innerHTML = '<p class="su__hint">Select a block to edit it, or drop a fact / trend / gap card on it.</p>'; return; }
-      let h = (spec.fields || []).map(([k, label]) => '<label class="su__f su__f--wide"><span>' + esc(label) + '</span><input data-bf="' + k + '"></label>').join("");
+      if (!spec) {
+        el.innerHTML = '<p class="su__hint">Click any block in the page to edit it here.</p>' +
+          '<p class="su__hint">Drag a fact, trend or gap card onto a block to write it in. A colour card sets the brand colour; a type card, the headline font.</p>';
+        return;
+      }
+      let h = '<p class="su__bname">' + (ed.blockSel + 1) + ". " + esc(spec.label) + "</p>" +
+        (spec.fields || []).map(([k, label]) => '<label class="su__f su__f--wide"><span>' + esc(label) + '</span><input data-bf="' + k + '"></label>').join("");
       if (spec.lines) h += '<label class="su__f su__f--wide"><span>' + esc(spec.lines[1]) + ' — one per line</span><textarea rows="4" data-bl="' + spec.lines[0] + '"></textarea></label>';
-      if (spec.list) h += '<label class="su__f su__f--wide"><span>Items — one per line: ' + spec.list[1].join(" | ") + '</span><textarea rows="5" data-bi="' + spec.list[0] + '"></textarea></label>';
+      const list = spec.list;
+      if (list) {
+        const [key, cols, labels] = list, items = b[key] || [];
+        // One small card per item, each field labelled — no separators to learn.
+        h += '<div class="su__items"><span class="su__itemsh">' + esc(labels.length > 1 ? "Items" : labels[0]) + " (" + items.length + ")</span>" +
+          items.map((it, r) => '<div class="su__item"><div class="su__itemh"><b>' + (r + 1) + "</b>" +
+            '<button class="w98btn su__sm" data-irm="' + r + '" title="Remove item ' + (r + 1) + '">×</button></div>' +
+            cols.map((c, ci) => '<label class="su__if"><span>' + esc(labels[ci]) + "</span>" +
+              (c === "c" && b.t === "swatches"
+                ? '<input type="color" data-li="' + r + '" data-lc="c" value="' + esc(/^#[0-9a-f]{6}$/i.test(it.c || "") ? it.c.toLowerCase() : "#cccccc") + '">'
+                : '<input data-li="' + r + '" data-lc="' + c + '" maxlength="300">') + "</label>").join("") + "</div>").join("") +
+          (items.length < A.MAX_ITEMS ? '<button class="w98btn su__sm su__iadd" data-iadd>+ Add item</button>' : "") +
+        "</div>";
+      }
       el.innerHTML = h;
       (spec.fields || []).forEach(([k]) => { el.querySelector('[data-bf="' + k + '"]').value = b[k] || ""; });
       if (spec.lines) el.querySelector("[data-bl]").value = (b[spec.lines[0]] || []).join("\n");
-      if (spec.list) el.querySelector("[data-bi]").value = A.listToText(b[spec.list[0]], spec.list[1]);
+      if (list) {
+        el.querySelectorAll("input[data-li]:not([type=color])").forEach((inp) => {
+          const it = (b[list[0]] || [])[Number(inp.dataset.li)] || {};
+          inp.value = it[inp.dataset.lc] == null ? "" : String(it[inp.dataset.lc]);
+        });
+      }
     };
 
     const readBlockField = (t) => {
@@ -1181,12 +1221,11 @@ const Suite = (() => {
       const spec = b && A.BLOCKS[b.t];
       if (!spec) return;
       if (t.dataset.bf) b[t.dataset.bf] = t.value.slice(0, 400);
-      if (t.dataset.bl) b[t.dataset.bl] = t.value.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 24).map((s) => s.slice(0, 400));
-      if (t.dataset.bi) {
-        let items = A.textToList(t.value, spec.list[1]);
-        // Swatch colours end up in a style attribute: hex only.
-        if (b.t === "swatches") items = items.map((it) => ({ ...it, c: /^#[0-9A-Fa-f]{6}$/.test(it.c) ? it.c : "#CCCCCC" }));
-        b[t.dataset.bi] = items;
+      if (t.dataset.bl) b[t.dataset.bl] = t.value.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, A.MAX_ITEMS).map((s) => s.slice(0, 400));
+      if (t.dataset.li !== undefined && spec.list) {
+        const it = (b[spec.list[0]] || [])[Number(t.dataset.li)];
+        // A swatch colour ends up in a style attribute: the picker only gives hex.
+        if (it) it[t.dataset.lc] = t.type === "color" ? t.value.toUpperCase() : t.value.slice(0, 300);
       }
     };
 
@@ -1194,8 +1233,8 @@ const Suite = (() => {
     root.addEventListener("input", (e) => {
       const t = e.target;
       if (t.dataset.s === "name") { ed.doc.meta.name = t.value.slice(0, 80) || "Untitled"; changed(ed, { panels: false }); return; }
-      if (t.dataset.l === "tagline") { ed.doc.site.tagline = t.value.slice(0, 160); page.innerHTML = Sites.renderSite(layoutClient(ed), "/"); return; }
-      if (t.closest(".su__bedit")) { readBlockField(t); page.innerHTML = Sites.renderSite(layoutClient(ed), "/"); }
+      if (t.dataset.l === "tagline") { ed.doc.site.tagline = t.value.slice(0, 160); paintPage(); return; }
+      if (t.closest(".su__bedit")) { readBlockField(t); paintPage(); }
     });
     root.addEventListener("change", (e) => {
       const t = e.target;
@@ -1210,16 +1249,39 @@ const Suite = (() => {
       }
     });
     root.addEventListener("click", (e) => {
-      if (e.target.closest(".su__page")) { e.preventDefault(); return; }   // the preview is not navigable
-      const t = e.target.closest("[data-add],[data-bsel],[data-bmove],[data-bdel],[data-s]");
+      // The preview is not navigable; a click in it picks the block it lands on.
+      if (e.target.closest(".su__page")) {
+        e.preventDefault();
+        const hit = e.target.closest("[data-block]");
+        if (hit) selectBlock(Number(hit.dataset.block));
+        return;
+      }
+      const t = e.target.closest("[data-add],[data-bsel],[data-bmove],[data-bdel],[data-iadd],[data-irm],[data-s]");
       if (!t) return;
       if (t.dataset.add) {
         mutate(ed, () => { const at = ed.blockSel >= 0 ? ed.blockSel + 1 : ed.doc.blocks.length; if (D.addBlock(ed.doc, A.BLOCKS[t.dataset.add].make(), at)) ed.blockSel = at; });
+        const added = page.querySelector('[data-block="' + ed.blockSel + '"]');
+        if (added) added.scrollIntoView({ block: "nearest", behavior: "smooth" });
         return;
       }
       if (t.dataset.bmove) { const i = Number(t.dataset.bmove), d = Number(t.dataset.d); mutate(ed, () => { if (D.moveBlock(ed.doc, i, d)) ed.blockSel = i + d; }); return; }
       if (t.dataset.bdel) { const i = Number(t.dataset.bdel); mutate(ed, () => { D.removeBlock(ed.doc, i); ed.blockSel = Math.min(ed.blockSel, ed.doc.blocks.length - 1); }); return; }
-      if (t.dataset.bsel) { ed.blockSel = Number(t.dataset.bsel); paintBlocks(); paintBlockEdit(); return; }
+      if (t.dataset.bsel) { selectBlock(Number(t.dataset.bsel), true); return; }
+      if (t.dataset.iadd !== undefined || t.dataset.irm !== undefined) {
+        const b = ed.doc.blocks[ed.blockSel], list = listOf(b);
+        if (!list) return;
+        mutate(ed, () => {
+          const items = b[list[0]] = b[list[0]] || [];
+          if (t.dataset.irm !== undefined) items.splice(Number(t.dataset.irm), 1);
+          else if (items.length < A.MAX_ITEMS) items.push(A.blankItem(list[1]));
+        });
+        if (t.dataset.iadd !== undefined) {
+          const rows = root.querySelectorAll(".su__bedit .su__item");
+          const first = rows.length && rows[rows.length - 1].querySelector("input");
+          if (first) first.focus();
+        }
+        return;
+      }
       if (t.dataset.s === "undo") undo(ed);
       if (t.dataset.s === "redo") undo(ed, true);
       if (t.dataset.s === "save") saveDoc(ed);
@@ -1228,19 +1290,32 @@ const Suite = (() => {
     });
     page.addEventListener("submit", (e) => e.preventDefault(), true);
 
+    // A card dropped on the page goes into the block it lands on.
     wireTray(root, ed.job, (c) => dropOnBlock(ed, c));
     const stage = root.querySelector(".su__stage");
-    stage.addEventListener("dragover", (e) => { if (e.dataTransfer.types.includes("text/x-pxcard")) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; } });
+    const blockAt = (e) => { const el = e.target.closest && e.target.closest("[data-block]"); return el ? Number(el.dataset.block) : -1; };
+    const clearDrop = () => page.querySelectorAll(".is-drop").forEach((el) => el.classList.remove("is-drop"));
+    stage.addEventListener("dragover", (e) => {
+      if (!e.dataTransfer.types.includes("text/x-pxcard")) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+      const i = blockAt(e);
+      page.querySelectorAll("[data-block]").forEach((el) => el.classList.toggle("is-drop", Number(el.dataset.block) === i));
+    });
+    stage.addEventListener("dragleave", (e) => { if (!stage.contains(e.relatedTarget)) clearDrop(); });
     stage.addEventListener("drop", (e) => {
       const id = e.dataTransfer.getData("text/x-pxcard");
+      clearDrop();
       if (!id) return;
       e.preventDefault();
+      const i = blockAt(e);
+      if (i >= 0) ed.blockSel = i;
       dropOnBlock(ed, cardById(id));
     });
 
     ed.render();
     ed.paintTray();
-    setStatus(ed, "Select a block, then drop a fact, trend or gap card to write it in. A colour card sets the brand colour.");
+    setStatus(ed, "Click a block in the page to edit it. Drag a card onto a block to write it in; a colour card sets the brand colour.");
   }
 
   function dropOnBlock(ed, c) {
@@ -1287,16 +1362,34 @@ const Suite = (() => {
     editors.set(key, ed);
     w.client.innerHTML =
       '<div class="su su--swatch"><div class="su__bar"><b class="su__lbl">PALETTE</b><span class="su__sw6"></span><span class="ml__spacer"></span>' +
-        '<input type="color" data-w="mix" title="Mix a colour"><button class="w98btn" data-w="addmix">Add mixed colour</button>' +
-        '<button class="w98btn" data-w="apply">Send to open document</button></div>' +
+        '<label class="su__lab"><span>Mix a colour</span><input type="color" data-w="mix"></label><button class="w98btn" data-w="addmix">Add it</button>' +
+        '<span class="su__sep"></span><button class="w98btn" data-w="apply"></button></div>' +
         '<div class="su__swbody"><div class="su__panel su__panel--grow"><div class="su__ph">CONTRAST</div><div class="su__grid"></div></div></div>' +
         trayHTML() + '<div class="su__status"></div></div>';
     ed.paintTray = () => paintTray(w.client, ed.app, w.meta.job);
+    // The palette goes to the drawing document nearest the front — named on
+    // the button, not "open document". Layout pages take a brand colour
+    // (drop a colour card on the page) rather than a palette.
+    const target = () => [...editors.values()]
+      .filter((e) => e.doc && e.app.mode !== "layout" && e.w && e.w.el.isConnected)
+      .sort((a, b) => (Number(b.w.el.style.zIndex) || 0) - (Number(a.w.el.style.zIndex) || 0))[0] || null;
+    const paintApply = () => {
+      const b = w.client.querySelector('[data-w="apply"]'), t = target();
+      const name = t ? t.doc.meta.name : "";
+      b.disabled = !t || !S().swatch.length;
+      b.textContent = t ? "Use in " + t.app.label + ": " + (name.length > 22 ? name.slice(0, 21) + "…" : name) : "Open a drawing to use it";
+      b.title = t ? "Replace the palette of " + t.app.label + " — " + name + " with these colours" : "Open a Banner, Type or Pixel document first";
+    };
+    w.el.addEventListener("pointerenter", paintApply);
+    w.el.addEventListener("pointerdown", paintApply, true);
     w.meta.paint = () => {
       const sw = S().swatch;
       w.client.querySelector(".su__sw6").innerHTML = sw.map((c) => '<button class="su__chip su__chip--lg" data-rm="' + c + '" style="background:' + c + '" title="' + c + ' — click to remove"></button>').join("") +
         (sw.length < 6 ? '<span class="su__slot">' + (6 - sw.length) + " free</span>" : "");
-      w.client.querySelector(".su__grid").innerHTML = sw.length < 2 ? '<p class="su__hint">Click colour cards below to build a palette of up to six. Every pair is checked for text contrast.</p>' :
+      paintApply();
+      w.client.querySelector(".su__grid").innerHTML = sw.length < 2
+        ? '<p class="su__hint">' + (sw.length ? "Add one more colour to see how the pair reads." : "Build a palette of up to six colours; every pair is checked for text contrast.") + "</p>" +
+          '<p class="su__hint">Colours come from research — with Clipping on, click a colour swatch on a site; pull colours out of a picture with Cutout; or mix one above. Then click a colour card in the tray below to add it here.</p>' :
         '<table class="su__ct"><tr><th></th>' + sw.map((c) => '<th><span class="su__chip" style="background:' + c + '"></span></th>').join("") + "</tr>" +
         sw.map((a) => '<tr><th><span class="su__chip" style="background:' + a + '"></span></th>' + sw.map((b) => {
           if (a === b) return "<td></td>";
@@ -1324,10 +1417,10 @@ const Suite = (() => {
         w.meta.paint();
       }
       if (t.dataset.w === "apply") {
-        const target = lastEditor && editors.has(lastEditor.key) ? lastEditor : null;
-        if (!target || !target.doc) { setStatus(ed, "Open a Banner, Type, Pixel or Layout document first."); return; }
-        mutate(target, () => { target.doc.palette = S().swatch.slice(); });
-        setStatus(ed, "Palette sent to " + target.doc.meta.name + ".");
+        const to = target();
+        if (!to) { setStatus(ed, "Open a Banner, Type or Pixel document first."); return; }
+        mutate(to, () => { to.doc.palette = S().swatch.slice(); });
+        setStatus(ed, "Palette sent to " + to.app.label + " — " + to.doc.meta.name + ". Its colours are in that editor's palette now.");
       }
     });
     w.meta.paint();

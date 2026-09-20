@@ -90,38 +90,34 @@ const SuiteApps = (() => {
 
   /* ── layout blocks ─────────────────────────────────────
    * Starting content for each block the Layout app offers, plus how to edit it:
-   * `fields` are single strings; `list` is an array edited one item per line,
-   * with columns separated by " | ".
+   * `fields` are single strings; `lines` is a list of strings, one per line;
+   * `list` is [key, columns, column labels], edited as one row per item.
    */
   const BLOCKS = {
     lede: { label: "Lede", make: () => ({ t: "lede", p: "One sentence that says what this is." }), fields: [["p", "Text"]] },
     prose: { label: "Prose", make: () => ({ t: "prose", h: "About", ps: ["A paragraph about who this is for."] }), fields: [["h", "Heading"]], lines: ["ps", "Paragraphs"] },
     notice: { label: "Notice", make: () => ({ t: "notice", h: "Heads up", p: "Something visitors need to know." }), fields: [["h", "Heading"], ["p", "Text"], ["stamp", "Stamp"]] },
-    stats: { label: "Stats", make: () => ({ t: "stats", h: "By the numbers", items: [{ n: "12", l: "chapters" }, { n: "3", l: "years" }] }), fields: [["h", "Heading"]], list: ["items", ["n", "l"]] },
-    steps: { label: "Steps", make: () => ({ t: "steps", h: "How it works", items: [{ h: "Read", p: "Start at chapter one." }, { h: "Join", p: "Say hello in the forum." }] }), fields: [["h", "Heading"]], list: ["items", ["h", "p"]] },
-    faq: { label: "FAQ", make: () => ({ t: "faq", h: "Questions", items: [{ q: "Is this official?", a: "No. Made by fans." }] }), fields: [["h", "Heading"]], list: ["items", ["q", "a"]] },
-    feed: { label: "Updates", make: () => ({ t: "feed", h: "Latest", items: [{ d: "Sep 12", h: "New fan art gallery", p: "" }] }), fields: [["h", "Heading"]], list: ["items", ["d", "h", "p"]] },
+    stats: { label: "Stats", make: () => ({ t: "stats", h: "By the numbers", items: [{ n: "12", l: "chapters" }, { n: "3", l: "years" }] }), fields: [["h", "Heading"]], list: ["items", ["n", "l"], ["Number", "Label"]] },
+    steps: { label: "Steps", make: () => ({ t: "steps", h: "How it works", items: [{ h: "Read", p: "Start at chapter one." }, { h: "Join", p: "Say hello in the forum." }] }), fields: [["h", "Heading"]], list: ["items", ["h", "p"], ["Step", "Detail"]] },
+    faq: { label: "FAQ", make: () => ({ t: "faq", h: "Questions", items: [{ q: "Is this official?", a: "No. Made by fans." }] }), fields: [["h", "Heading"]], list: ["items", ["q", "a"], ["Question", "Answer"]] },
+    feed: { label: "Updates", make: () => ({ t: "feed", h: "Latest", items: [{ d: "Sep 12", h: "New fan art gallery", p: "" }] }), fields: [["h", "Heading"]], list: ["items", ["d", "h", "p"], ["Date", "Headline", "Text"]] },
     gallery: { label: "Gallery", make: () => ({ t: "gallery", h: "Gallery", caps: ["First", "Second", "Third"] }), fields: [["h", "Heading"], ["q", "Picture search"]], lines: ["caps", "Captions"] },
     plate: { label: "Big picture", make: () => ({ t: "plate", q: "", cap: "" }), fields: [["q", "Picture search"], ["cap", "Caption"]] },
-    people: { label: "People", make: () => ({ t: "people", h: "Who runs this", items: [{ n: "A name", r: "What they do", p: "" }] }), fields: [["h", "Heading"]], list: ["items", ["n", "r", "p"]] },
-    swatches: { label: "Swatches", make: () => ({ t: "swatches", h: "Colours", items: [{ c: "#E0442B", n: "Red", m: "" }] }), fields: [["h", "Heading"]], list: ["items", ["c", "n", "m"]] },
+    people: { label: "People", make: () => ({ t: "people", h: "Who runs this", items: [{ n: "A name", r: "What they do", p: "" }] }), fields: [["h", "Heading"]], list: ["items", ["n", "r", "p"], ["Name", "Role", "Bio"]] },
+    swatches: { label: "Swatches", make: () => ({ t: "swatches", h: "Colours", items: [{ c: "#E0442B", n: "Red", m: "" }] }), fields: [["h", "Heading"]], list: ["items", ["c", "n", "m"], ["Colour", "Name", "Note"]] },
     contact: { label: "Contact", make: () => ({ t: "contact", h: "Contact", lines: ["Write any time."] }), fields: [["h", "Heading"]], lines: ["lines", "Lines"] },
   };
+  const MAX_ITEMS = 24;
 
-  // Text-area form of a list field, and back again.
-  function listToText(items, cols) {
-    return (items || []).map((it) => cols.map((c) => String(it[c] == null ? "" : it[c]).replace(/\|/g, "/")).join(" | ")).join("\n");
-  }
-  function textToList(text, cols) {
-    return String(text).split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 24).map((line) => {
-      const parts = line.split("|").map((p) => p.trim());
-      const o = {};
-      cols.forEach((c, i) => { o[c] = (parts[i] || "").slice(0, 300); });
-      return o;
-    });
+  // A blank row for a list block: every column empty, except a colour column,
+  // which starts on a colour the swatch will actually show.
+  function blankItem(cols) {
+    const o = {};
+    cols.forEach((c) => { o[c] = c === "c" ? "#CCCCCC" : ""; });
+    return o;
   }
 
-  return { APPS, TOOLS, BONUS, BLOCKS, forDiscipline, relevant, bonusFor, listToText, textToList };
+  return { APPS, TOOLS, BONUS, BLOCKS, MAX_ITEMS, forDiscipline, relevant, bonusFor, blankItem };
 })();
 
 if (typeof module !== "undefined") module.exports = SuiteApps;

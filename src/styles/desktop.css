@@ -98,6 +98,20 @@
 .grip{position:absolute;right:2px;bottom:2px;width:15px;height:15px;cursor:nwse-resize;touch-action:none;
   background:repeating-linear-gradient(135deg,transparent 0 2px,var(--w-sh) 2px 3px,var(--w-hi) 3px 4px,transparent 4px 6px)}
 .w98.max .grip{display:none}
+/* resize from any edge or corner: thin invisible strips just over the border */
+.rs{position:absolute;z-index:5;touch-action:none}
+.rs--n,.rs--s{left:10px;right:10px;height:7px;cursor:ns-resize}
+.rs--n{top:-4px}.rs--s{bottom:-4px}
+.rs--e,.rs--w{top:10px;bottom:10px;width:7px;cursor:ew-resize}
+.rs--e{right:-4px}.rs--w{left:-4px}
+.rs--ne,.rs--nw,.rs--se,.rs--sw{width:14px;height:14px}
+.rs--nw{left:-4px;top:-4px;cursor:nwse-resize}.rs--se{right:-4px;bottom:-4px;cursor:nwse-resize}
+.rs--ne{right:-4px;top:-4px;cursor:nesw-resize}.rs--sw{left:-4px;bottom:-4px;cursor:nesw-resize}
+.w98.max .rs{display:none}
+/* where a window dragged to an edge is about to snap */
+.snapghost{position:absolute;z-index:3;display:none;pointer-events:none;
+  background:rgba(16,132,208,.16);box-shadow:inset 0 0 0 3px rgba(255,255,255,.8),inset 0 0 0 4px rgba(0,0,0,.5)}
+.snapghost.on{display:block}
 
 /* brief document */
 .bk98{font-family:"Silkscreen",monospace;font-size:8px;letter-spacing:.14em;color:var(--w-nav);
@@ -127,6 +141,11 @@
 .start.on{border-color:var(--w-dk) var(--w-hi) var(--w-hi) var(--w-dk);
   box-shadow:inset 1px 1px 0 var(--w-sh);background:repeating-conic-gradient(var(--w-face) 0 25%,var(--w-lt) 0 50%) 0 0/3px 3px}
 .tdiv{flex:0 0 3px;border-left:1px solid var(--w-sh);border-right:1px solid var(--w-hi);margin:2px 1px}
+/* quick launch: flat until you point at it, like Win98's */
+.qlaunch{flex:0 0 30px;display:flex;align-items:center;justify-content:center;line-height:0;
+  border:2px solid transparent}
+.qlaunch:hover,.qlaunch:focus-visible{border-color:var(--w-hi) var(--w-dk) var(--w-dk) var(--w-hi);outline:none}
+.qlaunch.on,.qlaunch:active{border-color:var(--w-dk) var(--w-hi) var(--w-hi) var(--w-dk)}
 .tasks{flex:1;display:flex;gap:4px;min-width:0}
 .task{flex:0 1 160px;min-width:36px;display:flex;align-items:center;gap:6px;padding:0 8px;
   font-size:8.5px;letter-spacing:.03em;color:var(--w-txt);text-align:left;overflow:hidden;
@@ -156,6 +175,14 @@
 .si i{flex:0 0 20px;height:20px;line-height:0}
 .si:hover,.si:focus-visible{background:var(--w-nav);color:#fff;outline:none}
 .ssep{height:2px;margin:3px 5px;border-top:1px solid var(--w-sh);border-bottom:1px solid var(--w-hi)}
+/* the taskbar's menu: Cascade, Tile, Minimize All */
+.ctxm{position:absolute;left:40px;bottom:42px;z-index:7;min-width:230px;display:none;flex-direction:column;padding:3px;
+  background:var(--w-face);
+  border:2px solid;border-color:var(--w-hi) var(--w-dk) var(--w-dk) var(--w-hi);
+  box-shadow:inset 1px 1px 0 var(--w-lt),inset -1px -1px 0 var(--w-sh),4px 4px 12px rgba(0,0,0,.6)}
+.ctxm.on{display:flex}
+.ctxm .si{padding:7px 12px}
+.ctxm .si:disabled{color:var(--w-sh);text-shadow:1px 1px 0 var(--w-hi);background:none;cursor:default}
 
 /* ─── waterfall canvas ──────────────────────────────── */
 #fx{position:fixed;inset:0;width:100%;height:100%;z-index:60;pointer-events:none;opacity:0;
