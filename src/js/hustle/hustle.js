@@ -1030,7 +1030,7 @@ const Hustle = (() => {
     if (canvas && Por) {
       const site = siteClient(gig.poster.site) || {};
       Por.paintFeed(canvas, gig.poster.handle, who.look, {
-        theme: portraitTheme(site.theme), room: who.room, frame: who.frame,
+        theme: portraitTheme(site.theme), room: who.room, frame: who.frame, framing: who.framing,
         mood: Mtg.mood(st), blink: t < a.blinkUntil,
         mouthOpen: talking && a.phase % 2 === 0,
         bob: Math.floor(t / 900) % 3 === 0,

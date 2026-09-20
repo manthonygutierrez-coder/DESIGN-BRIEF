@@ -50,11 +50,13 @@ const HUSTLE = (() => {
       look: { skin: "#E0A87C", hair: "#3A2A1E", style: "long", specs: "none",
               extra: "none", build: "narrow", age: "young", facial: "none", band: "#FF7A1A" },
       // Too close to the camera, the way a teenager at a laptop is.
+      framing: "against",
       frame: { dy: 0.06, dh: 0.88 },
       room: [
         { p: "poster", x: 0.02, y: 0.06, w: 0.22, h: 0.48 },
         { p: "shelf",  x: 0.70, y: 0.12, w: 0.28, h: 0.26 },
         { p: "poster", x: 0.74, y: 0.48, w: 0.22, h: 0.34 },
+        { p: "mug",    x: 0.74, y: 0.76, w: 0.16, h: 0.20, z: 0.92 },
       ],
       bio: "Sixteen when the shrine went up, seventeen now, and it has been the best thing on her desktop ever since. Hand-codes every page in Notepad because that is how she learned and she is not stopping. Answers every email, usually within the hour, usually in lowercase.",
       lore: "Wears the orange sweatband because Toma does. Will tell you this unprompted.",
@@ -69,10 +71,13 @@ const HUSTLE = (() => {
       pause: 10000,
       look: { skin: "#C98B5F", hair: "#1B1512", style: "bun", specs: "square",
               extra: "none", build: "regular", age: "mid", facial: "none" },
+      // Back at the desk with the studio behind her, the lamp between.
+      framing: "receded",
       room: [
         { p: "monitor",   x: 0.03, y: 0.20, w: 0.20, h: 0.30 },
         { p: "corkboard", x: 0.70, y: 0.08, w: 0.28, h: 0.40 },
         { p: "plant",     x: 0.76, y: 0.56, w: 0.20, h: 0.32 },
+        { p: "lamp",      x: 0.02, y: 0.44, w: 0.20, h: 0.34, z: 0.7 },
       ],
       bio: "Four years in, funded out of her own savings and one contract that ended well. Writes the devlog on Fridays whether there is news or not. Says \u201cshe is not cute, she is competent\u201d about her shopkeeper and means it about the studio too.",
       lore: "Spent a week on thread physics nobody will notice. Does not regret it.",
@@ -89,11 +94,14 @@ const HUSTLE = (() => {
               extra: "collar", build: "regular", age: "mid", facial: "none" },
       // Standing back from it, over by the counter, half looking at the shop.
       frame: { dx: 0.34, dy: 0.15, dw: 0.44, dh: 0.82 },
+      framing: "receded",
       room: [
         { p: "shelf", x: 0.02, y: 0.10, w: 0.24, h: 0.34 },
         { p: "shelf", x: 0.02, y: 0.52, w: 0.24, h: 0.30 },
         { p: "door",  x: 0.76, y: 0.02, w: 0.24, h: 0.72 },
         { p: "clock", x: 0.62, y: 0.06, w: 0.10, h: 0.14 },
+        // One of hers, finished, on the counter between her and the lens.
+        { p: "mug",   x: 0.06, y: 0.68, w: 0.18, h: 0.26, z: 0.9 },
       ],
       bio: "Opened on Corder Street in 2019 with one wheel, a secondhand kiln and a card machine that is still slow. Fires on Mondays herself because nobody else is allowed near it. Takes the call from the shop floor, which you can hear.",
       lore: "Still thinks about the gradient on the last menu somebody made her.",

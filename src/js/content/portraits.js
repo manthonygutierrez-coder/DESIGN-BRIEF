@@ -205,6 +205,74 @@ const Portraits = (() => {
   /* ── rooms: what is behind them ──────────────────────── */
   /* Props take fractional coordinates so one room description works at any
    * size — a 320x240 call frame and a 116px About-page photograph. */
+  /* ── shapes, without soft edges ───────────────────────────
+   * The call is drawn at 80x60 and thrown up whole-number times, so a curve
+   * has to be made of pixels: a path fill would arrive antialiased and each
+   * of those in-between pixels would land as a 4x4 smudge. Everything here
+   * fills whole pixel rows instead, so round and leafy things stay as crisp
+   * as the rectangles they sit next to.
+   */
+  function rows(g, y0, y1, spansAt){
+    for (let y = Math.round(y0); y < Math.round(y1); y++){
+      const spans = spansAt(y + 0.5);
+      if (!spans) continue;
+      for (const [l, r] of spans){
+        const a = Math.round(l), b = Math.round(r);
+        if (b > a) g.fillRect(a, y, b - a, 1);
+      }
+    }
+  }
+  function ellipseFill(g, cx, cy, rx, ry){
+    rows(g, cy - ry, cy + ry, (y) => {
+      const t = (y - cy) / ry;
+      if (t <= -1 || t >= 1) return null;
+      const hw = rx * Math.sqrt(1 - t * t);
+      return [[cx - hw, cx + hw]];
+    });
+  }
+  // The band of an ellipse, `t` thick; `right` keeps the half away from the body.
+  function ringFill(g, cx, cy, rx, ry, t, right){
+    rows(g, cy - ry, cy + ry, (y) => {
+      const o = (y - cy) / ry;
+      if (o <= -1 || o >= 1) return null;
+      const out = rx * Math.sqrt(1 - o * o);
+      const iy = Math.max(0.001, ry - t), i = (y - cy) / iy;
+      const inn = Math.abs(i) < 1 ? Math.max(0, rx - t) * Math.sqrt(1 - i * i) : 0;
+      const spans = inn > 0 ? [[cx - out, cx - inn], [cx + inn, cx + out]] : [[cx - out, cx + out]];
+      return right ? spans.filter(([l]) => l >= cx - 0.01) : spans;
+    });
+  }
+  // One span per row, so convex shapes; enough for pots, shades and slabs.
+  function polyFill(g, pts){
+    let y0 = Infinity, y1 = -Infinity;
+    for (const p of pts){ if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1]; }
+    rows(g, y0, y1, (y) => {
+      let lo = Infinity, hi = -Infinity;
+      for (let i = 0; i < pts.length; i++){
+        const a = pts[i], b = pts[(i + 1) % pts.length];
+        if ((a[1] <= y) === (b[1] <= y)) continue;
+        const x = a[0] + ((y - a[1]) / (b[1] - a[1])) * (b[0] - a[0]);
+        if (x < lo) lo = x;
+        if (x > hi) hi = x;
+      }
+      return hi > lo ? [[lo, hi]] : null;
+    });
+  }
+  // A leaf: two curves from the stem to the tip, bellied out by `wid`.
+  function leaf(g, sx, sy, tx, ty, wid){
+    const mx = (sx + tx) / 2, my = (sy + ty) / 2;
+    const dx = tx - sx, dy = ty - sy, len = Math.hypot(dx, dy) || 1;
+    const nx = (-dy / len) * wid, ny = (dx / len) * wid;
+    const q = (p1, t) => [
+      (1 - t) * (1 - t) * sx + 2 * (1 - t) * t * p1[0] + t * t * tx,
+      (1 - t) * (1 - t) * sy + 2 * (1 - t) * t * p1[1] + t * t * ty,
+    ];
+    const pts = [];
+    for (let i = 0; i <= 8; i++) pts.push(q([mx + nx, my + ny], i / 8));
+    for (let i = 8; i >= 0; i--) pts.push(q([mx - nx, my - ny], i / 8));
+    polyFill(g, pts);
+  }
+
   const PROPS = {
     poster(g, x, y, w, h, th){
       g.fillStyle = shade(th.panel, th.dark ? 0.10 : -0.07); g.fillRect(x, y, w, h);
@@ -262,48 +330,170 @@ const Portraits = (() => {
       g.fillStyle = th.dim; g.fillRect(x + w * 0.74, y + h * 0.52, 1, 2);
     },
     plant(g, x, y, w, h, th){
-      g.fillStyle = mix(th.panel, "#3E6B34", 0.7);
-      g.fillRect(x + w * 0.2, y, w * 0.6, h * 0.62);
-      g.fillRect(x, y + h * 0.12, w * 0.4, h * 0.4);
-      g.fillRect(x + w * 0.58, y + h * 0.18, w * 0.42, h * 0.36);
-      g.fillStyle = shade(th.brand, -0.1); g.fillRect(x + w * 0.3, y + h * 0.62, w * 0.4, h * 0.38);
+      const leafy = mix(th.panel, "#3E6B34", 0.72), cx = x + w / 2, potY = y + h * 0.62;
+      g.fillStyle = leafy;
+      [[-0.9, 0.9], [0.85, 0.82], [-0.35, 1], [0.4, 0.95]].forEach(([dir, len]) =>
+        leaf(g, cx, potY, cx + dir * w * 0.5, potY - h * 0.58 * len, Math.max(1.2, w * 0.15)));
+      g.fillStyle = shade(th.brand, -0.1);
+      polyFill(g, [[x + w * 0.3, potY], [x + w * 0.7, potY], [x + w * 0.62, y + h], [x + w * 0.38, y + h]]);
     },
     clock(g, x, y, w, h, th){
       g.fillStyle = shade(th.ink, -0.05); g.fillRect(x, y, w, h);
       g.fillStyle = th.bg; g.fillRect(x + 1, y + 1, w - 2, h - 2);
       g.fillStyle = shade(th.ink, -0.05);
       g.fillRect(x + w / 2, y + h * 0.28, 1, h * 0.24); g.fillRect(x + w / 2, y + h / 2, w * 0.26, 1);
+    },
+    // Things that stand between the lens and the person. This close they read
+    // as shapes, so they are drawn as shapes: leaves, a rim, a curved handle.
+    plantbig(g, x, y, w, h, th){
+      const dark = mix(th.panel, "#23461F", 0.86), lit = mix(dark, "#7FBF5A", 0.22);
+      const potH = Math.max(3, h * 0.26), potY = y + h - potH, cx = x + w / 2;
+      [[-1, 0.86, 0], [0.92, 0.8, 1], [-0.52, 1.02, 1], [0.5, 0.96, 0], [0.08, 1.12, 1]]
+        .forEach(([dir, len, light]) => {
+          g.fillStyle = light ? lit : dark;
+          leaf(g, cx, potY + 1, cx + dir * w * 0.62, potY - (h - potH) * len, Math.max(1.4, w * 0.17));
+        });
+      const clay = mix(th.panel, "#8A4A2E", 0.62);
+      g.fillStyle = shade(clay, -0.12);
+      polyFill(g, [[x + w * 0.24, potY], [x + w * 0.76, potY], [x + w * 0.66, y + h], [x + w * 0.34, y + h]]);
+      g.fillStyle = shade(clay, -0.24);                        // the shaded side
+      polyFill(g, [[x + w * 0.6, potY], [x + w * 0.76, potY], [x + w * 0.66, y + h], [x + w * 0.56, y + h]]);
+      g.fillStyle = shade(clay, 0.06);                         // the rim catches the light
+      ellipseFill(g, cx, potY, w * 0.26, Math.max(1, potH * 0.24));
+      g.fillStyle = shade(clay, -0.3);
+      ellipseFill(g, cx, potY, w * 0.18, Math.max(1, potH * 0.16));
+    },
+    mug(g, x, y, w, h, th){
+      const bw = w * 0.72, cx = x + bw / 2, top = y + h * 0.2, bh = h - (top - y);
+      const ware = mix(th.panel, "#E8E4DA", 0.72);              // glazed, whatever the room
+      g.fillStyle = shade(ware, -0.14);
+      ringFill(g, x + bw * 0.94, top + bh * 0.52, w * 0.32, bh * 0.32, Math.max(1, w * 0.1), true);
+      g.fillStyle = ware;
+      polyFill(g, [[x, top], [x + bw, top], [x + bw * 0.86, y + h], [x + bw * 0.14, y + h]]);
+      g.fillStyle = shade(ware, -0.16);                        // the side away from the lamp
+      polyFill(g, [[x + bw * 0.64, top], [x + bw, top], [x + bw * 0.86, y + h], [x + bw * 0.68, y + h]]);
+      g.fillStyle = th.brand;
+      ellipseFill(g, cx, top, bw * 0.5, Math.max(1, h * 0.1));
+      g.fillStyle = shade(mix(th.ink, "#2A1C12", 0.5), -0.05); // what is in it
+      ellipseFill(g, cx, top + Math.max(1, h * 0.02), bw * 0.34, Math.max(1, h * 0.06));
+    },
+    lamp(g, x, y, w, h, th){
+      const cx = x + w * 0.5, shadeH = Math.max(3, h * 0.3);
+      g.fillStyle = shade(th.line, -0.3);
+      polyFill(g, [[cx - w * 0.06, y + shadeH], [cx + w * 0.06, y + shadeH],
+                   [cx + w * 0.1, y + h - h * 0.06], [cx - w * 0.1, y + h - h * 0.06]]);
+      g.fillStyle = shade(th.panel, -0.3);
+      ellipseFill(g, cx, y + h - h * 0.05, w * 0.34, Math.max(1, h * 0.05));
+      g.fillStyle = shade(th.panel, -0.24);
+      polyFill(g, [[x + w * 0.24, y], [x + w * 0.76, y], [x + w, y + shadeH], [x, y + shadeH]]);
+      g.fillStyle = th.dark ? "rgba(255,222,170,0.55)" : "rgba(255,240,200,0.7)";
+      ellipseFill(g, cx, y + shadeH, w * 0.46, Math.max(1, h * 0.05));
     }
   };
 
   const DEFAULT_ROOM = [
     { p: "poster", x: 0.04, y: 0.10, w: 0.24, h: 0.40 },
-    { p: "shelf",  x: 0.62, y: 0.16, w: 0.34, h: 0.26 }
+    { p: "shelf",  x: 0.62, y: 0.16, w: 0.34, h: 0.26 },
+    { p: "plantbig", x: -0.04, y: 0.42, w: 0.22, h: 0.62, z: 0.88 }
   ];
 
-  // Paints the room a person is calling from, in their own site's colours.
-  function paintRoom(g, W, H, theme, room, seed){
+  /* ── depth ────────────────────────────────────────────────
+   * A room is not a backdrop. Every prop has a distance, z: 0 is the back
+   * wall, 1 is the lens. Distance decides the three things it decides on any
+   * camera — size, colour and order:
+   *
+   *   size    props grow and spread out from the vanishing point as they come
+   *           forward, so the near ones run off the edges of the frame
+   *   colour  cool colours recede and warm ones advance, so far props are
+   *           cooled and dimmed and near ones warmed and darkened
+   *   order   anything nearer than the person is drawn over them
+   *
+   * Distances are in the data, so a room authored flat still reads the way it
+   * did: z defaults to where that kind of thing usually hangs, and the scale
+   * is measured from there.
+   */
+  const COOL = "#3D5A7A", WARM = "#C2601F", Z0 = 0.18;
+  const DEPTH = {
+    window: 0.02, door: 0.03, poster: 0.06, corkboard: 0.06, clock: 0.07, neon: 0.08,
+    shelf: 0.20, cabinet: 0.24, monitor: 0.30, plant: 0.34,
+    lamp: 0.66, plantbig: 0.86, mug: 0.90,
+  };
+  const zOf = (item) => (typeof item.z === "number" ? Math.max(0, Math.min(1, item.z))
+    : (DEPTH[item.p] == null ? 0.15 : DEPTH[item.p]));
+  const zoom = (z) => (0.70 + z * 1.25) / (0.70 + Z0 * 1.25);
+
+  // The same prop, seen from further off or closer to.
+  function gradeTheme(th, z){
+    const far = Math.max(0, 0.45 - z) / 0.45;
+    const near = Math.max(0, z - 0.5) / 0.5;
+    const grade = (hex) => {
+      let c = hex;
+      if (far) c = shade(mix(c, COOL, far * 0.5), -0.06 * far);
+      if (near) c = shade(mix(c, WARM, near * 0.45), -0.18 * near);
+      return c;
+    };
+    const out = { dark: th.dark };
+    for (const k of ["bg", "panel", "ink", "dim", "line", "brand", "brand2"]) if (th[k]) out[k] = grade(th[k]);
+    return out;
+  }
+
+  /* Where a prop lands once distance is taken into account. It grows about
+   * where it was put — from its base, the way a thing standing closer to the
+   * lens rises higher and hangs further below the frame — rather than about
+   * the vanishing point, which would fling anything near an edge out of shot
+   * and make a room impossible to compose. */
+  function project(item, z){
+    const k = zoom(z), w = item.w * k, h = item.h * k;
+    return { x: item.x + item.w / 2 - w / 2, y: item.y + item.h - h, w, h };
+  }
+
+  /* Paints the room a person is calling from, in their own site's colours.
+   * o.layer "fore" paints only what stands in front of them; the default
+   * paints the wall, the floor and everything behind. */
+  function paintRoom(g, W, H, theme, room, seed, o){
+    o = o || {};
+    const hz = typeof o.hz === "number" ? o.hz : 0.88, subject = typeof o.subject === "number" ? o.subject : 0.62;
     const th = theme, r = rngFrom(seedOf(String(seed) + "|room"));
-    const grad = g.createLinearGradient(0, 0, W, H);
-    grad.addColorStop(0, shade(th.panel, th.dark ? 0.05 : -0.04));
-    grad.addColorStop(1, th.bg);
-    g.fillStyle = grad; g.fillRect(0, 0, W, H);
+    const fore = o.layer === "fore";
+
+    if (!fore){
+      // wall, floor, and the line where they meet
+      const y0 = Math.max(1, Math.round(H * hz));
+      const grad = g.createLinearGradient(0, 0, W, y0);
+      grad.addColorStop(0, shade(th.panel, th.dark ? 0.05 : -0.04));
+      grad.addColorStop(1, th.bg);
+      g.fillStyle = grad; g.fillRect(0, 0, W, y0);
+      if (y0 < H){
+        const fl = g.createLinearGradient(0, y0, 0, H);
+        fl.addColorStop(0, shade(mix(th.bg, COOL, 0.26), -0.1));
+        fl.addColorStop(1, shade(mix(th.bg, COOL, 0.1), th.dark ? 0.04 : -0.16));
+        g.fillStyle = fl; g.fillRect(0, y0, W, H - y0);
+        g.fillStyle = shade(th.line || th.ink, th.dark ? 0.08 : -0.18);
+        g.fillRect(0, y0 - 1, W, 1);
+      }
+    }
 
     for (const item of (room && room.length ? room : DEFAULT_ROOM)){
+      const z = zOf(item);
+      if ((z > subject) !== fore) continue;
       const fn = PROPS[item.p];
       if (!fn) continue;
       // A prop can be tinted away from the site's brand: the theme it is handed
-      // is the site's, with one colour swapped, so no prop needs to know.
-      const pth = item.c ? Object.assign({}, th, { brand: item.c }) : th;
-      fn(g, Math.round(item.x * W), Math.round(item.y * H),
-            Math.max(2, Math.round(item.w * W)), Math.max(2, Math.round(item.h * H)), pth, r);
+      // is the site's, with one colour swapped and distance graded into all of
+      // them, so no prop needs to know about either.
+      const pr = project(item, z);
+      const pth = gradeTheme(item.c ? Object.assign({}, th, { brand: item.c }) : th, z);
+      fn(g, Math.round(pr.x * W), Math.round(pr.y * H),
+            Math.max(2, Math.round(pr.w * W)), Math.max(2, Math.round(pr.h * H)), pth, r);
     }
 
-    // the light they are sitting in
-    const bl = g.createRadialGradient(W * 0.22, H * 0.12, 1, W * 0.22, H * 0.12, H * 0.95);
-    bl.addColorStop(0, th.dark ? "rgba(255,222,170,0.22)" : "rgba(255,255,255,0.38)");
-    bl.addColorStop(1, "rgba(0,0,0,0)");
-    g.fillStyle = bl; g.fillRect(0, 0, W, H);
+    if (!fore){
+      // the light they are sitting in
+      const bl = g.createRadialGradient(W * 0.22, H * 0.12, 1, W * 0.22, H * 0.12, H * 0.95);
+      bl.addColorStop(0, th.dark ? "rgba(255,222,170,0.22)" : "rgba(255,255,255,0.38)");
+      bl.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = bl; g.fillRect(0, 0, W, H);
+    }
   }
 
   /* ── framing ─────────────────────────────────────────────
@@ -323,7 +513,32 @@ const Portraits = (() => {
   };
   const FEED = { w: 80, h: 60 };          // what the call is rendered at, before it is thrown up
 
+  /* ── the two shots ────────────────────────────────────────
+   * How a person sits in front of their own webcam. Either they are back in
+   * the room with it falling away behind them, or they are up against what is
+   * behind them and it fills the frame. Which one a person uses is in their
+   * data; the room editor sets it.
+   */
+  const FRAMINGS = {
+    receded: {
+      label: "Background receded",
+      hint: "Back in the room: floor in shot, the wall well behind them",
+      shot: { sx: 2, sy: 1, sw: 20, sh: 29, dx: 0.34, dy: 0.24, dw: 0.33, dh: 0.70 },
+      room: { hz: 0.62, subject: 0.50 },
+    },
+    against: {
+      label: "Against the background",
+      hint: "Up close: the wall right behind them, little floor in shot",
+      shot: { sx: 2, sy: 1, sw: 20, sh: 26, dx: 0.25, dy: 0.08, dw: 0.50, dh: 0.87 },
+      room: { hz: 0.88, subject: 0.62 },
+    },
+  };
+  const FRAMING_NAMES = Object.keys(FRAMINGS);
+  const framingOf = (name) => FRAMINGS[name] || FRAMINGS.against;
+
   const shotFor = (kind, over) => Object.assign({}, SHOTS[kind], over || {});
+  // The call's shot: the framing the person uses, with their own nudges on top.
+  const callShot = (o) => Object.assign({}, framingOf(o.framing).shot, o.frame || {});
   function place(g, img, f, W, H){
     g.drawImage(img, f.sx, f.sy, f.sw, f.sh,
       Math.round(f.dx * W), Math.round(f.dy * H), Math.round(f.dw * W), Math.round(f.dh * H));
@@ -366,12 +581,14 @@ const Portraits = (() => {
     o = o || {};
     const th = o.theme, W = FEED.w, H = FEED.h;
     const { c: small, g } = surface(W, H);
-    paintRoom(g, W, H, th, o.room, seed);
+    const fr = framingOf(o.framing).room;
+    paintRoom(g, W, H, th, o.room, seed, fr);
     const fig = figure(traits(seed, look), {
       garment: th.brand, line: th.brand2 || "#111",
       mood: o.mood, blink: o.blink, mouthOpen: o.mouthOpen, bob: o.bob, glance: o.glance
     });
-    place(g, fig, shotFor("call", o.frame), W, H);
+    place(g, fig, callShot(o), W, H);
+    paintRoom(g, W, H, th, o.room, seed, Object.assign({ layer: "fore" }, fr));
 
     const ctx = canvas.getContext("2d");
     ctx.imageSmoothingEnabled = false;
@@ -404,10 +621,12 @@ const Portraits = (() => {
     const { c, g } = surface(W, H);
     const r = rngFrom(seedOf(String(seed) + "|photo"));
 
-    paintRoom(g, W, H, th, o.room, seed);
+    const plate = { hz: 0.84, subject: 0.64 };
+    paintRoom(g, W, H, th, o.room, seed, plate);
     g.imageSmoothingEnabled = false;
     place(g, figure(t, { garment: o.garment || th.brand, line: th.brand2 || "#111", mood: o.mood }),
           shotFor("photo", o.frame), W, H);
+    paintRoom(g, W, H, th, o.room, seed, Object.assign({ layer: "fore" }, plate));
 
     g.globalAlpha = 0.06;                                     // film
     for (let i = 0; i < W * H / 9; i++){
@@ -440,7 +659,8 @@ const Portraits = (() => {
   }
 
   return { seedOf, rngFrom, shade, mix, traits, head, photo, paintFeed, paintRoom, palette,
-           GW, GH, SKIN, HAIR, STYLES, FACIAL, SPECS, EXTRAS, BUILDS, AGES, PROPS, SHOTS, FEED, DEFAULT_ROOM };
+           GW, GH, SKIN, HAIR, STYLES, FACIAL, SPECS, EXTRAS, BUILDS, AGES, PROPS, SHOTS, FEED, DEFAULT_ROOM,
+           FRAMINGS, FRAMING_NAMES, framingOf, DEPTH, zOf, project, gradeTheme };
 })();
 
 if (typeof module !== "undefined") module.exports = Portraits;

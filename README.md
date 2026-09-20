@@ -84,7 +84,14 @@ The rules are pure modules with tests: `hustle/dialogue.js`, `hustle/meeting.js`
 `content/portraits.js` hashes a handle into a person and renders them four ways —
 a contacts head, a live call frame in a room painted from their own site's colours,
 an About-page photograph, and a clipped card that carries their palette into the
-suite. Everything the game is made of — sites, gigs, conversations,
+suite. A room is not a backdrop: every prop carries a distance, and distance
+decides size, colour and order — things at the back are cooled and dimmed,
+things up by the lens are warmed and pass in front of the person, and the wall
+meets a floor. Each person sits in one of two shots, **background receded** or
+**against the background**, with their own nudges on top. The **Room Editor**
+sets all of it against the live feed: pick a prop by what it looks like, send it
+to the back wall or the foreground, drag the person in frame, and copy the block
+back into `hustle/content.js`. Everything the game is made of — sites, gigs, conversations,
 research answers, the crawler's index, ads — is data in `hustle/content.js`, and a
 content test checks that every research answer really appears on its page and that
 every gap can be proven.
