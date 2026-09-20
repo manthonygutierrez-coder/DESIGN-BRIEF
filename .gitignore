@@ -23,6 +23,8 @@ build-resources/existing*/
 *.log
 .env
 .env.*
+# harness screenshots and other one-off output from Claude sessions
+Claude outputs/
 
 # Affinity lock files (present while a document is open)
 *~lock~
