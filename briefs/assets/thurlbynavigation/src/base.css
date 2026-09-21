@@ -1,0 +1,18 @@
+/* Thurlby Navigation Trust — brand */
+:root{
+  --ground:#EFEAE0;
+  --panel:#E4DCCC;
+  --ink:#16191A;
+  --dim:#6E6A5E;
+  --line:#CFC6B4;
+  --brand:#1E4B3C;
+  --brand2:#C87E24;
+  --on-brand:#EFEAE0;
+  --sans:"Liberation Sans","DejaVu Sans",Arial,sans-serif;
+  --serif:"Bitstream Charter","Liberation Serif",Georgia,serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);
+     -webkit-font-smoothing:antialiased}
+.mark{display:block}
