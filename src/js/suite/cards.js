@@ -117,12 +117,12 @@ const SuiteCards = (() => {
     if (doc.mode !== "free") return { ok: false, reason: "this app cannot place " + c.kind + " cards" };
     if (c.kind === "object") {
       const w = Math.min(doc.w, 240), h = Math.min(doc.h, 240);
-      const l = DOC.add(doc, DOC.layer("image", { name: c.label, src: c.value, x: Math.round(at.x - w / 2), y: Math.round(at.y - h / 2), w, h, card: c.id }));
+      const l = DOC.add(doc, DOC.layer("image", { name: c.label, src: c.value, x: Math.round(at.x - w / 2), y: Math.round(at.y - h / 2), w, h, card: c.id, cards: { src: c.id } }));
       return l ? { ok: true, what: "placed image", layer: l } : { ok: false, reason: "too many layers" };
     }
     if (c.kind === "shape") {
       const s = Math.min(doc.w, doc.h, 120);
-      const l = DOC.add(doc, DOC.layer("path", { name: c.label, d: c.value, box: 64, x: Math.round(at.x - s / 2), y: Math.round(at.y - s / 2), w: s, h: s, fill: doc.palette[0] || "#0A0A0A", card: c.id }));
+      const l = DOC.add(doc, DOC.layer("path", { name: c.label, d: c.value, box: 64, x: Math.round(at.x - s / 2), y: Math.round(at.y - s / 2), w: s, h: s, fill: doc.palette[0] || "#0A0A0A", card: c.id, cards: { d: c.id } }));
       return l ? { ok: true, what: "placed shape", layer: l } : { ok: false, reason: "too many layers" };
     }
     if (c.kind === "type") return { ok: false, reason: "drop a type card on a text layer" };
@@ -136,22 +136,22 @@ const SuiteCards = (() => {
     if (INTENT.includes(c.kind)) return applyToCanvas(doc, c);
     if (c.kind === "colour") {
       const patch = opts.stroke ? { stroke: c.value, strokeW: l.strokeW || 2 } : { fill: c.value };
-      DOC.update(doc, l.id, { ...patch, card: c.id });
+      DOC.update(doc, l.id, { ...patch, card: c.id, cards: { ...l.cards, [opts.stroke ? "stroke" : "fill"]: c.id } });
       return { ok: true, what: opts.stroke ? "set stroke" : "set fill" };
     }
     if (c.kind === "type") {
       if (l.type !== "text") return { ok: false, reason: "type cards only apply to text" };
-      DOC.update(doc, l.id, { font: c.value, card: c.id });
+      DOC.update(doc, l.id, { font: c.value, card: c.id, cards: { ...l.cards, font: c.id } });
       return { ok: true, what: "set typeface" };
     }
     if (c.kind === "object") {
       if (l.type !== "image") return applyToCanvas(doc, c, { x: l.x + l.w / 2, y: l.y + l.h / 2 });
-      DOC.update(doc, l.id, { src: c.value, card: c.id });
+      DOC.update(doc, l.id, { src: c.value, card: c.id, cards: { ...l.cards, src: c.id } });
       return { ok: true, what: "replaced image" };
     }
     if (c.kind === "shape") {
       if (l.type !== "path") return applyToCanvas(doc, c, { x: l.x + l.w / 2, y: l.y + l.h / 2 });
-      DOC.update(doc, l.id, { d: c.value, card: c.id });
+      DOC.update(doc, l.id, { d: c.value, card: c.id, cards: { ...l.cards, d: c.id } });
       return { ok: true, what: "replaced shape" };
     }
     return { ok: false, reason: "nothing to do" };

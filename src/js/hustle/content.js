@@ -111,6 +111,71 @@ const HUSTLE = (() => {
         { n: "Sam", r: "Thursdays", p: "Runs Kiln Night. Teaches beginners without once making them feel like beginners." },
       ],
     },
+
+    improbable_dennis: {
+      name: "Dennis Kowalczyk", role: "Magician", co: "The Improbable Dennis", dom: "improbabledennis.com",
+      // Loves to talk, and will sit a long time in a silence waiting for you.
+      pause: 16000,
+      look: { skin: "#E8B896", hair: "#2B2320", style: "shortback", specs: "none", facial: "moustache",
+              extra: "collar", tint: "#141414", build: "regular", age: "older" },
+      // Leans into the webcam like it is a microphone.
+      framing: "against",
+      frame: { dy: 0.02, dh: 0.92 },
+      room: [
+        { p: "poster",  x: 0.03, y: 0.08, w: 0.22, h: 0.46 },
+        { p: "neon",    x: 0.70, y: 0.06, w: 0.26, h: 0.18 },
+        { p: "cabinet", x: 0.72, y: 0.30, w: 0.26, h: 0.50 },
+        { p: "mug",     x: 0.78, y: 0.74, w: 0.16, h: 0.22, z: 0.9 },
+      ],
+      bio: "Has performed as The Improbable Dennis since 1991: birthday parties, retirement communities, a steakhouse on Fridays and one cruise nobody mentions. His granddaughter says his poster looks like a screensaver. The Starlite Lanes lounge has offered him Fridays, and he wants to look like a man who belongs there.",
+      lore: "His assistant of nineteen years moved to Tampa in April. The position is open, and he will mention it.",
+      team: [
+        { n: "Denise", r: "Assistant, 2005–2024", p: "Moved to Tampa. Still sends a Christmas card with a dove on it." },
+        { n: "The doves", r: "Finale", p: "Four of them. They have names, and he will tell you the names." },
+      ],
+    },
+
+    weirdthings_alex: {
+      name: "Alex", role: "Editor, writer, stapler", co: "Weird Things", dom: "weirdthingszine.net",
+      // Types notes through the whole call; a silence makes them nervous.
+      pause: 8000,
+      look: { skin: "#8D5A3B", hair: "#1B1512", style: "beanie", specs: "round", facial: "none",
+              extra: "scarf", build: "narrow", age: "young" },
+      framing: "receded",
+      room: [
+        { p: "corkboard", x: 0.02, y: 0.06, w: 0.34, h: 0.46 },
+        { p: "poster",    x: 0.74, y: 0.08, w: 0.22, h: 0.30 },
+        { p: "shelf",     x: 0.70, y: 0.46, w: 0.28, h: 0.24 },
+        { p: "lamp",      x: 0.80, y: 0.52, w: 0.18, h: 0.30, z: 0.72 },
+      ],
+      bio: "Four issues in, printed on the library risograph and stapled at the kitchen table. Believes every witness until the evidence says otherwise, and the evidence rarely says otherwise. Types faster than anyone you have met.",
+      lore: "The corkboard behind them has red string on it. It is not a conspiracy board. It is a timeline.",
+      team: [
+        { n: "The Hollis Street library", r: "Printer", p: "Lends the risograph on Thursdays. The librarian has started asking about the duck." },
+      ],
+    },
+
+    baron214_dwayne: {
+      name: "Dwayne Tully", role: "Owner-operator", co: "Burger Baron #214", dom: "burgerbaron.com",
+      // Ten minutes before the fryers need him, and he means it.
+      pause: 7000,
+      look: { skin: "#C68E63", hair: "#3A2A1E", style: "cap", specs: "square", facial: "moustache",
+              extra: "collar", build: "broad", age: "mid" },
+      framing: "receded",
+      frame: { dx: 0.30, dy: 0.14, dw: 0.44, dh: 0.80 },
+      room: [
+        { p: "poster",  x: 0.02, y: 0.08, w: 0.20, h: 0.40 },
+        { p: "clock",   x: 0.30, y: 0.04, w: 0.10, h: 0.14 },
+        { p: "shelf",   x: 0.72, y: 0.10, w: 0.26, h: 0.28 },
+        { p: "monitor", x: 0.74, y: 0.44, w: 0.22, h: 0.26 },
+        { p: "mug",     x: 0.06, y: 0.70, w: 0.16, h: 0.24, z: 0.9 },
+      ],
+      bio: "Has run Burger Baron #214 on Route 9 since 1998, the year it won Regional Cleanest Grill. Opens at six and arrives at four-thirty. Loves the Baron, respects the Baron, and has emailed corporate eleven times about the burrito.",
+      lore: "Invented the Baron's Breakfast Burrito on a slow Tuesday. The regulars call it the Dwayne.",
+      team: [
+        { n: "Regional", r: "Brand standards", p: "Sends letters on the good paper. Has opinions about the crown." },
+      ],
+    },
   };
 
   /* ── sites ─────────────────────────────────────────────── */
@@ -493,6 +558,361 @@ const HUSTLE = (() => {
         { id: "gg-pastel", label: "Pastel everything", match: ["pastel paints"], tags: ["trend-pastel"] },
       ],
     },
+
+    /* A magician's site, untouched since about 2004. It is the brand he is
+     * leaving, and it knows things about him he forgets on the phone. */
+    "improbabledennis.com": {
+      who: "Dennis Kowalczyk", role: "Magician", co: "The Improbable Dennis", dom: "improbabledennis.com", frame: "neon",
+      theme: {
+        bg: "#2A1240", panel: "#3B1D57", ink: "#FFF4D6", dim: "#C9B3E0", line: "#57347A",
+        brand: "#E0B83A", brand2: "#6B2FA0", link: "#FFD86B", onBrand: "#2A1240",
+        head: "Papyrus, fantasy", body: "Georgia, serif", mark: "crest", markText: "ID",
+      },
+      site: {
+        tagline: "Magic for all occasions! Since 1991!",
+        strap: "you are visitor #000311 · best with your speakers on",
+        foot: "© The Improbable Dennis. Doves available for weddings (ask).",
+        nav: [["Home", "/"], ["Shows", "/shows"], ["About Dennis", "/about"], ["Questions", "/faq"]],
+        pages: {
+          "/": [
+            { t: "lede", p: "Welcome to the magical world of The Improbable Dennis! Performing since 1991 for birthdays, retirement communities and corporate events of every size." },
+            { t: "notice", h: "NEW! Friday nights", p: "Starting in October, The Improbable Dennis plays every Friday at the Starlite Lanes lounge. Grown-ups only, it's in the bar.", stamp: "FRIDAYS" },
+            { t: "stats", items: [{ n: "30+", l: "years of magic" }, { n: "4", l: "doves" }, { n: "1", l: "cruise" }] },
+          ],
+          "/shows": [
+            { t: "pricing", h: "Shows", tiers: [
+              { name: "Birthday Magic", price: "$150", feats: ["45 minutes", "Six balloon animals", "A magic colouring book"], note: "Ages 4 to 10" },
+              { name: "Evening Show", price: "$300", pick: "NEW", feats: ["75 minutes", "Cards, rings and the linking hoops", "The Vanishing Assistant*", "The dove finale"], note: "*assistant currently in Tampa" },
+              { name: "Corporate", price: "Call", feats: ["Dental conferences a speciality"] },
+            ] },
+          ],
+          "/about": [
+            { t: "prose", h: "About Dennis", ps: [
+              "Dennis Kowalczyk has performed as The Improbable Dennis ever since his mother named the act. His mother was right.",
+              "The purple and gold have been with him since the first cape. The cape is black velvet with gold trim, and it has outlived two sofas.",
+              "Kevin the rabbit retired to my sister's farm in 2019.",
+              "The doves do the finale now. There are four of them, and they have names.",
+            ] },
+            { t: "people", h: "The act", items: [
+              { n: "Dennis", r: "The Improbable", seed: "improbable_dennis", lead: true,
+                p: "Cards, rings, doves, and patter he has been polishing since before you were born." },
+              { n: "Denise", r: "Assistant, 2005–2024", seed: "improbable_dennis:denise",
+                look: { skin: "#F0C8A8", hair: "#C9A06A", style: "curls", specs: "none", facial: "none", extra: "earrings", age: "older", build: "narrow" },
+                p: "Nineteen years in the box. Moved to Tampa. Sends a card every Christmas." },
+            ] },
+          ],
+          "/faq": [
+            { t: "faq", h: "Questions people ask", items: [
+              { q: "Is the rabbit coming?", a: "Kevin retired in 2019. Please stop asking the doves about the rabbit." },
+              { q: "Do you do weddings?", a: "Yes. The doves are available for weddings. Ask about the doves." },
+              { q: "Why is the site purple?", a: "The purple has been with me since the first cape. My granddaughter says it looks like a screensaver. She is not wrong." },
+              { q: "Can I be your assistant?", a: "Maybe! Denise moved to Tampa. You would only have to get in the box twice a night." },
+            ] },
+          ],
+        },
+      },
+      refs: ["stage magician top hat", "white doves", "velvet stage curtain"],
+    },
+
+    "partypetemagic.com": {
+      who: "Party Pete", role: "", co: "Party Pete Magic", dom: "partypetemagic.com", frame: "saas",
+      theme: {
+        bg: "#FFFDF2", panel: "#FFF1B8", ink: "#23324A", dim: "#6A7690", line: "#F5DE85",
+        brand: "#FF4F7B", brand2: "#2BB5E8", link: "#E03A66", onBrand: "#FFFFFF",
+        head: "'Comic Sans MS', 'Chalkboard SE', cursive", body: "Helvetica, Arial, sans-serif", mark: "disc", markText: "PP",
+      },
+      site: {
+        tagline: "The magic comes to YOUR party!",
+        navCta: "Book Pete!",
+        hero: { h: "The magic comes to YOUR party!", p: "Over two thousand parties and not one sad kid.", cta: "Book Pete" },
+        nav: [["Home", "/"], ["Booking", "/book"]],
+        pages: {
+          "/": [
+            { t: "prose", h: "What you get", ps: [
+              "Balloon animals for every kid, even the shy ones.",
+              "Rainbow silks, rainbow cups, a rainbow wand. Every show comes in rainbow.",
+              "Wizzo, the cartoon wizard who lives in my hat, says hello to the birthday kid.",
+            ] },
+            { t: "stats", items: [{ n: "2,000+", l: "parties" }, { n: "Ages 3–10", l: "perfect for" }] },
+          ],
+          "/book": [
+            { t: "steps", h: "Booking is easy", items: [
+              { h: "Pick a date", p: "Weekends fill up fast!" },
+              { h: "Pick a theme", p: "Pirates, princesses or dinosaurs." },
+              { h: "Party!", p: "Pete brings the magic. You bring the cake." },
+            ] },
+          ],
+        },
+      },
+      refs: ["kids party magician", "balloon animals"],
+      trends: [
+        { id: "pp-balloons", label: "Balloon animals", match: ["balloon animals"], tags: ["trend-balloons"] },
+        { id: "pp-rainbow", label: "Rainbow everything", match: ["rainbow"], tags: ["trend-rainbow"] },
+        { id: "pp-mascot", label: "A cartoon mascot", match: ["cartoon wizard"], tags: ["trend-mascot"] },
+        { id: "pp-kids", label: "Kids' parties", match: ["ages 3"], tags: ["trend-kids"] },
+      ],
+    },
+
+    "marcuskane.live": {
+      who: "Marcus Kane", role: "", co: "Marcus Kane", dom: "marcuskane.live", frame: "studio",
+      theme: {
+        bg: "#0B0B0B", panel: "#161616", ink: "#F2F2F2", dim: "#8A8A8A", line: "#2A2A2A",
+        brand: "#FFFFFF", brand2: "#0B0B0B", link: "#FFFFFF", onBrand: "#0B0B0B",
+        head: "Helvetica, Arial, sans-serif", body: "Helvetica, Arial, sans-serif", mark: "slab", markText: "MK",
+      },
+      site: {
+        tagline: "Street magic. Mind reading. No top hats.",
+        nav: [["Home", "/"], ["Videos", "/videos"]],
+        pages: {
+          "/": [
+            { t: "lede", p: "No top hats. No rabbits. Just a deck of cards and whatever you are thinking right now." },
+            { t: "plate", q: "magician hands playing cards", cap: "Close-up. Always close-up." },
+            { t: "prose", h: "The look", ps: ["Everything is shot in black and white, because colour is a distraction."] },
+          ],
+          "/videos": [
+            { t: "feed", h: "Latest", items: [
+              { d: "Sep 18", h: "I read a stranger's PIN on the 14 bus", p: "Filmed in one take. 2.1 million views." },
+              { d: "Sep 04", h: "The card was in his shoe the whole time", p: "Filmed in one take. 880,000 views." },
+            ] },
+          ],
+        },
+      },
+      refs: ["magician hands playing cards", "street magic"],
+      trends: [
+        { id: "mk-cards", label: "Close-up card magic", match: ["deck of cards"], tags: ["trend-cards"] },
+        { id: "mk-close", label: "Close-up photos, always", match: ["always close-up"], tags: ["trend-closeup"] },
+        { id: "mk-mono", label: "Black and white", match: ["black and white"], tags: ["trend-mono"] },
+        { id: "mk-video", label: "Street magic on video", match: ["filmed in one take"], tags: ["trend-video"] },
+      ],
+    },
+
+    /* A zine about small, local cryptids, printed on a library risograph. */
+    "weirdthingszine.net": {
+      who: "Alex", role: "Editor, writer, stapler", co: "Weird Things", dom: "weirdthingszine.net", frame: "press",
+      theme: {
+        bg: "#FFF6F2", panel: "#FFE3EE", ink: "#1F3A6B", dim: "#6C7BA0", line: "#F4B8D2",
+        brand: "#FF48B0", brand2: "#1F3A6B", link: "#D42F8E", onBrand: "#FFF6F2",
+        head: "'Courier New', monospace", body: "Georgia, serif", mark: "grid", markText: "WT",
+      },
+      site: {
+        tagline: "A zine about the cryptids nobody talks about",
+        foot: "printed on the library risograph · stapled by hand · believe the witnesses",
+        nav: [["Home", "/"], ["Issues", "/issues"], ["Field notes", "/field-notes"]],
+        pages: {
+          "/": [
+            { t: "lede", p: "Weird Things is a zine about the cryptids nobody talks about. Not Bigfoot. The small ones, the local ones, the one your uncle saw." },
+            { t: "notice", h: "Issue 4 is coming", p: "The Big Duck. Our biggest story yet, literally. The cover is in progress.", stamp: "SOON" },
+            { t: "prose", h: "How it's made", ps: [
+              "Every issue is printed on the risograph at the Hollis Street library in two inks, fluorescent pink and blue, on whatever paper they have.",
+              "Sixteen pages, folded and stapled at my kitchen table. Forty copies, then forty more if people ask.",
+            ] },
+            { t: "swatches", h: "The inks", note: "what the library has. there is no black", items: [
+              { c: "#FF48B0", n: "Fluorescent pink" }, { c: "#3255A4", n: "Blue" }, { c: "#FFF6F2", n: "The paper (it counts)" },
+            ] },
+          ],
+          "/issues": [
+            { t: "feed", h: "Back issues", items: [
+              { d: "Mar", h: "Issue 3: The Hollow Tree Lights", p: "Three lights, one tree, no explanation anyone liked." },
+              { d: "Nov", h: "Issue 2: Mrs. Albee's Cat, Who Is Too Long", p: "Measured twice. Still too long." },
+              { d: "Jun", h: "Issue 1: The Thing in the Culvert", p: "Sold out. The culvert has since been replaced." },
+            ] },
+          ],
+          "/field-notes": [
+            { t: "spec", h: "The Big Duck — field notes", rows: [
+              ["Seen at", "Carvel Reservoir, north shore"],
+              ["Size", "About the size of a canoe"],
+              ["Witnesses", "Three fishermen and a mail carrier"],
+              ["First seen", "April 14, just after dawn"],
+              ["Photographs", "One. Blurry."],
+            ] },
+            { t: "prose", h: "What they said", ps: [
+              "“It looked at me like I owed it money.” — Ray, fisherman",
+              "“Nineteen years I've delivered on that road. That was not a goose.” — the mail carrier",
+            ] },
+          ],
+        },
+      },
+      refs: ["mallard duck", "reservoir at dawn", "blurry lake photo"],
+    },
+
+    "itwasalog.net": {
+      who: "The Society", role: "", co: "It Was A Log", dom: "itwasalog.net", frame: "civic",
+      theme: {
+        bg: "#F4F6F4", panel: "#E3E9E3", ink: "#1D2A22", dim: "#5E6E63", line: "#C8D3CA",
+        brand: "#3B6B4A", brand2: "#1D2A22", link: "#2F5A3C", onBrand: "#F4F6F4",
+        head: "Georgia, 'Times New Roman', serif", body: "Georgia, 'Times New Roman', serif", mark: "slab", markText: "LOG",
+      },
+      site: {
+        tagline: "Sightings, explained",
+        nav: [["Home", "/"], ["Explained", "/explained"]],
+        pages: {
+          "/": [
+            { t: "lede", p: "It was a log. It is almost always a log." },
+            { t: "prose", h: "Our method", ps: [
+              "Every sighting gets a side-by-side comparison: the photograph, and the log, otter or plastic bag it turned out to be.",
+              "This year we have explained 212 sightings. Nobody has ever thanked us.",
+            ] },
+          ],
+          "/explained": [
+            { t: "table", h: "Recently explained", cols: ["Sighting", "What it was"], rows: [
+              ["The Culvert Thing", "A shopping trolley"],
+              ["The Hollow Tree Lights", "A bicycle reflector"],
+              ["The Big Duck", "Under review. Probably a canoe."],
+            ] },
+          ],
+        },
+      },
+      refs: ["log floating in a lake"],
+      trends: [
+        { id: "log-compare", label: "Side-by-side comparisons", match: ["side-by-side comparison"], tags: ["trend-compare"] },
+        { id: "log-count", label: "A running count of explanations", match: ["explained 212"], tags: ["trend-count"] },
+      ],
+    },
+
+    "squatchdepot.com": {
+      who: "Squatch Depot", role: "", co: "Squatch Depot", dom: "squatchdepot.com", frame: "shop",
+      theme: {
+        bg: "#F7F3E8", panel: "#E9E0C8", ink: "#2A2418", dim: "#76694E", line: "#D8CCAA",
+        brand: "#3E7A2E", brand2: "#8A4B1F", link: "#2F6322", onBrand: "#F7F3E8",
+        head: "Impact, 'Arial Black', sans-serif", body: "Helvetica, Arial, sans-serif", mark: "disc", markText: "SD",
+      },
+      site: {
+        tagline: "Gifts for the Squatch-curious",
+        cart: "Cart (0)",
+        nav: [["Shop", "/"]],
+        pages: {
+          "/": [
+            { t: "lede", p: "BELIEVE. Then buy the mug." },
+            { t: "products", h: "Top sellers", items: [
+              { name: "The BELIEVE mug", meta: "11oz, dishwasher safe", price: "$14", ref: "bigfoot mug" },
+              { name: "Squatch air freshener", meta: "Pine scent", price: "$4", ref: "pine air freshener" },
+              { name: "Cartoon Squatch tee", meta: "He's waving!", price: "$22", ref: "cartoon bigfoot shirt" },
+            ] },
+          ],
+        },
+      },
+      refs: ["bigfoot mug", "cartoon bigfoot shirt"],
+      trends: [
+        { id: "sq-believe", label: "BELIEVE, in big letters", match: ["believe"], tags: ["trend-believe"] },
+        { id: "sq-cartoon", label: "A cartoon cryptid", match: ["cartoon squatch"], tags: ["trend-cartoon"] },
+      ],
+    },
+
+    /* A franchise's corporate site. The client runs one store, and the brand
+     * is not his to change — only to work inside. */
+    "burgerbaron.com": {
+      who: "Burger Baron", role: "", co: "Burger Baron", dom: "burgerbaron.com", frame: "shop",
+      theme: {
+        bg: "#FFF8EC", panel: "#FFE9C2", ink: "#3A1A10", dim: "#8A5A40", line: "#F2D19A",
+        brand: "#C8102E", brand2: "#FFC72C", link: "#A50D25", onBrand: "#FFF8EC",
+        head: "'Arial Black', Impact, sans-serif", body: "Helvetica, Arial, sans-serif", mark: "crest", markText: "BB",
+      },
+      site: {
+        tagline: "Flame-crowned since 1971",
+        cart: "Order ahead",
+        foot: "© Burger Baron Holdings. Participating locations only. The Baron presides.",
+        nav: [["Home", "/"], ["Menu", "/menu"], ["Store #214", "/stores/214"], ["For franchisees", "/franchise"]],
+        pages: {
+          "/": [
+            { t: "lede", p: "Flame-crowned burgers, Crown Fries and the Royal Shake, at 1,140 locations across the region." },
+            { t: "notice", h: "Breakfast", p: "Breakfast is served at participating locations. Ask your Baron.", stamp: "6–10:30" },
+          ],
+          "/menu": [
+            { t: "products", h: "The menu", items: [
+              { name: "The Baron", meta: "Quarter pound, flame-crowned", price: "$3.49", ref: "cheeseburger" },
+              { name: "Crown Fries", meta: "Medium", price: "$1.29", ref: "french fries" },
+              { name: "Royal Shake", meta: "Vanilla, chocolate or crown berry", price: "$1.99", ref: "milkshake" },
+              { name: "Baron Biscuit", meta: "Egg and cheese, breakfast only", price: "$1.79", ref: "breakfast biscuit" },
+            ] },
+          ],
+          "/stores/214": [
+            { t: "spec", h: "Store #214", rows: [
+              ["Where", "Route 9, next to Tire Barn"],
+              ["Owner-operator", "Dwayne Tully, since 1998"],
+              ["Hours", "Opens at 6am, every day of the year"],
+              ["Awards", "1998 Regional Cleanest Grill"],
+            ] },
+            { t: "people", h: "Your Baron", items: [
+              { n: "Dwayne Tully", r: "Owner-operator", seed: "baron214_dwayne", lead: true,
+                p: "Arrives at four-thirty. Knows the regulars' orders. Has opinions about breakfast." },
+            ] },
+          ],
+          "/franchise": [
+            { t: "notice", h: "Brand standards", p: "For franchisees. All local marketing must be approved by Regional on form BB-7.", stamp: "BB-7" },
+            { t: "spec", h: "The rules", rows: [
+              ["Colours", "Baron Red and Crown Gold. Nothing else leads."],
+              ["The crown", "Never tilted, never cropped."],
+              ["The Baron", "The Baron never holds food. The Baron presides."],
+              ["Words", "Never use the word best. Legal has asked twice."],
+            ] },
+            { t: "swatches", h: "Brand colours", items: [
+              { c: "#C8102E", n: "Baron Red" }, { c: "#FFC72C", n: "Crown Gold" }, { c: "#3A1A10", n: "Grill Brown, text only" },
+            ] },
+          ],
+        },
+      },
+      refs: ["cheeseburger", "gold crown", "drive thru at dawn"],
+    },
+
+    "clucksworth.com": {
+      who: "Clucksworth", role: "", co: "Clucksworth Chicken", dom: "clucksworth.com", frame: "shop",
+      theme: {
+        bg: "#FFF9E8", panel: "#FCEBC0", ink: "#3A2412", dim: "#8A6A48", line: "#F0D9A0",
+        brand: "#E86A1C", brand2: "#5A2E12", link: "#C4541A", onBrand: "#FFF9E8",
+        head: "Georgia, 'Times New Roman', serif", body: "Helvetica, Arial, sans-serif", mark: "disc", markText: "CC",
+      },
+      site: {
+        tagline: "Say hi to Chester!",
+        cart: "Order",
+        nav: [["Home", "/"]],
+        pages: {
+          "/": [
+            { t: "lede", p: "Biscuits from 6am. Buckets all day." },
+            { t: "products", h: "Favourites", items: [
+              { name: "Sunrise Biscuit", meta: "Chicken and honey butter", price: "$1.99", ref: "chicken biscuit" },
+              { name: "Family Bucket", meta: "Twelve pieces, four sides", price: "$14.99", ref: "fried chicken bucket" },
+            ] },
+            { t: "prose", h: "Meet Chester", ps: ["Chester is our cartoon rooster. He is on every box, every cup and every bucket."] },
+          ],
+        },
+      },
+      refs: ["fried chicken bucket", "chicken biscuit"],
+      trends: [
+        { id: "cw-biscuit", label: "Breakfast biscuits", match: ["biscuits from 6am"], tags: ["trend-biscuit"] },
+        { id: "cw-mascot", label: "A cartoon mascot", match: ["cartoon rooster"], tags: ["trend-mascot"] },
+      ],
+    },
+
+    "earlybirddiner.net": {
+      who: "The Early Bird", role: "", co: "The Early Bird Diner", dom: "earlybirddiner.net", frame: "paper",
+      theme: {
+        bg: "#FBF7EE", panel: "#EDE6D4", ink: "#1E2E2E", dim: "#5E6E6A", line: "#D9D0B8",
+        brand: "#2E8C8C", brand2: "#1E2E2E", link: "#226E6E", onBrand: "#FBF7EE",
+        head: "Georgia, 'Times New Roman', serif", body: "Georgia, 'Times New Roman', serif", mark: "wave", markText: "EB",
+      },
+      site: {
+        tagline: "All-day breakfast since 1964",
+        nav: [["Home", "/"], ["Menu", "/menu"]],
+        pages: {
+          "/": [
+            { t: "lede", p: "Sit down. Stay a while. There is a booth with your name on it." },
+            { t: "prose", h: "The coffee", ps: ["Bottomless coffee with every plate, until you tell us to stop."] },
+          ],
+          "/menu": [
+            { t: "table", h: "Breakfast plates", cols: ["Plate", "Price"], rows: [
+              ["Two eggs any style", "$6.50"],
+              ["Short stack", "$5.75"],
+              ["The Early Bird (everything)", "$9.95"],
+            ] },
+          ],
+        },
+      },
+      refs: ["diner breakfast plate", "diner coffee"],
+      trends: [
+        { id: "eb-plates", label: "Sit-down plates", match: ["sit down"], tags: ["trend-plates"] },
+        { id: "eb-coffee", label: "Bottomless coffee", match: ["bottomless coffee"], tags: ["trend-coffee"] },
+      ],
+    },
   };
 
   /* ── gigs ──────────────────────────────────────────────── */
@@ -802,6 +1222,337 @@ const HUSTLE = (() => {
         1: ["I don't think we can use this."],
       },
     },
+
+    /* A rebrand in two parts. The old brand is still his website, and the
+     * website remembers things he gets wrong on the phone. */
+    "dennis-wordmark": {
+      kind: "listing", discipline: "type", app: "type",
+      title: "MAGICIAN seeks designer (and possibly an assistant)",
+      short: "MAGICIAN'S WORDMARK",
+      pay: "$75",
+      posted: "Sep 19", area: "Harrisburg / online",
+      minRep: 0,
+      poster: { handle: "improbable_dennis", name: "Dennis", site: "improbabledennis.com" },
+      listing: [
+        "The Improbable Dennis, performing since forever, has a new Friday residency and needs a new look.",
+        "My granddaughter says my logo looks like a screensaver. I need a wordmark that belongs in a lounge.",
+        "$75. Also, my assistant moved to Tampa. Ask me about it.",
+      ],
+      dialogue: {
+        patience: 6,
+        pause: 16000,
+        filler: ["...Hello? Is this thing on?", "I'm leaning in. Is that better?", "Sorry, I thought you froze. People freeze on me."],
+        opening: ["Hello! Hello. Can you see me? My granddaughter set this up.", "The Improbable Dennis. Thank you for answering the ad."],
+        options: {
+          name: { ask: "What's the act called, exactly?", reply: ["The Improbable Dennis. With the 'The'.", "My mother named it. Without the 'The' I sound like a weather forecast."], reveals: ["name"] },
+          why: { ask: "Why a new look now?", reply: ["The Starlite Lanes want me Fridays, in the lounge. Grown-ups, with drinks.", "I showed the bartender my poster and she laughed. Kindly. But she laughed."] },
+          colours: { ask: "Which colours are you keeping?", reply: ["The gold. The gold is the good part.", "Black and gold, like a proper lounge. The purple was for the birthday parties. No purple."], reveals: ["colours", "nopurple"] },
+          feel: { ask: "What should it feel like?", reply: ["Like the old Vegas signs. The ones with all the bulbs.", "A showman. Not a man who does balloon animals, even though I do balloon animals."], reveals: ["vegas"] },
+          where: { ask: "Where does the wordmark have to work?", reply: ["Wide, like a sign. My granddaughter says 'wordmark size'.", "And it gets embroidered on the new cape, so three colours at most, the lady said."], reveals: ["size", "thread"] },
+          history: { ask: "How long have you been performing?", reply: ["Since '94. No, '93? A long time.", "I have a cape older than you."] },
+          assistant: { ask: "Your ad mentioned an assistant?", reply: ["Denise! Nineteen years. She moved to Tampa in April.", "You'd only have to get in the box twice a night. No pressure. Some pressure."] },
+          pay: { ask: "Is there any room in the budget?", reply: ["For the wordmark, seventy-five.", "For the right assistant, we can talk."], cost: 2 },
+          done: { ask: "I have what I need. I'll send you something.", reply: ["Wonderful. Improbable, truly."], end: true, cost: 0 },
+        },
+        leave: ["Oh, the doves need feeding. They get opinions.", "Email me! I check it on Tuesdays."],
+        challenges: {
+          // He guesses at his own start date. His site says 1991, and being
+          // reminded makes him realise the years are the pitch.
+          since: {
+            after: "history", needsFact: "since1991",
+            ask: "Your site says 1991. Isn't it longer than you think?",
+            reply: ["...1991. You're right. I lose a few years whenever I'm nervous.", "Put it on there. Since 1991. Thirty-odd years is the whole pitch. The young fellows can't say that."],
+            reveals: ["heritage"],
+          },
+        },
+      },
+      needs: [
+        { id: "name", label: "The Improbable Dennis, with the ‘The’", missed: "It isn't The Improbable Dennis, ‘The’ and all", text: ["the", "improbable", "dennis"], weight: 3 },
+        { id: "colours", label: "Black and gold, like a proper lounge", missed: "It isn't black and gold", all: ["black", "yellow"], weight: 2 },
+        { id: "vegas", label: "An old Vegas showman, not a kids' party", missed: "Nothing of the old Vegas signs in it", tags: ["vegas"], weight: 2 },
+        { id: "heritage", label: "Since 1991: the years are the pitch", missed: "It doesn't say since 1991", text: ["1991"], weight: 1 },
+      ],
+      limits: [
+        { id: "size", rule: "size", w: 1200, h: 400, label: "Wordmark, 1200 × 400" },
+        { id: "thread", rule: "maxColours", value: 3, label: "Three colours or fewer, for the embroidery" },
+        { id: "nopurple", rule: "avoid", tags: ["purple"], label: "No purple: that was the birthday parties" },
+      ],
+      facts: [
+        { id: "since1991", where: "improbabledennis.com", label: "Performing since 1991", match: ["since 1991"], tags: ["history"] },
+        { id: "starlite", where: "improbabledennis.com", label: "Fridays at the Starlite Lanes lounge", match: ["starlite lanes"], tags: ["venue"] },
+        { id: "cape", where: "improbabledennis.com", label: "Black velvet cape, gold trim", match: ["black velvet", "gold trim"], tags: ["cape"] },
+        { id: "screensaver", where: "improbabledennis.com", label: "The purple looks like a screensaver", match: ["screensaver"], tags: ["dated"] },
+      ],
+      refs: [
+        { q: "vintage vegas sign", tags: ["vegas"] },
+        { q: "stage magician top hat", tags: ["magic"] },
+        { q: "gold embroidery thread", tags: ["thread"] },
+      ],
+      competitors: ["partypetemagic.com", "marcuskane.live"],
+      features: [
+        { id: "balloons", label: "Balloon animals", doneBy: { "partypetemagic.com": "pp-balloons" } },
+        { id: "rainbow", label: "Rainbow everything", doneBy: { "partypetemagic.com": "pp-rainbow" } },
+        { id: "mono", label: "Black and white", doneBy: { "marcuskane.live": "mk-mono" } },
+        { id: "video", label: "Street magic on video", doneBy: { "marcuskane.live": "mk-video" } },
+        { id: "evening", label: "A grown-up night out", gap: true },
+      ],
+      gap: { tag: "gap-evening", label: "a grown-up night out, with old-school showmanship", line: "One sells kids' parties and the other sells videos. Nobody is selling an evening out." },
+      research: { seconds: 240 },
+      deadline: 900,
+      output: { label: "Your Improbable Dennis wordmark", tags: ["dennis-wordmark"] },
+      wrap: {
+        5: ["Improbable! That's me. That's the me I meant.", "It goes to the embroidery lady tomorrow. And the offer about the box stands."],
+        4: ["Oh, that's handsome. That's a lounge act.", "The bartender won't laugh at this one."],
+        3: ["It's good! Not quite what I pictured, but good."],
+        2: ["Hm. My granddaughter might like it."],
+        1: ["I don't think this is The Improbable Dennis."],
+      },
+    },
+
+    "dennis-poster": {
+      kind: "chain", discipline: "graphic", app: "banner",
+      after: { gig: "dennis-wordmark", minStars: 3 },
+      title: "a poster for Fridays at the Starlite",
+      short: "MAGICIAN'S LOUNGE POSTER",
+      pay: "$120",
+      poster: { handle: "improbable_dennis", name: "Dennis", site: "improbabledennis.com" },
+      invite: ["It's Dennis! The embroidery lady cried. Good crying.", "The Starlite wants a poster for the lounge door and the board by the shoe counter.", "Same as before, a bit more money. Can you do it?"],
+      dialogue: {
+        patience: 6,
+        pause: 16000,
+        filler: ["...Hello? You've gone very still.", "I'm leaning in again. Sorry.", "Take your time. I'll hum."],
+        opening: ["You again! Wonderful. I've been telling everyone about you.", "So. Fridays. The poster."],
+        options: {
+          mark: { ask: "Should the new wordmark lead it?", reply: ["Of course! That's the whole point.", "Big, at the top. People should know it's me before they know it's magic."], reveals: ["mark"] },
+          when: { ask: "When is the show?", reply: ["Every Friday at nine, in the lounge.", "Put Fridays on it. People forget the day."], reveals: ["when"] },
+          where: { ask: "What's the venue called, exactly?", reply: ["The Starlite Lanes. Starlite with an I-T-E.", "They're particular about that."], reveals: ["where"] },
+          picture: { ask: "What should be in the picture?", reply: ["Kevin! The rabbit. Everyone knows me from the rabbit.", "Thirty years that rabbit's been on my cards."] },
+          rules: { ask: "Does the venue have rules for it?", reply: ["Sharon runs the lounge. She says it has to say 21 and over, because it's in the bar.", "Poster size, the normal one. And nothing tiny, it's dark in there."], reveals: ["adults", "size", "text"] },
+          colours: { ask: "The same colours as the wordmark?", reply: ["Black and gold. Still no purple. I'm a new man."], reveals: ["nopurple"] },
+          done: { ask: "Great. I'll get going on it.", reply: ["Improbable! Thank you."], end: true, cost: 0 },
+        },
+        leave: ["The doves are making a noise. I have to go.", "Email me! Tuesdays."],
+        challenges: {
+          // Thirty years of the rabbit, and he forgets the rabbit retired. His
+          // own site remembers.
+          kevin: {
+            after: "picture", needsFact: "kevin",
+            ask: "Your site says Kevin retired to your sister's farm. Should he still be on it?",
+            reply: ["...Oh.", "Oh, you're right. Kevin's been on the farm since 2019. I keep forgetting to tell the posters.", "The doves! The doves do the finale now. Put the doves on it."],
+            reveals: ["doves"],
+          },
+        },
+      },
+      needs: [
+        { id: "mark", label: "Your wordmark, leading the poster", missed: "The new wordmark isn't on it", tags: ["dennis-wordmark"], weight: 3 },
+        { id: "where", label: "The Starlite Lanes", missed: "It doesn't say the Starlite Lanes", text: ["starlite lanes"], weight: 2 },
+        { id: "when", label: "Fridays", missed: "It doesn't say Fridays", text: ["friday"], weight: 1 },
+        { id: "adults", label: "21 and over, because it's in the bar", missed: "It doesn't say 21 and over", text: ["21"], weight: 1 },
+        { id: "doves", label: "The doves, not the retired rabbit", missed: "No doves, and Kevin retired in 2019", tags: ["dove"], weight: 2 },
+      ],
+      limits: [
+        { id: "size", rule: "size", w: 600, h: 850, label: "Poster, 600 × 850" },
+        { id: "text", rule: "minText", value: 18, label: "No text smaller than 18px: the lounge is dark" },
+        { id: "nopurple", rule: "avoid", tags: ["purple"], label: "Still no purple" },
+      ],
+      facts: [
+        { id: "kevin", where: "improbabledennis.com", label: "Kevin the rabbit retired in 2019", match: ["kevin", "retired"], tags: ["rabbit"] },
+        { id: "finale", where: "improbabledennis.com", label: "The doves do the finale", match: ["the doves do the finale"], tags: ["doves-lore"] },
+        { id: "grownups", where: "improbabledennis.com", label: "The Starlite show is grown-ups only", match: ["grown-ups only"], tags: ["venue"] },
+      ],
+      refs: [
+        { q: "white doves", tags: ["dove"] },
+        { q: "bowling alley neon", tags: ["starlite"] },
+        { q: "velvet stage curtain", tags: ["stage"] },
+      ],
+      competitors: ["partypetemagic.com", "marcuskane.live"],
+      features: [
+        { id: "mascot", label: "A cartoon mascot", doneBy: { "partypetemagic.com": "pp-mascot" } },
+        { id: "kids", label: "Kids' parties", doneBy: { "partypetemagic.com": "pp-kids" } },
+        { id: "closeup", label: "Close-up photos", doneBy: { "marcuskane.live": "mk-close" } },
+        { id: "cards", label: "Card tricks", doneBy: { "marcuskane.live": "mk-cards" } },
+        { id: "finale", label: "The finale, mid-trick", gap: true },
+      ],
+      gap: { tag: "gap-finale", label: "the finale, caught mid-trick", line: "Both of them put the magician on the poster. Nobody shows the magic happening." },
+      research: { seconds: 240 },
+      deadline: 1200,
+      output: { label: "Your Starlite Fridays poster", tags: ["dennis-poster"] },
+      wrap: {
+        5: ["The doves! Mid-flight! Sharon put it on the door and by the shoe counter.", "Friday is sold out. The lounge holds forty, but still. Sold out."],
+        4: ["That's a proper lounge poster.", "Kevin would understand."],
+        3: ["Good! I'll put it up. I might move one thing."],
+        2: ["Hm. Sharon says it's fine. Sharon says everything is fine."],
+        1: ["I don't think the Starlite will put this up."],
+      },
+    },
+
+    /* Someone with a vibe and no budget. The constraint is the printer. */
+    "weird-things-4": {
+      kind: "listing", discipline: "illustrative", app: "banner",
+      title: "zine cover!! issue 4. a cryptid (it's a duck)",
+      short: "CRYPTID ZINE COVER",
+      pay: "$25 + five copies",
+      posted: "Sep 20", area: "online",
+      minRep: 0,
+      poster: { handle: "weirdthings_alex", name: "Alex", site: "weirdthingszine.net" },
+      listing: [
+        "i make a zine about the cryptids nobody talks about. issue 4 is the big one.",
+        "need a cover. it's printed on a risograph so there are RULES, i'll explain on a call.",
+        "$25 and five copies. i staple them myself so they're good staples",
+      ],
+      dialogue: {
+        patience: 5,
+        pause: 8000,
+        filler: ["...", "sorry, typing notes", "r u there? i type fast when i'm nervous"],
+        opening: ["hi!! ok. thank you. ok.", "issue 4. the big duck. do you know about the big duck"],
+        options: {
+          subject: { ask: "Tell me about the Big Duck.", reply: ["a duck. the size of a canoe. at carvel reservoir", "i have ONE photo and it's blurry. they're always blurry, that's how you know"], reveals: ["duck"] },
+          cover: { ask: "What has to be on the cover?", reply: ["WEIRD THINGS at the top, always", "and ISSUE 4. the library catalogues them by issue"], reveals: ["title", "issue"] },
+          print: { ask: "How does the risograph work?", reply: ["two inks! fluorescent pink and blue, that's what the library has", "the paper counts as a colour. so three, total. there is no black. i know. i KNOW"], reveals: ["inks", "riso"] },
+          size: { ask: "What size is it?", reply: ["half letter, folded. zine page size"], reveals: ["size"] },
+          tone: { ask: "Should it be funny?", reply: ["NO. everybody makes it a joke", "i want it to look like a field guide. something you'd believe"] },
+          seen: { ask: "Who's seen it?", reply: ["oh SO many people. dozens", "everyone at the reservoir knows"] },
+          pay: { ask: "Is there any more budget?", reply: ["i could do six copies"], cost: 2 },
+          done: { ask: "Got it. I'll make you a cover.", reply: ["!!!!! ok. thank you. believe the witnesses"], end: true, cost: 0 },
+        },
+        leave: ["the library closes at six and i have to print", "email me!! i check it constantly"],
+        challenges: {
+          // Dozens, on the call. Four, in their own field notes. Catching it
+          // gets you the line that makes the cover credible.
+          witnesses: {
+            after: "seen", needsFact: "witnesses",
+            ask: "Your field notes list three fishermen and a mail carrier. Is it four?",
+            reply: ["...ok. four.", "four is still a LOT for one duck", "put “four witnesses” on the cover. i want people to take it seriously"],
+            reveals: ["four"],
+          },
+        },
+      },
+      needs: [
+        { id: "title", label: "WEIRD THINGS, at the top", missed: "It doesn't say Weird Things", text: ["weird things"], weight: 2 },
+        { id: "issue", label: "Issue 4: the library catalogues by issue", missed: "It doesn't say which issue", text: ["issue", "4"], weight: 1 },
+        { id: "duck", label: "The Big Duck", missed: "There's no duck on it", tags: ["duck"], weight: 3 },
+        { id: "inks", label: "Fluorescent pink and blue", missed: "It isn't in the two riso inks", all: ["pink", "blue"], weight: 2 },
+        { id: "four", label: "Four witnesses, so people take it seriously", missed: "It doesn't say four witnesses", text: ["four witnesses"], weight: 1 },
+      ],
+      limits: [
+        { id: "size", rule: "size", w: 550, h: 850, label: "Zine page, 550 × 850" },
+        { id: "riso", rule: "maxColours", value: 3, label: "Three colours: two inks and the paper" },
+      ],
+      facts: [
+        { id: "witnesses", where: "weirdthingszine.net", label: "Three fishermen and a mail carrier", match: ["three fishermen and a mail carrier"], tags: ["witnesses"] },
+        { id: "canoe", where: "weirdthingszine.net", label: "About the size of a canoe", match: ["size of a canoe"], tags: ["duck-lore"] },
+        { id: "twoinks", where: "weirdthingszine.net", label: "Two inks on the library risograph", match: ["two inks"], tags: ["riso"] },
+      ],
+      refs: [
+        { q: "mallard duck", tags: ["duck"] },
+        { q: "reservoir at dawn", tags: ["reservoir"] },
+        { q: "blurry lake photo", tags: ["blurry"] },
+      ],
+      competitors: ["itwasalog.net", "squatchdepot.com"],
+      features: [
+        { id: "compare", label: "Side-by-side comparisons", doneBy: { "itwasalog.net": "log-compare" } },
+        { id: "count", label: "A running count of explanations", doneBy: { "itwasalog.net": "log-count" } },
+        { id: "believe", label: "BELIEVE, in big letters", doneBy: { "squatchdepot.com": "sq-believe" } },
+        { id: "cartoon", label: "A cartoon cryptid", doneBy: { "squatchdepot.com": "sq-cartoon" } },
+        { id: "witness", label: "The witnesses, in their own words", gap: true },
+      ],
+      gap: { tag: "gap-witness", label: "the witnesses, in their own words", line: "One side explains every sighting away and the other sells mugs. Nobody quotes the people who saw it." },
+      research: { seconds: 240 },
+      deadline: 900,
+      wrap: {
+        5: ["oh my god. OH MY GOD", "it looks like something you'd find in a ranger station. printing tonight. you're getting six copies"],
+        4: ["it's so good!! the duck looks REAL", "printing it thursday"],
+        3: ["ok this is cool. i might move the duck"],
+        2: ["hmm. it's a bit of a joke? i wanted people to believe it"],
+        1: ["this isn't weird things"],
+      },
+    },
+
+    /* A franchise owner going rogue inside a brand that is not his. The
+     * corporate site is his brand guide and the thing he is dodging. */
+    "baron-burrito": {
+      kind: "listing", discipline: "graphic", app: "banner",
+      title: "NEED POSTER FOR BREAKFAST BURRITO (corporate does not need to know)",
+      short: "DRIVE-THRU POSTER",
+      pay: "$90 cash + free burritos",
+      posted: "Sep 21", area: "Route 9",
+      minRep: 3,
+      poster: { handle: "baron214_dwayne", name: "Dwayne", site: "burgerbaron.com" },
+      listing: [
+        "I run a Burger Baron. I invented a breakfast burrito. Corporate has not approved it.",
+        "I need a poster for the drive-thru window that looks official enough that nobody asks.",
+        "$90 cash and all the burritos you want. I open at six, call before the rush.",
+      ],
+      dialogue: {
+        patience: 5,
+        pause: 7000,
+        filler: ["You there? The fryer's beeping.", "Sorry, somebody's at the window.", "..."],
+        opening: ["Hey. You the poster person? Great.", "I've got about ten minutes before the fryers need me. Go."],
+        options: {
+          what: { ask: "What's the poster for?", reply: ["The Baron's Breakfast Burrito. Eggs, hash brown and Crown Sauce in a tortilla.", "I invented it on a slow Tuesday. Corporate doesn't do burritos. I do burritos."], reveals: ["burrito"] },
+          picture: { ask: "What should people see?", reply: ["The burrito. Big. You should want to eat the poster."], reveals: ["food"] },
+          price: { ask: "What does it cost?", reply: ["Two ninety-nine.", "Two ninety-nine until corporate finds out."], reveals: ["price"] },
+          look: { ask: "Should it look like an official Baron poster?", reply: ["It has to. Red and gold. People trust the red and gold.", "If it looks homemade, nobody orders it."], reveals: ["brand"] },
+          baron: { ask: "Is the Baron on it?", reply: ["Oh, he's got to be. Holding the burrito.", "Like he's about to take a bite. People love the Baron."] },
+          legal: { ask: "Is corporate strict about anything?", reply: ["They hate the word 'best'. Legal thing.", "We're 'the Baron's own'. Never 'the best'."], reveals: ["nobest"] },
+          where: { ask: "Where does it go?", reply: ["The drive-thru window. Poster size.", "People read it from the car, so nothing tiny."], reveals: ["size", "text"] },
+          approved: { ask: "Has corporate approved the burrito?", reply: ["I've emailed them eleven times.", "...So, no."] },
+          done: { ask: "Got it. I'll have something for you soon.", reply: ["Good. Thanks. Don't tell Regional."], end: true, cost: 0 },
+        },
+        leave: ["Breakfast rush. Gotta go.", "Email's fine. I read it at four-thirty."],
+        challenges: {
+          // He wants the mascot holding the burrito. His own brand standards
+          // say the mascot never holds food, and Regional checks.
+          presides: {
+            after: "baron", needsFact: "presides",
+            ask: "Your brand standards say the Baron never holds food. Do you want that fight with Regional?",
+            reply: ["...Oh no.", "Last time I got a letter. On the good paper.", "OK. No Baron. Just the crown, and straight, they check. Nobody can say a crown is holding anything."],
+            reveals: ["crown"],
+          },
+        },
+      },
+      needs: [
+        { id: "burrito", label: "It says Breakfast Burrito", missed: "It doesn't say Breakfast Burrito", text: ["breakfast burrito"], weight: 3 },
+        { id: "food", label: "A burrito you want to eat", missed: "There's no burrito to look at", tags: ["burrito"], weight: 2 },
+        { id: "brand", label: "Baron Red and Crown Gold", missed: "It isn't in the Baron's red and gold", all: ["red", "yellow"], weight: 2 },
+        { id: "price", label: "$2.99", missed: "The price isn't on it", text: ["2.99"], weight: 1 },
+        { id: "crown", label: "The crown, not the Baron: Regional checks", missed: "No crown, and the Baron can't hold food", tags: ["crown"], weight: 1 },
+      ],
+      limits: [
+        { id: "size", rule: "size", w: 600, h: 850, label: "Window poster, 600 × 850" },
+        { id: "text", rule: "minText", value: 24, label: "No text under 24px: it's read from the car" },
+        { id: "nobest", rule: "avoid", text: ["best"], label: "Never the word ‘best’" },
+      ],
+      facts: [
+        { id: "presides", where: "burgerbaron.com", label: "The Baron never holds food", match: ["the baron never holds food"], tags: ["baron-rules"] },
+        { id: "crownrule", where: "burgerbaron.com", label: "The crown: never tilted, never cropped", match: ["never tilted"], tags: ["crown-rules"] },
+        { id: "bestword", where: "burgerbaron.com", label: "Never the word best", match: ["the word best"], tags: ["legal"] },
+        { id: "opens", where: "burgerbaron.com", label: "Store #214 opens at 6am", match: ["opens at 6am"], tags: ["hours"] },
+      ],
+      refs: [
+        { q: "breakfast burrito", tags: ["burrito"] },
+        { q: "gold crown", tags: ["crown"] },
+        { q: "drive thru at dawn", tags: ["dawn"] },
+      ],
+      competitors: ["clucksworth.com", "earlybirddiner.net"],
+      features: [
+        { id: "biscuits", label: "Breakfast biscuits", doneBy: { "clucksworth.com": "cw-biscuit" } },
+        { id: "mascot", label: "A cartoon mascot", doneBy: { "clucksworth.com": "cw-mascot" } },
+        { id: "plates", label: "Sit-down plates", doneBy: { "earlybirddiner.net": "eb-plates" } },
+        { id: "coffee", label: "Bottomless coffee", doneBy: { "earlybirddiner.net": "eb-coffee" } },
+        { id: "handheld", label: "Breakfast you can eat at the wheel", gap: true },
+      ],
+      gap: { tag: "gap-handheld", label: "breakfast you can eat at the wheel", line: "Everyone else sells a biscuit or a sit-down plate. Nobody sells breakfast for the drive to work." },
+      research: { seconds: 240 },
+      deadline: 900,
+      wrap: {
+        5: ["That's going in the window before the rush.", "It looks more official than the official ones. If Regional calls, you've never heard of me."],
+        4: ["Good. That'll sell burritos.", "Come by. They're on me."],
+        3: ["It'll do. I'll tape it up."],
+        2: ["Hm. Looks a little homemade."],
+        1: ["Regional would have my franchise for this."],
+      },
+    },
   };
 
   /* ── gigslist posts that are not gigs ──────────────────── */
@@ -810,6 +1561,9 @@ const HUSTLE = (() => {
     { title: "draw my D&D party (5 characters) $10 total", posted: "Sep 13", status: "filled", note: "The poster says this gig has been filled." },
     { title: "Wedding invites, must be done by tomorrow morning", posted: "Sep 12", status: "flagged", note: "This posting has been flagged for removal." },
     { title: "Band poster — Soft Machinery Club, show on the 30th", posted: "Sep 11", status: "filled", note: "The poster says this gig has been filled." },
+    { title: "draw my ghost (he's friendly, he lives in the attic) $15", posted: "Sep 18", status: "filled", note: "The poster says this gig has been filled." },
+    { title: "Llama farm rebrand. The llamas have final approval", posted: "Sep 16", status: "filled", note: "The poster says this gig has been filled." },
+    { title: "Mascot costume needs a face. The mascot is a potato. Must start TODAY", posted: "Sep 15", status: "flagged", note: "This posting has been flagged for removal." },
   ];
 
   /* ── the crawler's index ───────────────────────────────── */
@@ -823,6 +1577,15 @@ const HUSTLE = (() => {
     { dom: "bramblemarket.net", title: "Bramble Market", snippet: "Run the stall. Pet the shop cat.", keywords: ["cosy game", "cozy game", "market", "shopkeeper", "shop", "indie game"] },
     { dom: "thepaintedcup.com", title: "The Painted Cup — paint-your-own pottery", snippet: "Birthday parties, pastel paints, take-home boxes.", keywords: ["pottery", "pottery painting", "paint your own", "ceramics", "cafe", "café"] },
     { dom: "glazeandgraze.com", title: "Glaze & Graze", snippet: "Clay, cheese, and a glass of something.", keywords: ["pottery", "pottery painting", "wine", "ceramics", "cafe", "café"] },
+    { dom: "improbabledennis.com", title: "The Improbable Dennis — magic for all occasions!", snippet: "Birthdays, retirement communities, corporate events. Doves available for weddings.", keywords: ["magician", "magic", "magic show", "birthday magician", "the improbable dennis", "dennis", "doves"] },
+    { dom: "partypetemagic.com", title: "Party Pete — the magic comes to YOUR party", snippet: "Balloon animals, rainbow silks and a cartoon wizard. Over 2,000 parties.", keywords: ["magician", "magic", "kids party", "birthday magician", "balloon animals", "party"] },
+    { dom: "marcuskane.live", title: "Marcus Kane — street magic, mind reading", snippet: "No top hats. No rabbits. Videos filmed in one take.", keywords: ["magician", "magic", "street magic", "card tricks", "mind reading"] },
+    { dom: "weirdthingszine.net", title: "Weird Things — a zine", snippet: "The cryptids nobody talks about. Issue 4: the Big Duck.", keywords: ["zine", "cryptid", "cryptids", "weird things", "big duck", "risograph", "folklore"] },
+    { dom: "itwasalog.net", title: "It Was A Log — sightings, explained", snippet: "Side-by-side comparisons. It is almost always a log.", keywords: ["cryptid", "cryptids", "sightings", "debunked", "skeptic", "bigfoot", "big duck"] },
+    { dom: "squatchdepot.com", title: "Squatch Depot — gifts for the Squatch-curious", snippet: "Mugs, tees and air fresheners. BELIEVE.", keywords: ["cryptid", "bigfoot", "sasquatch", "gifts", "mugs", "merch"] },
+    { dom: "burgerbaron.com", title: "Burger Baron — flame-crowned since 1971", snippet: "Burgers, Crown Fries and the Royal Shake at 1,140 locations.", keywords: ["burger", "burgers", "fast food", "burger baron", "breakfast", "franchise", "drive thru"] },
+    { dom: "clucksworth.com", title: "Clucksworth Chicken", snippet: "Biscuits from 6am. Buckets all day.", keywords: ["chicken", "fast food", "breakfast", "biscuits", "drive thru"] },
+    { dom: "earlybirddiner.net", title: "The Early Bird Diner", snippet: "All-day breakfast and bottomless coffee since 1964.", keywords: ["diner", "breakfast", "coffee", "pancakes"] },
     { dom: GIGSLIST, title: "gigslist — creative gigs", snippet: "Small jobs from real people. Reply to a post to get started.", keywords: ["gigs", "jobs", "freelance", "design", "work"] },
   ];
 

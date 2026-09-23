@@ -454,7 +454,7 @@ const Hustle = (() => {
     const report = { subjects: {}, scaleOK: null, pasted: false };
     if (typeof Characters === "undefined" || typeof HustleLikeness === "undefined") return report;
     const official = new Set(Suite.cards().filter((c) => c.tags.includes("official-art")).map((c) => c.id));
-    report.pasted = doc.layers.some((l) => l.type === "image" && !l.hidden && l.card && official.has(l.card));
+    report.pasted = doc.layers.some((l) => l.type === "image" && !l.hidden && (official.has(l.card) || official.has(l.cards && l.cards.src)));
     for (const sj of SuiteDoc.subjects(doc)) {
       const id = sj.ref.id, pose = sj.ref.pose;
       if (!Characters.has(id, pose)) continue;

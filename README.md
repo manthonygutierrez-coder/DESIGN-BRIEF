@@ -93,8 +93,9 @@ sets all of it against the live feed: pick a prop by what it looks like, send it
 to the back wall or the foreground, drag the person in frame, and copy the block
 back into `hustle/content.js`. Everything the game is made of — sites, gigs, conversations,
 research answers, the crawler's index, ads — is data in `hustle/content.js`, and a
-content test checks that every research answer really appears on its page and that
-every gap can be proven.
+content test checks that every research answer really appears on its page, that
+every gap can be proven, and that every need can be met with what the gig hands
+you: its facts, its picture searches, a colour, or the work from the gig before.
 
 ## Paper Moon Relay: drawing the OTP on-model
 

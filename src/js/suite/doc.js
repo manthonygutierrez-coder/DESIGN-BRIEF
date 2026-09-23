@@ -11,8 +11,9 @@
  *     palette: [ "#RRGGBB" ],
  *     meta:    { name, briefId, gigId, intent: [cardId] } }
  *
- * Every layer a card touched carries `card` — its provenance. Scoring never has
- * to look at pixels; it reads which cards ended up where.
+ * Every layer a card touched carries `card`, the latest one, and `cards`, which
+ * card set each part of it (fill, stroke, font, src, d) — its provenance.
+ * Scoring never has to look at pixels; it reads which cards ended up where.
  */
 
 const SuiteDoc = (() => {
@@ -31,6 +32,12 @@ const SuiteDoc = (() => {
     return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d;
   };
   const str = (v, max, d = "") => (typeof v === "string" ? v.slice(0, max) : d);
+  const SLOTS = ["fill", "stroke", "font", "src", "d"];
+  const slots = (v) => {
+    const out = {};
+    if (v && typeof v === "object") for (const k of SLOTS) if (typeof v[k] === "string" && v[k]) out[k] = v[k].slice(0, 80);
+    return out;
+  };
   const hex = (v, d = null) => (typeof v === "string" && HEX.test(v) ? v.toUpperCase() : d);
   // Fills are a hex colour, or a two-stop gradient { a, b, dir } (a bonus tool).
   const paint = (v, d) => {
@@ -270,7 +277,10 @@ const SuiteDoc = (() => {
 
   function cardsUsed(doc) {
     const ids = new Set(doc.meta.intent || []);
-    for (const l of doc.layers) if (l.card) ids.add(l.card);
+    for (const l of doc.layers) {
+      if (l.card) ids.add(l.card);
+      Object.values(l.cards || {}).forEach((id) => ids.add(id));
+    }
     for (const b of doc.blocks) if (b && b.card) ids.add(b.card);
     return [...ids];
   }
@@ -314,7 +324,7 @@ const SuiteDoc = (() => {
       w: num(l.w, 100, 1, MAX.dim * 4), h: num(l.h, 60, 1, MAX.dim * 4),
       rot: num(l.rot, 0, -360, 360), opacity: num(l.opacity, 1, 0, 1),
       fill: paint(l.fill, null), stroke: hex(l.stroke), strokeW: num(l.strokeW, 0, 0, 200),
-      hidden: !!l.hidden, locked: !!l.locked, card: l.card ? str(l.card, 80) : null,
+      hidden: !!l.hidden, locked: !!l.locked, card: l.card ? str(l.card, 80) : null, cards: slots(l.cards),
     };
     if (l.type === "text") {
       Object.assign(out, {

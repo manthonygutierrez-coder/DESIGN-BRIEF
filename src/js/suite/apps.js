@@ -14,7 +14,7 @@ const SuiteApps = (() => {
   const APPS = {
     banner: {
       label: "Banner", icon: "app-banner", mode: "free", blurb: "Banners, posters, marks, social cards",
-      presets: [["Leaderboard", 728, 90], ["Rectangle", 300, 250], ["Social card", 1200, 630], ["Square post", 1080, 1080], ["Poster", 600, 850]],
+      presets: [["Leaderboard", 728, 90], ["Rectangle", 300, 250], ["Social card", 1200, 630], ["Square post", 1080, 1080], ["Poster", 600, 850], ["Zine page", 550, 850]],
       // Pen and shape builder are core: drawing a character by eye needs them
       // from the first gig.
       tools: ["select", "rect", "ellipse", "pen", "build", "text", "image", "eyedrop"],

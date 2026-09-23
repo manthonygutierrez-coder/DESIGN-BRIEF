@@ -26,7 +26,11 @@ const HustleScore = (() => {
   const CARDS = typeof SuiteCards !== "undefined" ? SuiteCards : require("../suite/cards.js");
 
   function textOf(doc) {
-    const out = [doc.meta && doc.meta.name];
+    return [doc.meta && doc.meta.name, shownText(doc)].filter(Boolean).join("\n").toLowerCase();
+  }
+
+  function shownText(doc) {
+    const out = [];
     for (const l of doc.layers || []) if (l.type === "text" && !l.hidden) out.push(l.text);
     if (doc.site) out.push(doc.site.tagline);
     const walk = (v) => {
@@ -45,9 +49,13 @@ const HustleScore = (() => {
       const c = byId.get(id);
       if (c) c.tags.forEach((t) => tags.add(t));
     }
-    const colours = doc.mode === "layout" ? [doc.site && doc.site.brand].filter(Boolean) : DOC.colours(doc);
-    for (const hex of colours) CARDS.colourTags(hex).forEach((t) => tags.add(t));
+    colourWords(doc).forEach((t) => tags.add(t));
     return tags;
+  }
+
+  function colourWords(doc) {
+    const colours = doc.mode === "layout" ? [doc.site && doc.site.brand].filter(Boolean) : DOC.colours(doc);
+    return new Set(colours.flatMap((hex) => CARDS.colourTags(hex)));
   }
 
   const isEmpty = (doc) => {
@@ -79,6 +87,14 @@ const HustleScore = (() => {
         return { ok: !small.length, got: small.length ? "text at " + Math.min(...small.map((l) => l.size)) + "px" : "" };
       }
       case "maxBlocks": return { ok: (doc.blocks || []).length <= limit.value, got: (doc.blocks || []).length + " blocks" };
+      // What a client has dropped: an old colour, a word Legal will not allow.
+      // Judged on what is shown, never on the document's own name.
+      case "avoid": {
+        const words = colourWords(doc), text = shownText(doc);
+        const hue = (limit.tags || []).find((t) => words.has(t));
+        const said = (limit.text || []).find((s) => text.includes(String(s).toLowerCase()));
+        return { ok: !hue && !said, got: hue || "“" + said + "”" };
+      }
       case "mode": return { ok: doc.mode === limit.value, got: doc.mode };
       default: return { ok: true };
     }

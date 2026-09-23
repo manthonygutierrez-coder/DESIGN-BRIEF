@@ -780,7 +780,7 @@ const Suite = (() => {
         name, d: tp.d, box: 64, fillRule: "evenodd",
         x: Math.round((bx + tp.bounds.x / S) * 100) / 100, y: Math.round((by + tp.bounds.y / S) * 100) / 100,
         w: Math.max(1, tp.bounds.w / S), h: Math.max(1, tp.bounds.h / S),
-        fill: like.fill, stroke: like.stroke, strokeW: like.strokeW, opacity: like.opacity, card: like.card,
+        fill: like.fill, stroke: like.stroke, strokeW: like.strokeW, opacity: like.opacity, card: like.card, cards: like.cards,
       });
     };
     mutate(ed, () => {
