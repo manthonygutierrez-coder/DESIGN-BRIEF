@@ -67,7 +67,10 @@ Every step of a job is a small puzzle, and all of it happens on the desktop.
    instead.
 3. **Research, against the clock.** Turn on clipping in the browser and click the
    passages that matter: facts on the client's site, trends on rival sites. A useless
-   clip costs five seconds. What each clip was worth rises off the passage, and the
+   clip costs five seconds. The image search shows what you asked for — "mallard
+   duck" is a duck on a reservoir, "bigfoot mug" is a mug with a bigfoot printed on
+   it, "vintage vegas sign" is lit up at night — drawn in the same pixel light as the
+   calls, so what you cut out is the thing itself. What each clip was worth rises off the passage, and the
    toolbar counts what the site holds for the gig (`Here: 2/7 clipped`), so you know
    when a page is done. Cut objects and colours out of image-search pictures —
    cards inherit what the search was about. **Compare rivals** is a deduction grid:
@@ -200,7 +203,11 @@ src/
     content/
       clients.js   21 client personas, domains, site copy, reference seeds
       sites.js     four site skins + the image search; resolve() is the whole internet
-      imagery.js   procedural faux photography, seeded per query
+      imagery.js   the image search: official art, brand marks, and abstract moods
+      imageplan.js what a query is a picture of: the thing, the place, the light,
+                   the treatment, and how this result was framed (pure, tested)
+      pixelscene.js paints a plan small and lit, then scales it by a whole number
+      pixelthings.js the things in the pictures: animals, food, objects, people
 ```
 
 ## Notes for future work

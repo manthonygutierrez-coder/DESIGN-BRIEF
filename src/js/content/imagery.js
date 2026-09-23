@@ -427,17 +427,31 @@ const Imagery = (() => {
   function make(query, index, W = 200, H = 150){
     const real = overrideFor(query, index);
     if (real) return real;
+    // A picture of something is painted from a plan; a mood keeps the
+    // abstract compositions below.
+    if (typeof ImagePlan !== "undefined" && typeof PixelScene !== "undefined" && typeof PixelThings !== "undefined"){
+      const plan = ImagePlan.plan(query, index);
+      if (!plan.legacy) return PixelScene.render(plan, W, H, PixelThings).toDataURL("image/png");
+    }
     const R = rngFrom(seedOf(query + "::" + index));
     const m = moodFor(query);
+    // Drawn small and scaled by a whole number, like everything else the
+    // search returns, so a page of results never mixes smooth and pixel.
+    const k = Math.max(1, Math.round(H / 90)), w = Math.ceil(W / k), h = Math.ceil(H / k);
     const cv = document.createElement("canvas");
-    cv.width = W; cv.height = H;
+    cv.width = w; cv.height = h;
     const ctx = cv.getContext("2d");
     // Rotate through the pool by index rather than rolling for it, so any run of
     // results is guaranteed to vary instead of clustering on one composition.
     const pool = poolFor(query);
-    pool[(seedOf(query) + index) % pool.length](ctx, W, H, m, R);
-    finish(ctx, W, H, m, R);
-    return cv.toDataURL("image/jpeg", 0.72);
+    pool[(seedOf(query) + index) % pool.length](ctx, w, h, m, R);
+    finish(ctx, w, h, m, R);
+    const out = document.createElement("canvas");
+    out.width = W; out.height = H;
+    const o = out.getContext("2d");
+    o.imageSmoothingEnabled = false;
+    o.drawImage(cv, 0, 0, w * k, h * k);
+    return out.toDataURL("image/png");
   }
 
   /* ── brand marks ─────────────────────────────────────────
