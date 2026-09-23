@@ -38,6 +38,7 @@ const Hustle = (() => {
   const callAnim = {};             // per-call blink, speech and dropped frames
 
   const G = () => state.hustle;
+  const myName = () => (typeof Camera !== "undefined" && Camera.name && Camera.name()) || "you";
   const gigOf = (id) => H.gigs[id] || null;
   const gsOf = (id) => G().gigs[id] || (G().gigs[id] = {});
   const save = () => Bridge.saveState(state);
@@ -57,7 +58,9 @@ const Hustle = (() => {
       prospects: h.prospects && typeof h.prospects === "object" ? h.prospects : {},
       threads: h.threads && typeof h.threads === "object" ? h.threads : {},
       welcomed: !!h.welcomed,
+      me: h.me && typeof h.me === "object" ? h.me : null,
     };
+    if (typeof Camera !== "undefined" && Camera.init) Camera.init({ get: () => G().me, set: (m) => { G().me = m; save(); } });
 
     if (typeof RoomEdit !== "undefined") RoomEdit.applySaved(state);
     registerSites();
@@ -74,15 +77,25 @@ const Hustle = (() => {
     Web.onNavigate(onNavigate);
 
     mountTray();
-    if (!G().welcomed) {
-      G().welcomed = true;
-      post(SYSTEM, "sys", [
-        "Welcome to gigslist.",
-        "Small jobs from real people. Reply to a post and the client will page you here.",
-        "Do good work and people start to hear about you. Some of them never post at all.",
-      ]);
-      balloon("Welcome to Hustle", "Open gigslist to find your first gig.", () => Web.visit(GL("/")));
-    }
+    const welcome = (go) => {
+      if (!G().welcomed) {
+        G().welcomed = true;
+        post(SYSTEM, "sys", [
+          "Welcome to gigslist.",
+          "Small jobs from real people. Reply to a post and the client will page you here.",
+          "Do good work and people start to hear about you. Some of them never post at all.",
+        ]);
+        if (!go) balloon("Welcome to Hustle", "Open gigslist to find your first gig.", () => Web.visit(GL("/")));
+        save(); paintTray();
+      }
+      if (go) Web.visit(GL("/"));
+    };
+    // First, your camera: build yourself, then let it talk you through the rest.
+    // After boot returns, so the desktop shortcuts it points at are there.
+    setTimeout(() => {
+      const intro = typeof Camera !== "undefined" && Camera.intro && Camera.intro(welcome);
+      if (!intro) welcome(false);
+    }, 0);
     focusId = activeGigs()[0] || null;
     checkChains();
     checkInbound();
@@ -850,7 +863,7 @@ const Hustle = (() => {
             : m.cta === "review" ? '<button class="w98btn" data-pg="ticket" data-gig="' + m.gig + '">Read the review</button>' : "";
           return '<div class="pg__sys">' + esc(m.text) + (btn ? "<div>" + btn + "</div>" : "") + "</div>";
         }
-        return '<div class="pg__m pg__m--' + m.who + '"><b>' + (m.who === "you" ? "you" : esc(t.name)) + "</b><span>" + esc(m.text) +
+        return '<div class="pg__m pg__m--' + m.who + '"><b>' + (m.who === "you" ? esc(myName()) : esc(t.name)) + "</b><span>" + esc(m.text) +
           (m.file ? '<em class="pg__file">📎 ' + esc(m.file) + "</em>" : "") + "</span></div>";
       }).join("");
       // The briefing happens on the call now; the thread keeps the transcript.
@@ -977,13 +990,14 @@ const Hustle = (() => {
     const lines = st.log.slice(-40).map((m) =>
       '<div class="cl__l cl__l--' + (m.who === "you" ? "you" : "them") +
       (m.filler ? " cl__l--fill" : "") + (m.challenge ? " cl__l--win" : "") + '">' +
-      "<b>" + esc(m.who === "you" ? "you" : String(who.name || gig.poster.name).split(" ")[0]) + "</b>" +
+      "<b>" + esc(m.who === "you" ? myName() : String(who.name || gig.poster.name).split(" ")[0]) + "</b>" +
       "<span>" + esc(m.text) + "</span></div>").join("");
 
     w.client.innerHTML =
       '<div class="cl">' +
         '<div class="cl__stage">' +
           '<canvas class="cl__feed" width="320" height="240"></canvas>' +
+          (typeof Camera !== "undefined" && Camera.paintSelf ? '<canvas class="cl__me" width="96" height="72" title="You"></canvas>' : "") +
           '<div class="cl__hud">' +
             '<span class="cl__rec">● LIVE <b data-cl-clock>00:00</b></span>' +
             '<span class="cl__fps" data-cl-fps>8 fps · 320×240</span>' +
@@ -1037,6 +1051,12 @@ const Hustle = (() => {
         glance: Mtg.glancing(st),
         glitch: t < a.glitchUntil ? Math.floor(t / 170) : 0,
       });
+      const mine = w.client.querySelector(".cl__me");
+      if (mine && typeof Camera !== "undefined") {
+        const last = st.log[st.log.length - 1];
+        const asking = !talking && last && last.who === "you";
+        Camera.paintSelf(mine, { blink: (t % 4100) < 140, mouthOpen: asking && a.phase % 2 === 1, mood: st.ended ? "warm" : "neutral" });
+      }
     }
 
     const secs = Mtg.seconds(st), ratio = Mtg.ratio(st);

@@ -201,6 +201,11 @@ Object.assign(ICON_ART, {
 });
 // The reference board's pushpin, and the shape builder.
 Object.assign(ICON_ART, {
+  camera:{p:{k:"#0A0A0A",w:"#D8D8DC",b:"#1F3A6B",l:"#7EC8F0",r:"#E0442B",m:"#8A8A96"},g:[
+    "................",".....kkkkkk.....","....kwwwwwwk....","...kwwkkkkwwk...",
+    "...kwkbbbbkwk...","..kwwkbllbkwwk..","..kwwkbllbkwwk..","...kwkbbbbkwk...",
+    "...kwwkkkkwwk...","....kwwwwwrk....",".....kkkkkk.....",".......kk.......",
+    ".......kk.......",".....kkkkkk.....","....kmmmmmmk....","....kkkkkkkk...."]},
   "ref":{p:{k:"#0A0A0A",r:"#C2452C",w:"#F6F7F2",y:"#FFF3C4",m:"#8A8A96"},g:[
     "................","......kkkk......",".....krrrrk.....",".....krwrrk.....",
     "......krrk......","....kkkrrkkk....","...krrrrrrrrk...","....kkkkkkkk....",

@@ -88,6 +88,7 @@ const Session = (() => {
       addStartItem("gigslist", "Gigslist", () => Hustle.board());
       addStartItem("pager", "Pager", () => Hustle.openPager());
       addStartItem("roomedit", "Room Editor", () => RoomEdit.open());
+      addStartItem("camera", "Camera", () => Camera.open());
     }
     addStartItem("suite", "Design Suite", () => Suite.launcher());
     addStartItem("logoff", "Log Off " + LABELS[slot].name + "...", logoff);
@@ -109,6 +110,7 @@ const Session = (() => {
       addShortcut("gigslist", "Gigslist", "gigslist", () => Hustle.board());
       addShortcut("pager", "Pager", "pager", () => Hustle.openPager());
       addShortcut("roomedit", "Room Editor", "roomedit", () => RoomEdit.open());
+      addShortcut("camera", "Camera", "camera", () => Camera.open());
     }
     addShortcut("suite", "Design Suite", "suite", () => Suite.launcher());
     if (slot === "studio") Mail.restore();

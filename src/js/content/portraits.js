@@ -78,7 +78,10 @@ const Portraits = (() => {
       age:     pick(AGES),
       band:    null,          // a coloured band across the forehead
       garment: null,          // overridden by the site's brand at draw time
-      tint:    null           // something at the throat: a tape measure, a tie
+      tint:    null,          // something at the throat: a tape measure, a tie
+      // Pieces only the camera builder hands out. They default to nothing, so
+      // nobody already in the game changes.
+      top: "plain", marks: "none", ears: "none", hat: null, accent: null,
     };
     if (t.age === "older") t.hair = mix(t.hair, GREY[Math.floor(r() * 3) % 3], 0.55 + r() * 0.35);
     const o = look || {};
@@ -111,6 +114,20 @@ const Portraits = (() => {
     R(bx, 23, bw, 1, shade(cloth, 0.10));
     R(bx, 24, 2, 6, clothD); R(bx + bw - 2, 24, 2, 6, clothD);
     R(10, 23, 4, 2, clothD);                                 // collar notch
+    // What you are wearing goes on before anything that hangs over it.
+    const acc = t.accent || "#F4F1EA";
+    switch (t.top){
+      case "tee":      R(10, 23, 4, 1, shade(cloth, -0.24)); break;
+      case "hoodie":   R(8, 21, 8, 2, shade(cloth, -0.14)); R(10, 24, 1, 3, "#E8E4DA"); R(13, 24, 1, 3, "#E8E4DA"); R(bx + 3, 28, bw - 6, 1, clothD); break;
+      case "shirt":    R(9, 23, 2, 2, shade(cloth, 0.26)); R(13, 23, 2, 2, shade(cloth, 0.26)); R(12, 24, 1, 6, clothD);
+                       R(11, 25, 1, 1, shade(cloth, 0.3)); R(11, 27, 1, 1, shade(cloth, 0.3)); break;
+      case "stripes":  for (let y = 24; y < 30; y += 2) R(bx, y, bw, 1, shade(cloth, 0.28)); break;
+      case "sweater":  for (let y = 24; y < 30; y++) for (let x = bx + (y % 2); x < bx + bw; x += 2) R(x, y, 1, 1, shade(cloth, -0.07)); break;
+      case "jacket":   R(11, 23, 2, 4, acc); R(9, 23, 2, 4, shade(cloth, -0.24)); R(13, 23, 2, 4, shade(cloth, -0.24)); R(12, 27, 1, 1, clothD); break;
+      case "cardigan": R(10, 23, 4, 7, acc); R(9, 23, 1, 7, clothD); R(14, 23, 1, 7, clothD); R(9, 25, 1, 1, "#E8E4DA"); R(9, 28, 1, 1, "#E8E4DA"); break;
+      case "overalls": R(9, 25, 6, 5, t.accent || "#3A5A8A"); R(9, 23, 1, 2, t.accent || "#3A5A8A"); R(14, 23, 1, 2, t.accent || "#3A5A8A");
+                       R(9, 25, 1, 1, "#E8C36A"); R(14, 25, 1, 1, "#E8C36A"); break;
+    }
     if (t.extra === "collar"){ R(9, 23, 2, 3, shade(cloth, 0.16)); R(13, 23, 2, 3, shade(cloth, 0.16)); }
     if (t.extra === "lanyard"){ R(10, 23, 1, 4, "#2E3338"); R(13, 23, 1, 4, "#2E3338"); R(11, 27, 2, 3, "#D8D8DC"); }
     if (t.extra === "scarf"){ R(8, 22, 8, 2, shade(cloth, 0.22)); R(9, 24, 2, 4, shade(cloth, 0.28)); }
@@ -119,6 +136,13 @@ const Portraits = (() => {
     /* neck */
     R(10, 19, 4, 5, dark);
     R(10, 22, 4, 1, deep);
+    if (t.top === "turtleneck"){ R(9, 19, 6, 4, cloth); R(9, 19, 6, 1, shade(cloth, 0.1)); R(13, 20, 2, 3, clothD); }
+    switch (t.extra){
+      case "bowtie":     R(9, 22, 2, 2, acc); R(13, 22, 2, 2, acc); R(11, 22, 2, 2, shade(acc, -0.2)); break;
+      case "tie":        R(11, 22, 2, 1, shade(acc, 0.1)); R(11, 23, 2, 6, acc); R(11, 28, 2, 1, shade(acc, -0.2)); break;
+      case "necklace":   R(9, 22, 1, 1, "#E8C36A"); R(14, 22, 1, 1, "#E8C36A"); R(10, 23, 4, 1, "#E8C36A"); R(11, 24, 2, 1, acc); break;
+      case "headphones": R(7, 20, 10, 1, "#2A2A30"); R(6, 20, 2, 3, "#3A3A42"); R(16, 20, 2, 3, "#3A3A42"); R(6, 20, 1, 1, acc); break;
+    }
 
     /* head */
     R(HX, HY, HW, HH, skin);
@@ -129,6 +153,7 @@ const Portraits = (() => {
 
     /* hair */
     const H = (x, y, w, h, c) => R(x, y, w, h, c || hair);
+    const hat = t.hat, wrap = hat || shade(cloth, 0.10), shaved = mix(hair, skin, 0.55);
     switch (t.style){
       case "crop":      H(7, 5, 10, 3); H(7, 8, 1, 3); H(16, 8, 1, 3); break;
       case "shortback": H(7, 5, 10, 2); H(7, 7, 1, 6, hairD); H(16, 7, 1, 6, hairD); break;
@@ -140,9 +165,24 @@ const Portraits = (() => {
       case "braids":    H(7, 5, 10, 3); H(5, 8, 2, 16); H(17, 8, 2, 16);
                         for (let i = 10; i < 24; i += 3){ H(5, i, 2, 1, hairD); H(17, i, 2, 1, hairD); } break;
       case "bald":      R(7, 5, 10, 2, shade(skin, 0.05)); R(9, 6, 3, 1, shade(skin, 0.12)); break;
-      case "cap":       H(6, 4, 12, 4, shade(cloth, -0.28)); H(4, 8, 10, 1, shade(cloth, -0.42)); H(8, 3, 8, 1, shade(cloth, -0.14)); break;
-      case "beanie":    H(6, 3, 12, 6, shade(cloth, -0.20)); H(6, 8, 12, 1, shade(cloth, -0.34)); H(11, 1, 2, 2, shade(cloth, -0.20)); break;
-      case "headscarf": H(6, 4, 12, 5, shade(cloth, 0.10)); H(6, 9, 2, 8, shade(cloth, -0.06)); H(16, 9, 2, 8, shade(cloth, -0.06)); break;
+      case "cap":       H(6, 4, 12, 4, hat || shade(cloth, -0.28)); H(4, 8, 10, 1, shade(hat || cloth, hat ? -0.2 : -0.42)); H(8, 3, 8, 1, hat ? shade(hat, 0.12) : shade(cloth, -0.14)); break;
+      case "beanie":    H(6, 3, 12, 6, hat || shade(cloth, -0.20)); H(6, 8, 12, 1, shade(hat || cloth, hat ? -0.16 : -0.34)); H(11, 1, 2, 2, hat || shade(cloth, -0.20)); break;
+      case "headscarf": H(6, 4, 12, 5, wrap); H(6, 9, 2, 8, shade(wrap, -0.14)); H(16, 9, 2, 8, shade(wrap, -0.14)); break;
+      case "afro":      H(5, 1, 14, 2); H(4, 3, 16, 5); H(3, 6, 4, 8); H(17, 6, 4, 8); H(7, 2, 4, 1, shade(hair, 0.14)); H(4, 13, 3, 1, hairD); H(17, 13, 3, 1, hairD); break;
+      case "puffs":     H(7, 5, 10, 2); H(3, 1, 6, 5); H(15, 1, 6, 5); H(4, 0, 4, 1); H(16, 0, 4, 1); H(4, 1, 2, 1, shade(hair, 0.14)); H(16, 1, 2, 1, shade(hair, 0.14)); break;
+      case "locs":      H(6, 4, 12, 4); H(7, 3, 10, 1, shade(hair, 0.1));
+                        for (const [x, len] of [[5, 15], [7, 4], [16, 5], [18, 14]]){ H(x, 8, 2, len); H(x, 8 + len - 1, 2, 1, hairD); } break;
+      case "buzz":      R(7, 5, 10, 1, mix(hair, skin, 0.3)); R(7, 6, 10, 1, shaved); R(7, 7, 1, 3, shaved); R(16, 7, 1, 3, shaved); break;
+      case "mohawk":    R(7, 5, 10, 2, shade(skin, 0.05)); H(10, 1, 4, 6); H(11, 0, 2, 1); H(10, 2, 1, 3, shade(hair, 0.14)); break;
+      case "sidepart":  H(7, 5, 10, 3); H(7, 8, 6, 1); H(7, 8, 1, 4); H(16, 8, 1, 3); R(13, 5, 1, 2, hairD); break;
+      case "pigtails":  H(7, 5, 10, 3); H(7, 8, 1, 3); H(16, 8, 1, 3); H(4, 11, 3, 8); H(17, 11, 3, 8);
+                        R(4, 11, 3, 1, hat || acc); R(17, 11, 3, 1, hat || acc); break;
+      case "fringe":    H(6, 5, 12, 3); H(7, 8, 10, 2); H(6, 8, 2, 10); H(16, 8, 2, 10); H(8, 9, 1, 1, hairD); H(12, 9, 1, 1, hairD); break;
+      case "undercut":  H(7, 4, 10, 3); H(12, 3, 5, 1); H(12, 7, 5, 2); R(7, 7, 1, 4, shaved); R(16, 9, 1, 2, shaved); break;
+      case "cornrows":  H(7, 5, 10, 3); for (let x = 8; x < 16; x += 2) R(x, 5, 1, 3, hairD); H(7, 8, 1, 2); H(16, 8, 1, 2); H(11, 19, 2, 3); break;
+      case "hijab":     H(5, 3, 14, 5, wrap); H(5, 8, 2, 13, shade(wrap, -0.1)); H(17, 8, 2, 13, shade(wrap, -0.1));
+                        H(7, 8, 10, 1, shade(wrap, -0.16)); H(7, 19, 10, 4, wrap); H(6, 22, 12, 3, shade(wrap, -0.08)); break;
+      case "turban":    H(6, 2, 12, 6, wrap); H(7, 3, 10, 1, shade(wrap, -0.12)); H(6, 5, 12, 1, shade(wrap, -0.14)); H(10, 1, 4, 2, shade(wrap, 0.1)); H(7, 8, 1, 2, hairD); H(16, 8, 1, 2, hairD); break;
     }
 
     /* the years */
@@ -177,6 +217,8 @@ const Portraits = (() => {
     /* facial hair, over the mouth */
     if (t.facial === "stubble"){ R(8, 16, 8, 4, mix(skin, hair, 0.22)); R(10, 17, 4, 1, "#8C4A47"); }
     else if (t.facial === "moustache"){ R(10, 16, 4, 1, hair); }
+    else if (t.facial === "goatee"){ R(10, 16, 4, 1, hair); R(10, 18, 4, 2, hair); R(11, 20, 2, 1, hairD); }
+    else if (t.facial === "sideburns"){ R(7, 10, 1, 7, hair); R(16, 10, 1, 7, hair); }
     else if (t.facial === "beard"){
       R(8, 16, 8, 4, hair); R(9, 20, 6, 1, hairD); R(10, 17, 4, 1, "#7A3E3B"); R(10, 16, 4, 1, hairD);
     }
@@ -184,11 +226,23 @@ const Portraits = (() => {
     /* a band across the forehead: a sweatband, a headset, a hairline */
     if (t.band){ R(7, 10, 10, 1, t.band); R(6, 10, 1, 1, shade(t.band, -0.18)); R(17, 10, 1, 1, shade(t.band, -0.18)); }
     if (t.extra === "earrings"){ R(6, 16, 1, 1, "#E8C36A"); R(17, 16, 1, 1, "#E8C36A"); }
+    const spot = mix(skin, "#6E3A1E", 0.42);
+    if (t.marks === "freckles") for (const [x, y] of [[8, 15], [9, 16], [10, 15], [14, 15], [15, 16], [13, 16]]) R(x, y, 1, 1, spot);
+    if (t.marks === "mole") R(14, 17, 1, 1, shade(spot, -0.2));
+    if (t.marks === "blush"){ R(8, 15, 2, 1, mix(skin, "#E0606A", 0.4)); R(14, 15, 2, 1, mix(skin, "#E0606A", 0.4)); }
+    if (t.ears === "studs"){ R(6, 15, 1, 1, "#EDEFF4"); R(17, 15, 1, 1, "#EDEFF4"); }
+    if (t.ears === "hoops"){ R(5, 16, 1, 3, "#E8C36A"); R(6, 18, 1, 1, "#E8C36A"); R(18, 16, 1, 3, "#E8C36A"); R(17, 18, 1, 1, "#E8C36A"); }
+    if (t.ears === "hearingaid"){ R(17, 11, 1, 1, "#C9B79E"); R(18, 11, 1, 4, "#C9B79E"); R(17, 14, 1, 1, "#9E8C74"); }
 
     /* glasses, over everything */
     if (t.specs !== "none"){
       const f = "#2B3136";
-      if (t.specs === "round"){
+      if (t.specs === "shades"){
+        R(8, 12, 4, 3, "#1C1C22"); R(13, 12, 4, 3, "#1C1C22"); R(9, 12, 1, 1, "#5A5A6A"); R(14, 12, 1, 1, "#5A5A6A");
+      } else if (t.specs === "cateye"){
+        R(8, 12, 4, 1, f); R(13, 12, 4, 1, f); R(7, 11, 1, 1, f); R(17, 11, 1, 1, f);
+        R(8, 15, 4, 1, f); R(13, 15, 4, 1, f); R(8, 13, 1, 2, f); R(11, 13, 1, 2, f); R(13, 13, 1, 2, f); R(16, 13, 1, 2, f);
+      } else if (t.specs === "round"){
         R(8, 12, 4, 1, f); R(8, 15, 4, 1, f); R(8, 13, 1, 2, f); R(11, 13, 1, 2, f);
         R(13, 12, 4, 1, f); R(13, 15, 4, 1, f); R(13, 13, 1, 2, f); R(16, 13, 1, 2, f);
       } else {
@@ -388,7 +442,113 @@ const Portraits = (() => {
       polyFill(g, [[x + w * 0.24, y], [x + w * 0.76, y], [x + w, y + shadeH], [x, y + shadeH]]);
       g.fillStyle = th.dark ? "rgba(255,222,170,0.55)" : "rgba(255,240,200,0.7)";
       ellipseFill(g, cx, y + shadeH, w * 0.46, Math.max(1, h * 0.05));
-    }
+    },
+
+    /* ── for the player's own room ─────────────────────── */
+    guitar(g, x, y, w, h, th){
+      const wood = mix(th.brand, "#B8763A", 0.55), cx = x + w / 2;
+      g.fillStyle = shade(wood, -0.35); g.fillRect(cx - Math.max(0.5, w * 0.07), y, Math.max(1, w * 0.14), h * 0.55);
+      g.fillStyle = shade(wood, -0.1); ellipseFill(g, cx, y + h * 0.58, w * 0.34, h * 0.14);
+      g.fillStyle = wood; ellipseFill(g, cx, y + h * 0.8, w * 0.48, h * 0.2);
+      g.fillStyle = shade(wood, -0.5); ellipseFill(g, cx, y + h * 0.66, w * 0.12, h * 0.05);
+      g.fillStyle = shade(wood, -0.4); g.fillRect(cx - w * 0.2, y + h * 0.86, w * 0.4, Math.max(1, h * 0.03));
+    },
+    lights(g, x, y, w, h, th, r){
+      const bulbs = ["#FFD166", "#FF6FA8", "#7CE0FF", "#9BF07A"];
+      for (let i = 0; i <= 12; i++){
+        const t = i / 12, px = x + t * w, py = y + Math.sin(t * Math.PI) * h * 0.8;
+        g.fillStyle = shade(th.line, -0.3); g.fillRect(px, py, 1, 1);
+        if (i % 2){
+          const c = bulbs[(i >> 1) % bulbs.length];
+          g.globalAlpha = 0.28; g.fillStyle = c; g.fillRect(px - 1, py, 3, 3); g.globalAlpha = 1;
+          g.fillStyle = c; g.fillRect(px, py + 1, 1, 1);
+        }
+      }
+    },
+    frame(g, x, y, w, h, th, r){
+      g.fillStyle = mix(th.line, "#6A4A2A", 0.5); g.fillRect(x, y, w, h);
+      g.fillStyle = mix(th.panel, "#CFE3F2", 0.6); g.fillRect(x + 1, y + 1, w - 2, h * 0.55);
+      g.fillStyle = mix(th.brand, "#5E8A4A", 0.5); g.fillRect(x + 1, y + 1 + h * 0.55, w - 2, h - 2 - h * 0.55);
+      g.fillStyle = mix(th.brand2 || th.brand, "#F2C94C", 0.4); ellipseFill(g, x + w * (0.3 + r() * 0.4), y + h * 0.3, Math.max(1, w * 0.1), Math.max(1, h * 0.1));
+    },
+    bookcase(g, x, y, w, h, th, r){
+      g.fillStyle = mix(th.line, "#5A3A22", 0.55); g.fillRect(x, y, w, h);
+      const shelves = 4, sh = h / shelves;
+      for (let s = 0; s < shelves; s++){
+        g.fillStyle = shade(mix(th.line, "#5A3A22", 0.55), -0.3); g.fillRect(x + 1, y + s * sh + 1, w - 2, sh - 2);
+        for (let bx = x + 1; bx < x + w - 2; bx += 1 + (r() * 2 | 0)){
+          g.fillStyle = [th.brand, th.brand2 || th.dim, "#C8252C", "#2F6FC0", "#E8DCC4", "#3E8A3A"][(r() * 6) | 0];
+          const bh = sh * (0.5 + r() * 0.4);
+          g.fillRect(bx, y + (s + 1) * sh - 1 - bh, 1, bh);
+        }
+      }
+    },
+    hanging(g, x, y, w, h, th){
+      const cx = x + w / 2, potY = y + h * 0.4;
+      g.fillStyle = shade(th.line, -0.2); g.fillRect(cx - w * 0.25, y, 1, potY - y); g.fillRect(cx + w * 0.25, y, 1, potY - y);
+      g.fillStyle = mix(th.panel, "#E8DCC4", 0.6); ellipseFill(g, cx, potY + h * 0.06, w * 0.3, h * 0.08);
+      g.fillStyle = mix(th.panel, "#3E6B34", 0.75);
+      [[-0.5, 1], [-0.1, 1.3], [0.3, 0.9], [0.55, 1.1]].forEach(([dx, len]) => leaf(g, cx, potY + h * 0.08, cx + dx * w, potY + h * 0.5 * len, Math.max(1, w * 0.1)));
+    },
+    record(g, x, y, w, h, th){
+      g.fillStyle = mix(th.line, "#5A3A22", 0.5); g.fillRect(x, y + h * 0.45, w, h * 0.55);
+      g.fillStyle = "#1A1A1E"; ellipseFill(g, x + w * 0.42, y + h * 0.45, w * 0.34, h * 0.14);
+      g.fillStyle = th.brand; ellipseFill(g, x + w * 0.42, y + h * 0.45, w * 0.08, h * 0.04);
+      g.fillStyle = "#C0C4C8"; g.fillRect(x + w * 0.82, y + h * 0.2, 1, h * 0.25);
+    },
+    pennant(g, x, y, w, h, th){
+      g.fillStyle = th.brand; polyFill(g, [[x, y], [x + w, y + h * 0.5], [x, y + h]]);
+      g.fillStyle = th.brand2 || shade(th.brand, 0.3); g.fillRect(x, y + h * 0.4, w * 0.5, Math.max(1, h * 0.14));
+    },
+    mirror(g, x, y, w, h, th){
+      g.fillStyle = mix(th.line, "#C9A24B", 0.5); ellipseFill(g, x + w / 2, y + h / 2, w / 2, h / 2);
+      g.fillStyle = mix(th.bg, "#CFE3F2", 0.55); ellipseFill(g, x + w / 2, y + h / 2, w / 2 - 1, h / 2 - 1);
+      g.fillStyle = "rgba(255,255,255,0.5)"; g.fillRect(x + w * 0.35, y + h * 0.2, 1, h * 0.4);
+    },
+    cat(g, x, y, w, h, th){
+      const fur = mix("#D9803A", th.panel, 0.2);
+      g.fillStyle = shade(fur, -0.2); g.fillRect(x + w * 0.05, y + h * 0.82, w * 0.35, Math.max(1, h * 0.1));
+      g.fillStyle = fur; ellipseFill(g, x + w * 0.5, y + h * 0.66, w * 0.3, h * 0.32);
+      ellipseFill(g, x + w * 0.56, y + h * 0.3, w * 0.24, h * 0.2);
+      polyFill(g, [[x + w * 0.36, y + h * 0.22], [x + w * 0.4, y], [x + w * 0.52, y + h * 0.16]]);
+      polyFill(g, [[x + w * 0.62, y + h * 0.16], [x + w * 0.74, y], [x + w * 0.78, y + h * 0.24]]);
+      g.fillStyle = "#1C1C1E"; g.fillRect(x + w * 0.48, y + h * 0.28, 1, 1); g.fillRect(x + w * 0.64, y + h * 0.28, 1, 1);
+    },
+    fishtank(g, x, y, w, h, th, r){
+      g.fillStyle = "#2A2A30"; g.fillRect(x, y + h - 1, w, 1);
+      g.fillStyle = "rgba(90,170,210,0.55)"; g.fillRect(x, y + h * 0.15, w, h * 0.85 - 1);
+      g.fillStyle = "#3E8A3A"; for (let i = 0; i < 3; i++) g.fillRect(x + 1 + r() * (w - 2), y + h * 0.55, 1, h * 0.44);
+      g.fillStyle = "#F07A1C"; g.fillRect(x + w * (0.2 + r() * 0.5), y + h * (0.35 + r() * 0.3), 2, 1);
+      g.fillStyle = "rgba(255,255,255,0.35)"; g.fillRect(x, y + h * 0.15, w, 1);
+    },
+    trophy(g, x, y, w, h, th){
+      g.fillStyle = "#6A4A2A"; g.fillRect(x + w * 0.2, y + h * 0.8, w * 0.6, h * 0.2);
+      g.fillStyle = "#D9A62A"; g.fillRect(x + w * 0.44, y + h * 0.5, w * 0.12, h * 0.3);
+      polyFill(g, [[x + w * 0.1, y], [x + w * 0.9, y], [x + w * 0.7, y + h * 0.5], [x + w * 0.3, y + h * 0.5]]);
+      g.fillStyle = "#F2D26A"; g.fillRect(x + w * 0.24, y + 1, 1, h * 0.3);
+    },
+    cactus(g, x, y, w, h, th){
+      const green = mix(th.panel, "#4E8A3A", 0.75), potY = y + h * 0.7;
+      g.fillStyle = green; g.fillRect(x + w * 0.4, y, w * 0.2, potY - y);
+      g.fillRect(x + w * 0.18, y + h * 0.26, w * 0.12, h * 0.26); g.fillRect(x + w * 0.18, y + h * 0.46, w * 0.24, Math.max(1, h * 0.06));
+      g.fillRect(x + w * 0.7, y + h * 0.18, w * 0.12, h * 0.2); g.fillRect(x + w * 0.58, y + h * 0.34, w * 0.24, Math.max(1, h * 0.06));
+      g.fillStyle = mix(th.brand, "#C2562B", 0.5);
+      polyFill(g, [[x + w * 0.2, potY], [x + w * 0.8, potY], [x + w * 0.7, y + h], [x + w * 0.3, y + h]]);
+    },
+    crt(g, x, y, w, h, th){
+      g.fillStyle = "#3A3A40"; g.fillRect(x, y + h * 0.2, w, h * 0.8);
+      g.fillStyle = th.dark ? "#7CC8E8" : "#5A8AA0"; g.fillRect(x + w * 0.1, y + h * 0.3, w * 0.62, h * 0.55);
+      g.fillStyle = "rgba(255,255,255,0.25)"; g.fillRect(x + w * 0.1, y + h * 0.3, w * 0.62, 1);
+      g.fillStyle = "#C0C4C8"; g.fillRect(x + w * 0.3, y, 1, h * 0.2); g.fillRect(x + w * 0.6, y, 1, h * 0.2);
+      g.fillStyle = th.brand; g.fillRect(x + w * 0.8, y + h * 0.4, 1, 1);
+    },
+    calendar(g, x, y, w, h, th){
+      g.fillStyle = "#F4F1EA"; g.fillRect(x, y, w, h);
+      g.fillStyle = th.brand; g.fillRect(x, y, w, Math.max(1, h * 0.22));
+      g.fillStyle = "rgba(0,0,0,0.25)";
+      for (let i = 1; i < 4; i++) g.fillRect(x, y + h * 0.22 + i * (h * 0.78 / 4), w, 1);
+      g.fillStyle = "#C8252C"; g.fillRect(x + w * 0.6, y + h * 0.5, Math.max(1, w * 0.2), Math.max(1, h * 0.14));
+    },
   };
 
   const DEFAULT_ROOM = [
@@ -417,6 +577,21 @@ const Portraits = (() => {
     window: 0.02, door: 0.03, poster: 0.06, corkboard: 0.06, clock: 0.07, neon: 0.08,
     shelf: 0.20, cabinet: 0.24, monitor: 0.30, plant: 0.34,
     lamp: 0.66, plantbig: 0.86, mug: 0.90,
+    lights: 0.04, frame: 0.05, pennant: 0.05, mirror: 0.05, calendar: 0.06, guitar: 0.12, bookcase: 0.18,
+    trophy: 0.22, record: 0.26, fishtank: 0.26, cat: 0.3, crt: 0.3, hanging: 0.4, cactus: 0.72,
+  };
+
+  /* What the wall is covered in. Drawn over its colour, under everything on it. */
+  const PATTERNS = {
+    plain: null,
+    stripes(g, W, y0, th){ g.fillStyle = shade(th.panel, th.dark ? 0.07 : -0.06); for (let x = 0; x < W; x += 6) g.fillRect(x, 0, 3, y0); },
+    dots(g, W, y0, th){ g.fillStyle = shade(th.panel, th.dark ? 0.12 : -0.1); for (let y = 2; y < y0; y += 5) for (let x = (y % 10 ? 2 : 4.5); x < W; x += 5) g.fillRect(Math.round(x), y, 1, 1); },
+    panel(g, W, y0, th){ const wood = mix(th.panel, "#8A5A34", 0.35); g.fillStyle = wood; g.fillRect(0, y0 * 0.55, W, y0 * 0.45);
+                         g.fillStyle = shade(wood, -0.18); for (let x = 3; x < W; x += 7) g.fillRect(x, y0 * 0.55, 1, y0 * 0.45); g.fillRect(0, y0 * 0.55, W, 1); },
+    brick(g, W, y0, th){ g.fillStyle = shade(th.panel, th.dark ? 0.08 : -0.08);
+                         for (let y = 0; y < y0; y += 4){ g.fillRect(0, y, W, 1); for (let x = ((y / 4) % 2) * 4; x < W; x += 8) g.fillRect(x, y, 1, 4); } },
+    tiles(g, W, y0, th){ g.fillStyle = shade(th.panel, th.dark ? 0.1 : -0.07); for (let y = 0; y < y0; y += 6) g.fillRect(0, y, W, 1); for (let x = 0; x < W; x += 6) g.fillRect(x, 0, 1, y0); },
+    check(g, W, y0, th){ g.fillStyle = shade(th.panel, th.dark ? 0.06 : -0.05); for (let y = 0; y < y0; y += 4) for (let x = (y / 4) % 2 ? 0 : 4; x < W; x += 8) g.fillRect(x, y, 4, 4); },
   };
   const zOf = (item) => (typeof item.z === "number" ? Math.max(0, Math.min(1, item.z))
     : (DEPTH[item.p] == null ? 0.15 : DEPTH[item.p]));
@@ -463,6 +638,7 @@ const Portraits = (() => {
       grad.addColorStop(0, shade(th.panel, th.dark ? 0.05 : -0.04));
       grad.addColorStop(1, th.bg);
       g.fillStyle = grad; g.fillRect(0, 0, W, y0);
+      if (PATTERNS[o.pattern]) PATTERNS[o.pattern](g, W, y0, th);
       if (y0 < H){
         const fl = g.createLinearGradient(0, y0, 0, H);
         fl.addColorStop(0, shade(mix(th.bg, COOL, 0.26), -0.1));
@@ -582,13 +758,13 @@ const Portraits = (() => {
     const th = o.theme, W = FEED.w, H = FEED.h;
     const { c: small, g } = surface(W, H);
     const fr = framingOf(o.framing).room;
-    paintRoom(g, W, H, th, o.room, seed, fr);
+    paintRoom(g, W, H, th, o.room, seed, Object.assign({ pattern: o.pattern }, fr));
     const fig = figure(traits(seed, look), {
-      garment: th.brand, line: th.brand2 || "#111",
+      garment: (look && look.garment) || th.brand, line: look && look.line !== undefined ? look.line : th.brand2 || "#111",
       mood: o.mood, blink: o.blink, mouthOpen: o.mouthOpen, bob: o.bob, glance: o.glance
     });
     place(g, fig, callShot(o), W, H);
-    paintRoom(g, W, H, th, o.room, seed, Object.assign({ layer: "fore" }, fr));
+    paintRoom(g, W, H, th, o.room, seed, Object.assign({ layer: "fore", pattern: o.pattern }, fr));
 
     const ctx = canvas.getContext("2d");
     ctx.imageSmoothingEnabled = false;
@@ -660,7 +836,7 @@ const Portraits = (() => {
 
   return { seedOf, rngFrom, shade, mix, traits, head, photo, paintFeed, paintRoom, palette,
            GW, GH, SKIN, HAIR, STYLES, FACIAL, SPECS, EXTRAS, BUILDS, AGES, PROPS, SHOTS, FEED, DEFAULT_ROOM,
-           FRAMINGS, FRAMING_NAMES, framingOf, DEPTH, zOf, project, gradeTheme };
+           FRAMINGS, FRAMING_NAMES, framingOf, DEPTH, zOf, project, gradeTheme, PATTERNS, paint, figure: (t, o) => figure(t, o) };
 })();
 
 if (typeof module !== "undefined") module.exports = Portraits;

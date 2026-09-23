@@ -46,6 +46,13 @@ An existing `state.json` from before slots is moved into Studio on first launch.
 
 Every step of a job is a small puzzle, and all of it happens on the desktop.
 
+0. **Set up your camera.** Clients see you on every call, so the first time you log
+   on you build yourself and dress the room behind you — 14 skin tones, 24 hair styles
+   and head coverings from locs and puffs to a hijab or turban, glasses, freckles, a
+   hearing aid, nine tops; 27 props, eight room palettes and seven walls — against
+   your own live feed. Then your camera talks you through the job, pointing at each
+   part of the desktop, and after that it sits in the corner of every call.
+   Start → Camera changes any of it later.
 1. **Find work.** `gigslist.org` has small jobs from real-sounding people. Not every
    business posts: some only advertise, and hovering an ad names the brand. Work out
    its address, type it in, and you have found a prospect you can pitch.
@@ -208,6 +215,9 @@ src/
                    the treatment, and how this result was framed (pure, tested)
       pixelscene.js paints a plan small and lit, then scales it by a whole number
       pixelthings.js the things in the pictures: animals, food, objects, people
+    hustle/
+      camera.js    your camera: the wardrobe, room pieces and palettes (pure, tested)
+      camview.js   the camera builder, the setup guide, and you in the corner of a call
 ```
 
 ## Notes for future work
