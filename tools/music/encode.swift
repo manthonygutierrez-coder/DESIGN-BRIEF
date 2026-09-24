@@ -21,7 +21,7 @@ let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
   AVVideoWidthKey: w,
   AVVideoHeightKey: h,
   AVVideoCompressionPropertiesKey: [
-    AVVideoAverageBitRateKey: 6_000_000,              // small UI text needs it
+    AVVideoAverageBitRateKey: 2_500_000,              // UI is mostly still; keeps a 3-minute film shareable
     AVVideoMaxKeyFrameIntervalKey: Int(fps) * 2,
     AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel,
   ],

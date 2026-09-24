@@ -39,9 +39,13 @@ app.whenReady().then(async () => {
   });
   w.webContents.setAudioMuted(true);
   w.webContents.setFrameRate(FPS);
+  const seen = new Map();                            // a message that repeats is shown three times, then counted
   w.webContents.on("console-message", (e, level, message) => {
     const m = e.message || message;
-    if (/error|warn|film/i.test(m)) console.log("[page] " + m);
+    if (!/error|warn|film/i.test(m)) return;
+    const k = seen.get(m) || 0;
+    seen.set(m, k + 1);
+    if (k < 3) console.log("[page] " + m);
   });
 
   // The latest painted frame, as raw BGRA; the pump repeats it until the next.
@@ -85,6 +89,7 @@ app.whenReady().then(async () => {
   ipcMain.on("tool:log", (e, msg) => log(msg));
   ipcMain.handle("tool:done", async (e, report) => {
     log("director finished", JSON.stringify(report));
+    for (const [m, k] of seen) if (k > 3) log("page said " + k + "x: " + m.slice(0, 120));
     try {
       if (enc) await encoded;
       const wav = path.join(tmp, "music.wav"), m4a = path.join(tmp, "music.m4a"), final = path.join(out, "pixel-crossing-one-gig.mp4");
@@ -102,6 +107,9 @@ app.whenReady().then(async () => {
 
   const url = "file://" + path.join(ROOT, "src/index.html") + "?slot=hustle";
   await w.loadURL(url);
+  w.webContents.focus();                             // keys go where a person's would
   log("game loaded; handing over to the director");
-  await w.webContents.executeJavaScript(fs.readFileSync(path.join(__dirname, "film-page.js"), "utf8") + "\n//# sourceURL=film-page.js");
+  // FILM_STOP=<scene> ends the take after that scene, for working on one part.
+  const stop = "window.__filmStop = " + JSON.stringify(process.env.FILM_STOP || "") + ";\n";
+  await w.webContents.executeJavaScript(stop + fs.readFileSync(path.join(__dirname, "film-page.js"), "utf8") + "\n//# sourceURL=film-page.js");
 });

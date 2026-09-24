@@ -37,6 +37,9 @@ const Hustle = (() => {
   let welcome = () => {};           // set in boot; the camera's walkthrough ends with it
   let callTimer = 0;               // one interval drives every open call
   const callAnim = {};             // per-call blink, speech and dropped frames
+  // One shape for every call's record, whoever touches it first: an empty one
+  // left phase undefined, so mouths never moved and the glass drew NaN.
+  const animOf = (id) => callAnim[id] || (callAnim[id] = { blinkUntil: 0, nextBlink: 0, glitchUntil: 0, nextGlitch: 0, phase: 0 });
 
   const G = () => state.hustle;
   const myName = () => (typeof Camera !== "undefined" && Camera.name && Camera.name()) || "you";
@@ -1054,7 +1057,7 @@ const Hustle = (() => {
 
     const log = w.client.querySelector(".cl__log");
     if (log) log.scrollTop = log.scrollHeight;
-    (callAnim[id] || (callAnim[id] = {})).sig = callSig(gig, gs, st);
+    animOf(id).sig = callSig(gig, gs, st);
     paintCall(id);
   }
 
@@ -1064,7 +1067,7 @@ const Hustle = (() => {
     if (!w) return false;
     const gig = gigOf(id), gs = gsOf(id), st = gs.dlg, who = personFor(gig);
     if (!st) return false;
-    const a = callAnim[id] || (callAnim[id] = { blinkUntil: 0, nextBlink: 0, glitchUntil: 0, nextGlitch: 0, phase: 0 });
+    const a = animOf(id);
     const t = now();
     const talking = st.speaking > 0 && !st.ended;
 
@@ -1143,7 +1146,7 @@ const Hustle = (() => {
         if (next.log.length !== before || next.ended) { advance(id, next); continue; }
         gs.dlg = next;
       }
-      const a = callAnim[id] || (callAnim[id] = {});
+      const a = animOf(id);
       const sig = callSig(gig, gs, gs.dlg);
       if (sig !== a.sig) { renderCall(id); continue; }   // she stopped talking, or a window opened
       paintCall(id);

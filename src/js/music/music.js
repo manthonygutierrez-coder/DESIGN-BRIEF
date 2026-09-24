@@ -280,6 +280,7 @@ const Music = (() => {
     if (!ctx && !make()) return null;
     const dest = ctx.createMediaStreamDestination();
     bus.fade.connect(dest);
+    ctx.resume().catch(() => {});                    // a recording needs the clock running, silence and all
     return dest.stream;
   }
 

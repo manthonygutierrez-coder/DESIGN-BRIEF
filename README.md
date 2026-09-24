@@ -253,6 +253,17 @@ and crossfade on the beat. On top of that:
 The speaker by the clock opens a Win98 volume box: volume, music on or off, and mute,
 remembered on this computer.
 
+To hear it away from the game, `tools/music` renders it on the same instruments, inside
+Electron's own audio engine:
+
+    ./node_modules/.bin/electron tools/music/render.js out/   # each arrangement, four times round, filling in
+    ./node_modules/.bin/electron tools/music/film.js out/     # the music video: one gig, filmed as it plays
+
+The film runs a hidden, muted copy of the game with its own save (nothing is written to
+`~/Documents`), plays one gig by script with a cursor you can see, and joins the picture
+to the music it recorded with macOS's own encoders, so it needs nothing installed.
+`FILM_STOP=call` ends a take after that scene, for working on one part.
+
 ## Notes for future work
 
 - **Developing without launching Electron.** `src/` is plain HTML/CSS/JS, so it also
