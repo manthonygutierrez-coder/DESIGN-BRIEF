@@ -20,6 +20,9 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+/* the hidden attribute always hides: any class that sets display (.si,
+   .ie__tools) otherwise beats the browser's own [hidden] rule */
+[hidden]{display:none !important}
 /* pixel art that js/pixelfit.js sizes to whole screen pixels per art pixel,
    centred in whatever room is left over */
 [data-px]{image-rendering:pixelated;margin-inline:auto}
