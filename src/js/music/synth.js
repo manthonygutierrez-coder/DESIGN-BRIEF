@@ -15,7 +15,8 @@
 const MusicSynth = (() => {
   // How fast things move: arrangements and parts fade over a bar line, a
   // call closes in at once. Shared so the game and the files agree.
-  const FADE = { tier: 0.3, part: 0.45, call: 0.2, muffleHz: 900, duck: 0.35 };
+  // far: heard from across the room (see src/room), through the desk's small speakers.
+  const FADE = { tier: 0.3, part: 0.45, call: 0.2, muffleHz: 900, duck: 0.35, farHz: 1500, far: 0.5 };
 
   const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
 

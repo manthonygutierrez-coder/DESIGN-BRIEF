@@ -30,8 +30,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .track{
   position:fixed;inset:0;
   display:flex;
-  width:200vw;height:100%;
+  width:200cqw;height:100%;
   transform:translate3d(0,0,0);
   will-change:transform;
 }
-.side{position:relative;flex:0 0 100vw;width:100vw;height:100%;overflow:hidden}
+.side{position:relative;flex:0 0 100cqw;width:100cqw;height:100%;overflow:hidden}

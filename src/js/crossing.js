@@ -7,9 +7,10 @@ let dA = [], sA = [], dB = [], sB = [];
 function rnd(){ return Math.random(); }
 function sizeFX(){
   // Each cell is a whole number of screen pixels, and the canvas runs a
-  // little past the window instead of stretching cells to fit it exactly
+  // little past the screen instead of stretching cells to fit it exactly
   // (stretched, they came out 12.9 pixels wide, some wider than others).
-  const w = Math.max(1, innerWidth), h = Math.max(1, innerHeight);
+  // The screen is the computer's (#pc), which is not always the window.
+  const s = PC.size(), w = Math.max(1, s.w), h = Math.max(1, s.h);
   const dpr = window.devicePixelRatio || 1, cell = Math.max(1, Math.round(CELL * dpr)) / dpr;
   cols = Math.max(8, Math.ceil(w / cell));
   rows = Math.max(8, Math.ceil(h / cell));
@@ -110,7 +111,7 @@ function cross(dir){
     ended = true;
     clearTimeout(guard);
     arrive();
-    track.style.transform = "translate3d(" + (dir === 1 ? -100 : 0) + "vw,0,0)";
+    track.style.transform = "translate3d(" + (dir === 1 ? -100 : 0) + "cqw,0,0)";
     cv.style.opacity = "0";
     ctx.clearRect(0, 0, cols, rows);
     busy = false;
@@ -130,7 +131,7 @@ function cross(dir){
     const pp = clamp((t - 0.30) / 0.42, 0, 1);
     const e = easeInOut(pp);
     const x = dir === 1 ? -e * 100 : -100 + e * 100;
-    track.style.transform = "translate3d(" + x + "vw,0,0)";
+    track.style.transform = "translate3d(" + x + "cqw,0,0)";
 
     if (t > 0.40) arrive();
     if (t < 1) requestAnimationFrame(step);

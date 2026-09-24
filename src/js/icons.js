@@ -172,6 +172,17 @@ winterbourneandsons:{p:{k:"#14110E",w:"#D8C08A",a:"#8A7040"},g:[
     "..kkttttbbttkk..",".kktaattbbtttkk.",".kttaattttttcck.","kkttttttttttcckk",
     "kttttttttttttttk","kkttddttttttttkk",".kttddtttkkkttk.",".kkttttttk.ktkk.",
     "..kktttttkkkkk..","...kkttttttkk...",".....kkkkkk.....","................"]},
+  /* ── the room: leaving the desk, and switching off ── */
+  standup:{p:{k:"#0A0A0A",a:"#7CF9C0"},g:[
+    "................",".......kk.......","......kaak......",".....kaaaak.....",
+    "....kaaaaaak....","...kaaaaaaaak...","..kkkkaaaakkkk..",".....kaaaak.....",
+    ".....kaaaak.....",".....kaaaak.....",".....kaaaak.....",".....kaaaak.....",
+    ".....kkkkkk.....","................","................","................"]},
+  shutdown:{p:{r:"#E0442B"},g:[
+    "................",".......rr.......","...rr..rr..rr...","..rr...rr...rr..",
+    ".rr....rr....rr.",".rr....rr....rr.","rr.....rr.....rr","rr.....rr.....rr",
+    "rr............rr","rr............rr",".rr..........rr.",".rr..........rr.",
+    "..rr........rr..","...rrr....rrr...",".....rrrrrr.....","................"]},
   "logoff":{p:{k:"#0A0A0A",y:"#FFD24A"},g:[
     "................","................","................","................",
     "..kkkk..........",".kyyyyk.........","kyykkyykkkkkkkk.","kyk..kyyyyyyyyyk",
