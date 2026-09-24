@@ -14,6 +14,8 @@
  *   all     every tag does
  *   blocks  every block type appears (Layout)
  *   app     it was made in that app
+ *   subjects   graded, not pass/fail: how like the model sheets the marked
+ *              drawings are (hustle/likeness.js). Pasting official art zeroes it.
  *
  * The scorer never looks at pixels. It reads the document the suite saved and
  * the cards that document records using.
@@ -24,7 +26,11 @@ const HustleScore = (() => {
   const CARDS = typeof SuiteCards !== "undefined" ? SuiteCards : require("../suite/cards.js");
 
   function textOf(doc) {
-    const out = [doc.meta && doc.meta.name];
+    return [doc.meta && doc.meta.name, shownText(doc)].filter(Boolean).join("\n").toLowerCase();
+  }
+
+  function shownText(doc) {
+    const out = [];
     for (const l of doc.layers || []) if (l.type === "text" && !l.hidden) out.push(l.text);
     if (doc.site) out.push(doc.site.tagline);
     const walk = (v) => {
@@ -43,9 +49,13 @@ const HustleScore = (() => {
       const c = byId.get(id);
       if (c) c.tags.forEach((t) => tags.add(t));
     }
-    const colours = doc.mode === "layout" ? [doc.site && doc.site.brand].filter(Boolean) : DOC.colours(doc);
-    for (const hex of colours) CARDS.colourTags(hex).forEach((t) => tags.add(t));
+    colourWords(doc).forEach((t) => tags.add(t));
     return tags;
+  }
+
+  function colourWords(doc) {
+    const colours = doc.mode === "layout" ? [doc.site && doc.site.brand].filter(Boolean) : DOC.colours(doc);
+    return new Set(colours.flatMap((hex) => CARDS.colourTags(hex)));
   }
 
   const isEmpty = (doc) => {
@@ -77,9 +87,34 @@ const HustleScore = (() => {
         return { ok: !small.length, got: small.length ? "text at " + Math.min(...small.map((l) => l.size)) + "px" : "" };
       }
       case "maxBlocks": return { ok: (doc.blocks || []).length <= limit.value, got: (doc.blocks || []).length + " blocks" };
+      // What a client has dropped: an old colour, a word Legal will not allow.
+      // Judged on what is shown, never on the document's own name.
+      case "avoid": {
+        const words = colourWords(doc), text = shownText(doc);
+        const hue = (limit.tags || []).find((t) => words.has(t));
+        const said = (limit.text || []).find((s) => text.includes(String(s).toLowerCase()));
+        return { ok: !hue && !said, got: hue || "“" + said + "”" };
+      }
       case "mode": return { ok: doc.mode === limit.value, got: doc.mode };
       default: return { ok: true };
     }
+  }
+
+  /* The on-model need, from the likeness report the renderer measured:
+   * { subjects: { toma: { quality, shape, palette, proportions } }, scaleOK, pasted } */
+  function likenessLine(need, max, rep) {
+    const name = (id) => id.charAt(0).toUpperCase() + id.slice(1);
+    if (rep && rep.pasted) {
+      return { ok: false, text: "Pasted official art. The studio takes fan sites down for that", pts: 0, max, kind: "need" };
+    }
+    const per = need.subjects.map((id) => (rep && rep.subjects && rep.subjects[id]) || null);
+    let q = per.reduce((n, r) => n + (r ? r.quality : 0), 0) / need.subjects.length;
+    if (rep && rep.scaleOK === false) q *= 0.85;
+    q = Math.max(0, Math.min(1, q));
+    const detail = need.subjects.map((id, i) => name(id) + " " + (per[i] ? Math.round(per[i].quality * 100) + "%" : "not marked")).join(" · ") +
+      " (shape, palette, proportions)" + (rep && rep.scaleOK === true ? "; relative scale ✓" : rep && rep.scaleOK === false ? "; relative scale off" : "");
+    const ok = q >= 0.6;
+    return { ok, text: (ok ? "On-model — " : (need.missed || "Not on-model") + " — ") + detail, pts: max * q, max, kind: "need", graded: q };
   }
 
   function stars(total) {
@@ -99,6 +134,7 @@ const HustleScore = (() => {
     const weight = needs.reduce((n, x) => n + (x.weight || 1), 0) || 1;
     for (const need of needs) {
       const max = 70 * (need.weight || 1) / weight;
+      if (need.subjects) { lines.push(likenessLine(need, max, opts.likeness)); continue; }
       const ok = needMet(need, ctx);
       lines.push({ ok, text: ok ? need.met || need.label : need.missed || need.label, pts: ok ? max : 0, max, kind: "need" });
     }
@@ -139,7 +175,7 @@ const HustleScore = (() => {
     return t;
   }
 
-  return { score, stars, tier, textOf, tagsOf, needMet, limitCheck, TIERS };
+  return { score, stars, tier, textOf, tagsOf, needMet, limitCheck, likenessLine, TIERS };
 })();
 
 if (typeof module !== "undefined") module.exports = HustleScore;

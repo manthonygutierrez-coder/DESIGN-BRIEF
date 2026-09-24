@@ -47,7 +47,7 @@ const Session = (() => {
       '<div class="w98 on logon__win" role="dialog" aria-modal="true" aria-labelledby="logonTitle">' +
         '<div class="tbar"><span class="tbar__i">' + iconSVG("logoff", 16) + '</span><span class="tbar__t" id="logonTitle">Welcome to Pixel Crossing</span></div>' +
         '<div class="client logon__c">' +
-          '<div class="logon__top"><i>' + iconSVG("logoff", 34) + "</i><p>Choose who is logging on to this desktop. Each keeps its own mail, files and progress.</p></div>" +
+          '<div class="logon__top"><i>' + iconSVG("logoff", 32) + "</i><p>Choose who is logging on to this desktop. Each keeps its own mail, files and progress.</p></div>" +
           '<div class="logon__opts">' +
             ["studio", "hustle"].map((s) =>
               '<button class="logon__opt' + (s === last ? " last" : "") + '" data-slot="' + s + '">' +
@@ -87,6 +87,9 @@ const Session = (() => {
     if (slot === "hustle") {
       addStartItem("gigslist", "Gigslist", () => Hustle.board());
       addStartItem("pager", "Pager", () => Hustle.openPager());
+      addStartItem("roomedit", "Room Editor", () => RoomEdit.open());
+      addStartItem("camera", "Camera", () => Camera.open());
+      addStartItem("camera", "Setup guide", () => Camera.walk());
     }
     addStartItem("suite", "Design Suite", () => Suite.launcher());
     addStartItem("logoff", "Log Off " + LABELS[slot].name + "...", logoff);
@@ -99,13 +102,27 @@ const Session = (() => {
       Feed.boot().catch((e) => console.error("[feed] boot failed:", e));
     }
     await Suite.boot().catch((e) => console.error("[suite] boot failed:", e));
+    // The reference board is a drawing tool, so both slots get one.
+    if (typeof RefBoard !== "undefined") await RefBoard.boot().catch((e) => console.error("[refboard] boot failed:", e));
     if (slot === "hustle") {
+      // Paper Moon Relay's official art answers the image search in Hustle.
+      if (typeof Characters !== "undefined") Characters.register();
       await Hustle.boot().catch((e) => console.error("[hustle] boot failed:", e));
       addShortcut("gigslist", "Gigslist", "gigslist", () => Hustle.board());
       addShortcut("pager", "Pager", "pager", () => Hustle.openPager());
+      addShortcut("roomedit", "Room Editor", "roomedit", () => RoomEdit.open());
+      addShortcut("camera", "Camera", "camera", () => Camera.open());
     }
     addShortcut("suite", "Design Suite", "suite", () => Suite.launcher());
     if (slot === "studio") Mail.restore();
+
+    // The desk has its own music, from the first logon. An established
+    // studio hears the whole band; in Hustle, reputation decides.
+    if (typeof Music !== "undefined") {
+      Music.mountTray();
+      if (slot === "studio") Music.set({ fullness: 1 });
+      Music.start();
+    }
 
     const focus = desk.focusTarget();
     if (focus) focus.focus({ preventScroll: true });
@@ -114,7 +131,7 @@ const Session = (() => {
   function addStartItem(icon, label, onClick) {
     const b = document.createElement("button");
     b.className = "si"; b.type = "button"; b.setAttribute("role", "menuitem");
-    b.innerHTML = "<i>" + iconSVG(icon, 20) + "</i><span></span>";
+    b.innerHTML = "<i>" + iconSVG(icon, 16) + "</i><span></span>";
     b.querySelector("span").textContent = label;
     b.addEventListener("click", () => { toggleStart(false); onClick(); });
     slist.insertBefore(b, backItem);

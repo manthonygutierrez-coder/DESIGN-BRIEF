@@ -199,6 +199,30 @@ Object.assign(ICON_ART, {
     ".kyyyyyykyydddk.","kyddddyyyyyyyyyk","kyyyyyyykyyyyyyk","kkkkkkkkkkkkkkkk",
     "................","................","................","................"]},
 });
+// The reference board's pushpin, and the shape builder.
+Object.assign(ICON_ART, {
+  camera:{p:{k:"#0A0A0A",w:"#D8D8DC",b:"#1F3A6B",l:"#7EC8F0",r:"#E0442B",m:"#8A8A96"},g:[
+    "................",".....kkkkkk.....","....kwwwwwwk....","...kwwkkkkwwk...",
+    "...kwkbbbbkwk...","..kwwkbllbkwwk..","..kwwkbllbkwwk..","...kwkbbbbkwk...",
+    "...kwwkkkkwwk...","....kwwwwwrk....",".....kkkkkk.....",".......kk.......",
+    ".......kk.......",".....kkkkkk.....","....kmmmmmmk....","....kkkkkkkk...."]},
+  "ref":{p:{k:"#0A0A0A",r:"#C2452C",w:"#F6F7F2",y:"#FFF3C4",m:"#8A8A96"},g:[
+    "................","......kkkk......",".....krrrrk.....",".....krwrrk.....",
+    "......krrk......","....kkkrrkkk....","...krrrrrrrrk...","....kkkkkkkk....",
+    ".......kk.......",".kkkkkkmkkkkkk..",".kyyyyykyyyyyk..",".kyyyyyyyyyyyk..",
+    ".kyyyyyyyyyyyk..",".kyyyyyyyyyyyk..",".kkkkkkkkkkkkk..","................"]},
+  "t-build":{p:{k:"#0A0A0A",a:"#1084D0",b:"#E0442B",p:"#FF5FA8"},g:[
+    "................","..kkkkkk........","..kaaaak........","..kaaaakkkkk....",
+    "..kaaaakbbbk....","..kaaaakbbbk....","..kkkkkbbbbk....","......kbbbbk....",
+    "......kkkkkk....","................","..pp..pp..pp....","...........pp...",
+    "............pp..",".............p..","................","................"]},
+});
+// The taskbar's Arrange button: two windows side by side.
+ICON_ART.arrange = {p:{k:"#0A0A0A",b:"#000080",c:"#1084D0",w:"#FFFFFF",s:"#808080"},g:[
+  "................","kkkkkkk..kkkkkkk","kbbbbck..kbbbbck","kkkkkkk..kkkkkkk",
+  "kwwwwwks.kwwwwwk","kwwwwwks.kwwwwwk","kwwwwwks.kwwwwwk","kwwwwwks.kwwwwwk",
+  "kwwwwwks.kwwwwwk","kwwwwwks.kwwwwwk","kwwwwwks.kwwwwwk","kkkkkkks.kkkkkkk",
+  ".sssssss..ssssss","................","................","................"]};
 ICON_ART["t-pick"] = ICON_ART["t-eyedrop"];
 
 function clientIcon(dom, fallbackId){
@@ -225,3 +249,82 @@ function iconSVG(id, px){
   return '<svg viewBox="0 0 16 16" width="' + px + '" height="' + px +
          '" shape-rendering="crispEdges" aria-hidden="true">' + r + '</svg>';
 }
+
+/* ── the hourglass ─────────────────────────────────────────
+ * Not a static icon: the sand has to move. Same 16x16 grid and the same
+ * crisp edges as everything above, but the rows are filled at draw time from
+ * how much of the pause is left. The number goes over it in the DOM, where it
+ * stays legible at any fill.
+ */
+const GLASS_ROWS = [
+  null,                              // 0  cap
+  [4, 8], [4, 8], [5, 6], [6, 4], [6, 4], [7, 2],   // 1-6  upper bulb
+  [7, 2], [7, 2],                                    // 7-8  the neck
+  [7, 2], [6, 4], [6, 4], [5, 6], [4, 8], [4, 8],    // 9-14 lower bulb
+  null                               // 15 cap
+];
+const GLASS_TOP = [1, 2, 3, 4, 5, 6];
+const GLASS_BOT = [14, 13, 12, 11, 10, 9];
+
+// ratio 0..1 of sand left; phase animates the falling grain; tone picks the
+// sand colour — "calm", "low", or "out".
+function hourglassSVG(ratio, px, phase, tone){
+  const r = Math.max(0, Math.min(1, Number(ratio) || 0));
+  const sand = tone === "out" ? "#E8563B" : tone === "low" ? "#E8913B" : "#E8C36A";
+  const sandD = tone === "out" ? "#B33A24" : tone === "low" ? "#B86A1E" : "#B8933E";
+  const frame = "#2E2318", glass = "#9FB4B8", lit = "#D7E4E6";
+  const put = (x, y, w, h, c) =>
+    '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + c + '"/>';
+
+  let s = put(3, 0, 10, 1, frame) + put(3, 15, 10, 1, frame) +
+          put(3, 1, 1, 1, frame) + put(12, 1, 1, 1, frame) +
+          put(3, 14, 1, 1, frame) + put(12, 14, 1, 1, frame);
+
+  // the empty glass, then the sand on top of it
+  GLASS_ROWS.forEach((row, y) => { if (row) s += put(row[0], y, row[1], 1, glass); });
+
+  const held = Math.round(GLASS_TOP.length * r);             // rows still up top
+  GLASS_TOP.slice(GLASS_TOP.length - held).forEach((y) => {
+    const [x, w] = GLASS_ROWS[y];
+    s += put(x, y, w, 1, sand);
+  });
+  const piled = Math.round(GLASS_BOT.length * (1 - r));      // rows fallen through
+  GLASS_BOT.slice(0, piled).forEach((y) => {
+    const [x, w] = GLASS_ROWS[y];
+    s += put(x, y, w, 1, sand);
+  });
+  if (piled) s += put(GLASS_ROWS[14][0], 14, GLASS_ROWS[14][1], 1, sandD);
+  if (held)  s += put(7, 6, 2, 1, sandD);
+
+  if (r > 0 && r < 1) s += put(7 + (phase % 2), 7 + (Math.floor(phase / 2) % 2), 1, 1, sand);
+  s += put(4, 1, 1, 1, lit) + put(4, 9, 1, 1, lit);          // one highlight, so it reads as glass
+
+  return '<svg viewBox="0 0 16 16" width="' + px + '" height="' + px +
+         '" shape-rendering="crispEdges" aria-hidden="true">' + s + '</svg>';
+}
+
+// A full glass, for the taskbar and anywhere a static one will do.
+ICON_ART.hourglass = {p:{k:"#2E2318",s:"#E8C36A",d:"#B8933E"},g:[
+  "...kkkkkkkkkk...","...kssssssssk...","....kssssssk....",".....kssssk.....",
+  ".....kssssk.....","......kssk......","......ksdk......","......ksdk......",
+  "......ksdk......","......kssk......",".....kssssk.....",".....kssssk.....",
+  "....kssssssk....","...kssssssssk...","...kssssssssk...","...kkkkkkkkkk..."]};
+
+ICON_ART.roomedit = {p:{k:"#0A0A0A",w:"#E8E4DA",b:"#4E6E88",a:"#E8913B",g:"#7FA38C"},g:[
+  "................",".kkkkkkkkkkkkkk.",".kwwwwwwwwwwwwk.",".kwbbwwwwwwaawk.",
+  ".kwbbwwwwwwaawk.",".kwwwwwggwwaawk.",".kwwwwwggwwwwwk.",".kwwbbwggwwwwwk.",
+  ".kwwbbwggwwwwwk.",".kwwwwwwwwwwwwk.",".kkkkkkkkkkkkkk.","......kaak......",
+  ".....kaaaak.....","....kaaaaaak....","...kkkkkkkkkk...","................"]};
+// The tray speaker, on and off.
+Object.assign(ICON_ART, {
+  sound:{p:{k:"#0A0A0A",w:"#E8E8EC",g:"#8A8A96"},g:[
+    "................","................",".......k........","......kk....k...",
+    ".....kwk.....k..","kkkkkwwk..k...k.","kwwwwwwk...k..k.","kwgwwwwk...k..k.",
+    "kwgwwwwk...k..k.","kwwwwwwk...k..k.","kkkkkwwk..k...k.",".....kwk.....k..",
+    "......kk....k...",".......k........","................","................"]},
+  soundoff:{p:{k:"#0A0A0A",w:"#E8E8EC",g:"#8A8A96",r:"#C2452C"},g:[
+    "................","................",".......k........","......kk........",
+    ".....kwk........","kkkkkwwk........","kwwwwwwk.r...r..","kwgwwwwk..r.r...",
+    "kwgwwwwk...r....","kwwwwwwk..r.r...","kkkkkwwk.r...r..",".....kwk........",
+    "......kk........",".......k........","................","................"]},
+});

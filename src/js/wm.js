@@ -1,8 +1,10 @@
 /* ── desktop / window manager ─────────────────────────────
  * Generic Win98 windows. Any app (briefs, mail, browser) calls
  * createWindow() and fills in .client itself; everything below —
- * focus, z-order, cascade, drag, resize, min/max/close, taskbar —
- * is app-agnostic. Windows are keyed by string ("brief:3", "mail").
+ * focus, z-order, placement, drag, resize from any edge, snapping to a
+ * half of the desk, min/max/close, arranging, taskbar — is app-agnostic.
+ * Windows are keyed by string ("brief:3", "mail"). The geometry is in
+ * wmgeom.js.
  */
 const deskEl = $("desk"), winsEl = $("wins"), iconsEl = $("icons"), tasksEl = $("tasks");
 const startBtn = $("startBtn"), smenu = $("smenu"), slist = $("slist");
@@ -10,7 +12,8 @@ const coarse = matchMedia("(pointer: coarse)").matches;
 
 const wins = new Map();       // key -> win record
 const shortcuts = new Map();  // key -> element
-let zTop = 10, cascade = 0, activeWin = null;
+let zTop = 10, activeWin = null;
+const ICON_COL = 104;         // the shortcut column new windows open clear of
 
 function esc(s){ return String(s).replace(/[&<>]/g, (m) => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[m])); }
 // Silkscreen draws its ampersand as something close to a cent sign, so any
@@ -24,7 +27,7 @@ function addShortcut(key, label, iconId, onOpen){
   el.className = "sc";
   el.type = "button";
   el.dataset.key = key;
-  el.innerHTML = iconSVG(iconId, 34) + '<span class="sc__l"></span>';
+  el.innerHTML = iconSVG(iconId, 32) + '<span class="sc__l"></span>';
   el.querySelector(".sc__l").textContent = pixelLabel(label);
   el.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -54,6 +57,14 @@ function focusWin(w){
   w.el.classList.add("on");
   w.tb.classList.add("on");
   w.el.style.zIndex = String(++zTop);
+  announceFocus();
+}
+
+// Whatever follows the front window (the music does) listens for this,
+// so no app has to call it. An empty className is the bare desktop.
+function announceFocus(){
+  const w = activeWin && activeWin.el.isConnected && !activeWin.el.classList.contains("min") ? activeWin : null;
+  document.dispatchEvent(new CustomEvent("wm:focus", { detail: { key: w ? w.key : null, className: w ? w.el.className : "" } }));
 }
 
 function getWin(key){ return wins.get(key) || null; }
@@ -62,6 +73,31 @@ function revealWin(w){
   if (w.el.classList.contains("min")) w.el.classList.remove("min");
   focusWin(w);
   return w;
+}
+
+/* ── geometry helpers ──────────────────────────────────── */
+const deskSize = () => ({ w: deskEl.clientWidth || 900, h: deskEl.clientHeight || 600 });
+const rectOf = (w) => ({ x: w.el.offsetLeft, y: w.el.offsetTop, w: w.el.offsetWidth, h: w.el.offsetHeight });
+function setRect(w, r){
+  w.el.style.left = Math.round(r.x) + "px"; w.el.style.top = Math.round(r.y) + "px";
+  w.el.style.width = Math.round(r.w) + "px"; w.el.style.height = Math.round(r.h) + "px";
+}
+const isMin = (w) => w.el.classList.contains("min");
+// The windows on show, back to front.
+const shownWins = () => [...wins.values()].filter((w) => !isMin(w))
+  .sort((a, b) => (Number(a.el.style.zIndex) || 0) - (Number(b.el.style.zIndex) || 0));
+
+function minimizeWin(w){
+  w.el.classList.add("min");
+  w.tb.classList.remove("on");
+  if (w === activeWin) announceFocus();
+}
+
+// Out of maximized and out of any snap, keeping the current position.
+function unsnap(w){
+  if (w.el.classList.contains("max")) w.el.classList.remove("max");
+  w.prev = null;
+  w.snap = null;
 }
 
 /* ── the generic window ────────────────────────────────── */
@@ -84,7 +120,9 @@ function createWindow(opts){
     '</div>' +
     '<div class="client"></div>' +
     (footer ? '<div class="wfoot">' + footer + '</div>' : '') +
-    '<div class="grip"></div>';
+    '<div class="grip"></div>' +
+    // Every edge and corner resizes, as on the real thing.
+    ["n", "s", "e", "w", "ne", "nw", "se", "sw"].map((d) => '<div class="rs rs--' + d + '" data-rs="' + d + '"></div>').join("");
 
   w.el = el;
   w.client = el.querySelector(".client");
@@ -95,50 +133,38 @@ function createWindow(opts){
     if (s) s.textContent = t;
   };
 
-  // Cascade like the real thing. Leave slack for the offset, and scale the
-  // step to whatever slack actually exists so small desks still fan out
-  // instead of stacking every window on one clamped position.
-  const dw = deskEl.clientWidth || 900, dh = deskEl.clientHeight || 600;
-  const ww = Math.min(opts.w || 600, Math.max(opts.minW || 250, dw - 70));
-  const wh = Math.min(opts.h || 470, Math.max(opts.minH || 170, dh - 70));
-  // Start clear of the shortcut column when there is room, so opening a window
-  // does not bury the desktop icons it came from.
-  const iconCol = 104;
-  const baseX = (dw - ww > iconCol + 16) ? iconCol : 8;
-  const slackX = Math.max(0, dw - ww - baseX - 8), slackY = Math.max(0, dh - wh - 16);
-  const stepX = Math.max(6, Math.min(26, slackX / 6)), stepY = Math.max(6, Math.min(26, slackY / 6));
-  const n = cascade % 7;
-  cascade++;
-  let x = Math.round(baseX + n * stepX), y = Math.round(8 + n * stepY);
-  if (x + ww > dw) x = Math.max(4, dw - ww - 4);
-  if (y + wh > dh) y = Math.max(4, dh - wh - 4);
-  el.style.left = x + "px"; el.style.top = y + "px";
-  el.style.width = ww + "px"; el.style.height = wh + "px";
+  // Open where it covers least of what is already open — beside the window
+  // you are working in, not on top of it — and clear of the shortcut column
+  // when there is room, so opening a window does not bury the icon it came from.
+  const desk = deskSize();
+  const ww = Math.min(opts.w || 600, Math.max(opts.minW || 250, desk.w - 70));
+  const wh = Math.min(opts.h || 470, Math.max(opts.minH || 170, desk.h - 70));
+  const spot = WinGeom.place(desk, { w: ww, h: wh }, shownWins().map(rectOf), { left: ICON_COL });
+  setRect(w, spot);
   if (opts.minW) el.style.minWidth = opts.minW + "px";
   if (opts.minH) el.style.minHeight = opts.minH + "px";
 
   const tb = document.createElement("button");
   tb.className = "task";
   tb.type = "button";
-  tb.innerHTML = '<i>' + iconSVG(iconId, 14) + '</i><span></span>';
+  tb.innerHTML = '<i>' + iconSVG(iconId, 16) + '</i><span></span>';
   tb.addEventListener("click", () => {
     if (el.classList.contains("min")){ el.classList.remove("min"); focusWin(w); }
-    else if (activeWin === w){ el.classList.add("min"); tb.classList.remove("on"); }
+    else if (activeWin === w) minimizeWin(w);
     else focusWin(w);
   });
   w.tb = tb;
   w.onClose = onClose;
 
   el.addEventListener("pointerdown", () => focusWin(w), true);
-  el.querySelector('[data-w="min"]').addEventListener("click", (e) => {
-    e.stopPropagation(); el.classList.add("min"); tb.classList.remove("on");
-  });
+  el.querySelector('[data-w="min"]').addEventListener("click", (e) => { e.stopPropagation(); minimizeWin(w); });
   el.querySelector('[data-w="max"]').addEventListener("click", (e) => { e.stopPropagation(); toggleMax(w); });
   el.querySelector('[data-w="cls"]').addEventListener("click", (e) => { e.stopPropagation(); closeWin(w); });
   el.querySelector(".tbar").addEventListener("dblclick", () => toggleMax(w));
 
   dragBy(el.querySelector(".tbar"), w, "move");
-  dragBy(el.querySelector(".grip"), w, "size");
+  dragBy(el.querySelector(".grip"), w, "size", "se");
+  el.querySelectorAll("[data-rs]").forEach((h) => dragBy(h, w, "size", h.dataset.rs));
 
   winsEl.appendChild(el);
   tasksEl.appendChild(tb);
@@ -170,33 +196,45 @@ function closeWin(w){
     activeWin = null;
     const last = [...wins.values()].pop();
     if (last) focusWin(last);
+    else announceFocus();
   }
 }
 
-/* drag + resize; pointer capture keeps it alive outside the window */
-function dragBy(handle, w, mode){
+/* drag + resize; pointer capture keeps it alive outside the window.
+ * mode "move" drags by the title bar and snaps at the desk's edges;
+ * mode "size" drags the edge or corner named by dir (n, s, e, w, ne…). */
+function dragBy(handle, w, mode, dir){
   handle.addEventListener("pointerdown", (e) => {
     if (e.button !== 0 || e.target.closest(".tb")) return;
-    if (mode === "move" && w.el.classList.contains("max")) return;
+    if (w.el.classList.contains("max")) return;
     e.preventDefault();
     focusWin(w);
     handle.setPointerCapture(e.pointerId);
     const sx = e.clientX, sy = e.clientY;
-    const ox = w.el.offsetLeft, oy = w.el.offsetTop;
-    const ow = w.el.offsetWidth, oh = w.el.offsetHeight;
-    const dw = deskEl.clientWidth, dh = deskEl.clientHeight;
-    const minW = parseInt(w.el.style.minWidth, 10) || 250;
-    const minH = parseInt(w.el.style.minHeight, 10) || 170;
+    const desk = deskSize(), deskBox = deskEl.getBoundingClientRect();
+    const min = { w: parseInt(w.el.style.minWidth, 10) || 250, h: parseInt(w.el.style.minHeight, 10) || 170 };
+    let start = rectOf(w), zone = null;
+
+    // Dragging a snapped window away gives it back the size it had before,
+    // still under the pointer at the same place along its title bar.
+    if (mode === "move" && w.snap && w.unsnapped){
+      const along = (sx - deskBox.left - start.x) / start.w;
+      start = { x: sx - deskBox.left - along * w.unsnapped.w, y: start.y, w: w.unsnapped.w, h: w.unsnapped.h };
+      setRect(w, start);
+      w.snap = null;
+    }
+    if (mode === "size") w.snap = null;
 
     const move = (ev) => {
       const dx = ev.clientX - sx, dy = ev.clientY - sy;
       if (mode === "move"){
         // keep at least a strip of titlebar reachable, like Win98
-        w.el.style.left = clamp(ox + dx, -(ow - 90), dw - 90) + "px";
-        w.el.style.top  = clamp(oy + dy, 0, dh - 26) + "px";
+        w.el.style.left = clamp(start.x + dx, -(start.w - 90), desk.w - 90) + "px";
+        w.el.style.top  = clamp(start.y + dy, 0, desk.h - 26) + "px";
+        zone = WinGeom.snapZone(desk, ev.clientX - deskBox.left, ev.clientY - deskBox.top);
+        showSnapGhost(zone && WinGeom.snapRect(desk, zone));
       } else {
-        w.el.style.width  = clamp(ow + dx, minW, dw - w.el.offsetLeft) + "px";
-        w.el.style.height = clamp(oh + dy, minH, dh - w.el.offsetTop) + "px";
+        setRect(w, WinGeom.resize(start, dir, dx, dy, min, desk));
       }
     };
     const up = (ev) => {
@@ -204,12 +242,117 @@ function dragBy(handle, w, mode){
       handle.removeEventListener("pointermove", move);
       handle.removeEventListener("pointerup", up);
       handle.removeEventListener("pointercancel", up);
+      showSnapGhost(null);
+      if (zone && ev.type === "pointerup") snapWin(w, zone);
     };
     handle.addEventListener("pointermove", move);
     handle.addEventListener("pointerup", up);
     handle.addEventListener("pointercancel", up);
   });
 }
+
+/* ── snapping ─────────────────────────────────────────────
+ * Drag a title bar to the left or right edge and the window takes that half
+ * of the desk; to the top edge, all of it. An outline shows where it will go
+ * before you let go. */
+const snapGhost = document.createElement("div");
+snapGhost.className = "snapghost";
+snapGhost.setAttribute("aria-hidden", "true");
+deskEl.appendChild(snapGhost);
+
+function showSnapGhost(r){
+  snapGhost.classList.toggle("on", !!r);
+  if (!r) return;
+  snapGhost.style.left = r.x + "px"; snapGhost.style.top = r.y + "px";
+  snapGhost.style.width = r.w + "px"; snapGhost.style.height = r.h + "px";
+}
+
+function snapWin(w, zone){
+  if (zone === "max"){ if (!w.el.classList.contains("max")) toggleMax(w); return; }
+  if (!w.snap) w.unsnapped = rectOf(w);
+  w.snap = zone;
+  setRect(w, WinGeom.snapRect(deskSize(), zone));
+  focusWin(w);
+}
+
+/* ── arranging ────────────────────────────────────────────
+ * The taskbar's own menu, as in Win98: right-click the taskbar, or use the
+ * Arrange button beside Start. */
+function arrangeWins(mode){
+  if (mode === "min"){ shownWins().forEach(minimizeWin); return; }
+  if (mode === "restore"){ [...wins.values()].filter(isMin).forEach((w) => w.el.classList.remove("min")); const f = shownWins().pop(); if (f) focusWin(f); return; }
+  const list = shownWins();                          // back to front
+  if (!list.length) return;
+  const desk = deskSize();
+  // A cascade ends with the front window on top at the foot of the stair;
+  // tiles give the front window the first place.
+  const order = mode === "cascade" ? list : list.slice().reverse();
+  const rects = mode === "cascade" ? WinGeom.cascade(desk, order.length) : WinGeom.tile(desk, order.length, mode);
+  order.forEach((w, i) => { unsnap(w); setRect(w, rects[i]); });
+  if (mode === "cascade") order.forEach(focusWin);
+  else focusWin(order[0]);
+}
+
+// Two windows side by side, e.g. a live call and the site it is about:
+// `first` keeps its width on the left, `second` takes the rest.
+function pairWins(first, second){
+  if (!first || !second || first === second) return;
+  const [a, b] = WinGeom.pair(deskSize(), first.el.offsetWidth);
+  [[first, a], [second, b]].forEach(([w, r]) => { w.el.classList.remove("min"); unsnap(w); setRect(w, r); });
+  focusWin(first);
+  focusWin(second);
+}
+
+const arrangeMenu = document.createElement("div");
+arrangeMenu.className = "ctxm";
+arrangeMenu.setAttribute("role", "menu");
+arrangeMenu.innerHTML = [
+  ["cascade", "Cascade Windows"], ["cols", "Tile Windows Side by Side"], ["rows", "Tile Windows Stacked"], null,
+  ["min", "Minimize All Windows"], ["restore", "Restore All Windows"],
+].map((it) => it ? '<button class="si" type="button" role="menuitem" data-arrange="' + it[0] + '"><span>' + it[1] + "</span></button>" : '<div class="ssep"></div>').join("");
+smenu.parentNode.appendChild(arrangeMenu);
+
+const arrangeBtn = document.createElement("button");
+arrangeBtn.className = "qlaunch";
+arrangeBtn.type = "button";
+arrangeBtn.title = "Arrange windows — or right-click the taskbar";
+arrangeBtn.setAttribute("aria-label", "Arrange windows");
+arrangeBtn.setAttribute("aria-haspopup", "true");
+arrangeBtn.innerHTML = iconSVG("arrange", 16);
+startBtn.insertAdjacentElement("afterend", arrangeBtn);
+
+function toggleArrange(open, x){
+  const next = open === undefined ? !arrangeMenu.classList.contains("on") : open;
+  arrangeMenu.classList.toggle("on", next);
+  arrangeBtn.classList.toggle("on", next);
+  if (!next) return;
+  const any = wins.size > 0;
+  arrangeMenu.querySelectorAll("[data-arrange]").forEach((b) => {
+    const m = b.dataset.arrange;
+    b.disabled = m === "restore" ? ![...wins.values()].some(isMin) : !any || (m !== "min" && !shownWins().length);
+  });
+  const host = arrangeMenu.parentNode.getBoundingClientRect();
+  const left = x === undefined ? arrangeBtn.getBoundingClientRect().left - host.left : x - host.left;
+  arrangeMenu.style.left = Math.max(4, Math.min(left, host.width - arrangeMenu.offsetWidth - 4)) + "px";
+  const first = arrangeMenu.querySelector("[data-arrange]:not(:disabled)");
+  if (first) first.focus({ preventScroll: true });
+}
+arrangeBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleArrange(); });
+startBtn.parentNode.addEventListener("contextmenu", (e) => {
+  if (e.target.closest(".tray")) return;
+  e.preventDefault();
+  toggleArrange(true, e.clientX);
+});
+arrangeMenu.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-arrange]");
+  if (!b || b.disabled) return;
+  toggleArrange(false);
+  arrangeWins(b.dataset.arrange);
+});
+arrangeMenu.addEventListener("keydown", (e) => { if (e.key === "Escape"){ toggleArrange(false); arrangeBtn.focus(); } });
+document.addEventListener("pointerdown", (e) => {
+  if (arrangeMenu.classList.contains("on") && !arrangeMenu.contains(e.target) && !arrangeBtn.contains(e.target)) toggleArrange(false);
+});
 
 /* ── brief windows ─────────────────────────────────────── */
 function briefKey(ci){ return "brief:" + ci; }

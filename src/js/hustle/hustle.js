@@ -4,8 +4,9 @@
  *
  *   find      gigslist posts, the crawler, and brand ads whose domains you
  *             have to work out and type in yourself
- *   brief     a Pager conversation; the questions you ask decide what the
- *             ticket says, and the client only has so much attention
+ *   brief     a video call. The questions you ask decide what the ticket
+ *             says, the client only has so much attention, and an hourglass
+ *             runs on every pause — see meeting.js for the rules
  *   research  timed: clip facts and rival trends off pages, cut things out of
  *             pictures, and prove the gap on the comparison grid
  *   make      in the design suite, with the cards you found
@@ -17,12 +18,14 @@
  */
 
 const Hustle = (() => {
-  const H = HUSTLE, Dlg = HustleDialogue, Res = HustleResearch, Sc = HustleScore;
+  const H = HUSTLE, Dlg = HustleDialogue, Mtg = HustleMeeting, Res = HustleResearch, Sc = HustleScore;
+  const Por = typeof Portraits !== "undefined" ? Portraits : null;
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
   const GL = (path) => "http://" + H.GIGSLIST + (path || "/");
   const SYSTEM = "gigslist";
   const CLIP_MISS = 5, GAP_MISS = 30, GAP_TRIES = 2;
-  const UNLOCKS = [[5, "snap", "Snap to grid"], [10, "align", "Align"], [16, "gradient", "Gradients"], [24, "mirror", "Mirror drawing"], [32, "pen", "The pen tool"]];
+  // The pen is a core tool now: drawing characters by eye needs it from day one.
+  const UNLOCKS = [[5, "snap", "Snap to grid"], [10, "align", "Align"], [16, "gradient", "Gradients"], [24, "mirror", "Mirror drawing"]];
 
   let state = null;
   let clipping = true;
@@ -31,8 +34,15 @@ const Hustle = (() => {
   let trayEl = null, pagerTrayEl = null, balloonEl = null, balloonTimer = 0;
   let pagerSel = null;
   let renderTimer = 0;
+  let welcome = () => {};           // set in boot; the camera's walkthrough ends with it
+  let callTimer = 0;               // one interval drives every open call
+  const callAnim = {};             // per-call blink, speech and dropped frames
+  // One shape for every call's record, whoever touches it first: an empty one
+  // left phase undefined, so mouths never moved and the glass drew NaN.
+  const animOf = (id) => callAnim[id] || (callAnim[id] = { blinkUntil: 0, nextBlink: 0, glitchUntil: 0, nextGlitch: 0, phase: 0 });
 
   const G = () => state.hustle;
+  const myName = () => (typeof Camera !== "undefined" && Camera.name && Camera.name()) || "you";
   const gigOf = (id) => H.gigs[id] || null;
   const gsOf = (id) => G().gigs[id] || (G().gigs[id] = {});
   const save = () => Bridge.saveState(state);
@@ -40,6 +50,10 @@ const Hustle = (() => {
   const hostOf = (url) => { try { return new URL(url).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; } };
   const clock = (sec) => { const s = Math.max(0, Math.round(sec)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
   const siteClient = (dom) => (typeof CLIENTS !== "undefined" ? CLIENTS["HUSTLE:" + dom] : null) || null;
+  // The music hears about the game only through these, and may not be loaded.
+  const sound = (name, o) => { if (typeof Music !== "undefined") Music.sfx(name, o); };
+  const tune = (p) => { if (typeof Music !== "undefined") Music.set(p); };
+  const repFullness = () => (typeof MusicTheme !== "undefined" ? MusicTheme.fullnessFromRep(G().rep) : 0);
 
   /* ── boot ──────────────────────────────────────────────── */
   async function boot() {
@@ -52,8 +66,12 @@ const Hustle = (() => {
       prospects: h.prospects && typeof h.prospects === "object" ? h.prospects : {},
       threads: h.threads && typeof h.threads === "object" ? h.threads : {},
       welcomed: !!h.welcomed,
+      me: h.me && typeof h.me === "object" ? h.me : null,
     };
+    if (typeof Camera !== "undefined" && Camera.init) Camera.init({ get: () => G().me, set: (m) => { G().me = m; save(); }, done: (go) => welcome(go) });
+    tune({ fullness: repFullness() });                // an unknown hears a sparse band
 
+    if (typeof RoomEdit !== "undefined") RoomEdit.applySaved(state);
     registerSites();
     Sites.registerHost(H.GIGSLIST, renderGigslist);
     Sites.registerHost(H.CRAWLER, renderCrawler);
@@ -68,15 +86,25 @@ const Hustle = (() => {
     Web.onNavigate(onNavigate);
 
     mountTray();
-    if (!G().welcomed) {
-      G().welcomed = true;
-      post(SYSTEM, "sys", [
-        "Welcome to gigslist.",
-        "Small jobs from real people. Reply to a post and the client will page you here.",
-        "Do good work and people start to hear about you. Some of them never post at all.",
-      ]);
-      balloon("Welcome to Hustle", "Open gigslist to find your first gig.", () => Web.visit(GL("/")));
-    }
+    welcome = (go) => {
+      if (!G().welcomed) {
+        G().welcomed = true;
+        post(SYSTEM, "sys", [
+          "Welcome to gigslist.",
+          "Small jobs from real people. Reply to a post and the client will page you here.",
+          "Do good work and people start to hear about you. Some of them never post at all.",
+        ]);
+        if (!go) balloon("Welcome to Hustle", "Open gigslist to find your first gig.", () => Web.visit(GL("/")));
+        save(); paintTray();
+      }
+      if (go) Web.visit(GL("/"));
+    };
+    // First, your camera: build yourself, then let it talk you through the rest.
+    // After boot returns, so the desktop shortcuts it points at are there.
+    setTimeout(() => {
+      const intro = typeof Camera !== "undefined" && Camera.intro && Camera.intro(welcome);
+      if (!intro) welcome(false);
+    }, 0);
     focusId = activeGigs()[0] || null;
     checkChains();
     checkInbound();
@@ -96,10 +124,17 @@ const Hustle = (() => {
   /* ── gigs: lookups ─────────────────────────────────────── */
   const stageOf = (id) => (G().gigs[id] && G().gigs[id].stage) || null;
   const activeGigs = () => Object.keys(H.gigs).filter((id) => ["research", "production"].includes(stageOf(id)));
+  // Clipping is live during the briefing too: a designer who reads the site
+  // before the call is the whole fantasy, and mid-call it costs sand rather
+  // than research seconds.
+  const CLIPPABLE_STAGES = ["research", "briefing"];
   const researchGig = () => {
-    if (focusId && stageOf(focusId) === "research") return focusId;
-    return Object.keys(H.gigs).find((id) => stageOf(id) === "research") || null;
+    if (focusId && CLIPPABLE_STAGES.includes(stageOf(focusId))) return focusId;
+    return Object.keys(H.gigs).find((id) => CLIPPABLE_STAGES.includes(stageOf(id))) || null;
   };
+  const clippedFacts = (gs) => (gs && gs.found && gs.found.facts) || [];
+  // One flip a call to start with; reputation buys you room to think.
+  const flipsFor = () => (G().rep >= 24 ? 3 : G().rep >= 10 ? 2 : 1);
 
   // What the design suite sees as a job.
   function jobs() {
@@ -196,28 +231,54 @@ const Hustle = (() => {
   function startBriefing(id) {
     const gig = gigOf(id), gs = gsOf(id);
     gs.stage = "briefing";
-    gs.dlg = Dlg.start(gig.dialogue);
-    const lines = gs.dlg.log.map((m) => m.text);
+    gs.dlg = Mtg.start(gig.dialogue, { flips: flipsFor() });
+    gs.found = gs.found || Res.emptyFound();        // you may have read up already
     gs.logged = gs.dlg.log.length;
-    post(gig.poster.handle, "them", lines);
-    balloon(gig.poster.name + " paged you", "Open the Pager to talk through the job.", () => focusPager(gig.poster.handle));
+    gs.callAt = now();
+    post(gig.poster.handle, "them", gs.dlg.log.map((m) => m.text));
+    focusId = id;
+    balloon(gig.poster.name + " is calling", "Pick up — they only have a few minutes.", () => openCall(id));
+    openCall(id);
   }
 
   function choose(id, optionId) {
     const gig = gigOf(id), gs = gsOf(id);
-    if (!gig || gs.stage !== "briefing" || typing(thread(gig.poster.handle))) return;
-    const next = Dlg.choose(gig.dialogue, gs.dlg, optionId);
-    if (next === gs.dlg) return;
+    if (!gig || gs.stage !== "briefing") return;
+    advance(id, Mtg.choose(gig.dialogue, gs.dlg, optionId, clippedFacts(gs)));
+  }
+
+  function flipGlass(id) {
+    const gig = gigOf(id), gs = gsOf(id);
+    if (!gig || gs.stage !== "briefing") return;
+    advance(id, Mtg.flip(gig.dialogue, gs.dlg));
+  }
+
+  // Takes whatever the meeting rules returned and lets the rest of the desktop
+  // catch up: the thread keeps the transcript, the ticket opens, research runs.
+  function advance(id, next) {
+    const gig = gigOf(id), gs = gsOf(id);
+    if (!next || next === gs.dlg) return;
     const fresh = next.log.slice(gs.logged || 0);
     gs.dlg = next;
     gs.logged = next.log.length;
-    for (const m of fresh) post(gig.poster.handle, m.who, m.text);
-    if (next.ended) {
-      const at = post(gig.poster.handle, "sys", "Brief written to your ticket. Research is open — the clock starts now.", { gig: id, cta: "ticket" });
-      startResearch(id);
-    }
+    const t = thread(gig.poster.handle);
+    for (const m of fresh) t.msgs.push({ who: m.who, text: String(m.text), at: now() });
+    if (next.ended) endCall(id);
     save();
-    renderPager();
+    renderCall(id);
+    scheduleRender();
+  }
+
+  function endCall(id) {
+    const gig = gigOf(id), gs = gsOf(id);
+    const s = Mtg.summary(gs.dlg);
+    const note = s.ended === "wrapped" ? "Call closed. Brief written to your ticket."
+      : s.ended === "bored" ? "They hung up. The ticket keeps the gaps — the work is scored on them anyway."
+      : s.ended === "drifted" ? "They drifted off and wrapped up on their own. What you never asked is still on the ticket."
+      : "Nothing left to ask. Brief written to your ticket.";
+    post(gig.poster.handle, "sys", note + " Research is open — the clock starts now.", { gig: id, cta: "ticket" });
+    startResearch(id);
+    tune({ call: callLive() });
   }
 
   function startResearch(id) {
@@ -257,6 +318,31 @@ const Hustle = (() => {
     const id = researchGig();
     if (!id) return;
     const gig = gigOf(id), gs = gsOf(id);
+
+    // Official art is never a card: clipping a model sheet pins it to the
+    // reference board, to draw from by eye.
+    const fig = target.closest && target.closest("[data-pose]");
+    if (fig && typeof RefBoard !== "undefined" && typeof Characters !== "undefined") {
+      const [cid, pose] = fig.dataset.pose.split(":");
+      if (Characters.has(cid, pose)) {
+        RefBoard.pin({ src: Characters.art(cid, pose, { scale: 1 }), label: Characters.CAST[cid].name + " — " + pose, char: cid, pose });
+        flash(fig, "hit");
+        floatNote(fig, "Pinned to your ref board", "pin");
+        webStatus("Pinned " + Characters.CAST[cid].name + " (" + pose + ") to your reference board. Look, don't copy.");
+        return;
+      }
+    }
+    // A fan artist's colour pick is an exact colour: that is the research.
+    const sw = target.closest && target.closest(".sw[data-hex]");
+    if (sw) {
+      const name = (sw.querySelector(".sw__n") || {}).textContent || sw.dataset.hex;
+      const n = Suite.addCards([{ kind: "colour", label: name.slice(0, 60), value: sw.dataset.hex, tags: ["colour-pick"], source: { url, ref: "pick:" + sw.dataset.hex } }]);
+      flash(sw, n ? "hit" : "dupe");
+      floatNote(sw, n ? "+ Colour card" : "Already a card", n ? "hit" : "dupe");
+      webStatus(n ? "Colour card: " + name + " " + sw.dataset.hex : "Already on a card: " + name);
+      return;
+    }
+
     const el = target.closest && target.closest(CLIPPABLE);
     if (!el || !el.closest(".ie__view")) { webStatus("Clip a passage: a paragraph, a list item, a caption."); return; }
     const text = el.textContent.replace(/\s+/g, " ").trim();
@@ -264,15 +350,26 @@ const Hustle = (() => {
     const hit = Res.clip(gig, H.sites, dom, text, gs.found);
 
     if (!hit) {
-      gs.research.left = Math.max(0, gs.research.left - CLIP_MISS);
-      flash(el, "miss");
-      webStatus("Nothing useful there. −" + CLIP_MISS + "s");
+      gs.misses = (gs.misses || 0) + 1;              // your camera notices
+      if (gs.stage === "briefing" && gs.dlg && !gs.dlg.ended) {
+        gs.dlg.sand -= CLIP_MISS * 500;              // and they are still waiting
+        flash(el, "miss");
+        floatNote(el, "Nothing useful — they're waiting", "miss");
+        webStatus("Nothing useful there — and they're still on the line.");
+      } else if (gs.research) {
+        gs.research.left = Math.max(0, gs.research.left - CLIP_MISS);
+        flash(el, "miss");
+        floatNote(el, "Nothing useful  −" + CLIP_MISS + "s", "miss");
+        webStatus("Nothing useful there. −" + CLIP_MISS + "s");
+      }
     } else if (hit.kind === "dupe") {
       flash(el, "dupe");
+      floatNote(el, "Already on a card", "dupe");
       webStatus("Already on a card: " + hit.item.label);
     } else {
       gs.found = Res.record(gs.found, hit);
       flash(el, "hit");
+      floatNote(el, "+ " + (hit.kind === "fact" ? "Fact" : "Trend") + " card: " + hit.item.label, "hit");
       if (hit.kind === "fact") {
         Suite.addCards([{ kind: "fact", label: hit.item.label, value: text.slice(0, 400), tags: hit.item.tags.concat(["fact"]), source: { url, ref: "fact:" + hit.item.id } }]);
         webStatus("Fact card: " + hit.item.label);
@@ -285,14 +382,43 @@ const Hustle = (() => {
     save();
     renderTicket(id);
     renderCompare(id);
-    if (gs.research.left <= 0) endResearch(id, "time");
+    Web.refreshTools();                              // the "found here" count
+    if (gs.research && gs.research.left <= 0) endResearch(id, "time");
   }
 
   function flash(el, kind) {
+    sound("clip-" + kind);
     el.classList.remove("hx-hit", "hx-miss", "hx-dupe");
     void el.offsetWidth;
     el.classList.add("hx-" + kind);
     setTimeout(() => el.classList.remove("hx-" + kind), 900);
+  }
+
+  // What a clip was worth, rising off the passage itself — where you are
+  // looking — instead of only in the status bar at the foot of the window.
+  function floatNote(el, text, kind) {
+    const win = el.closest(".w98");
+    if (!win) return;
+    const wr = win.getBoundingClientRect(), r = el.getBoundingClientRect();
+    const n = document.createElement("div");
+    n.className = "hx-float hx-float--" + kind;
+    n.textContent = text.length > 60 ? text.slice(0, 57) + "…" : text;
+    n.style.left = Math.round(Math.max(8, Math.min(r.left - wr.left + 10, wr.width - 240))) + "px";
+    n.style.top = Math.round(Math.max(34, Math.min(r.top - wr.top - 26, wr.height - 40))) + "px";
+    win.appendChild(n);
+    setTimeout(() => n.remove(), 1600);
+  }
+
+  // How much of what this site holds for the gig is already on cards. Every
+  // fact names the site it is on, so the count is exact.
+  function foundHere(id, host) {
+    if (!host) return null;
+    const gig = gigOf(id), found = gsOf(id).found || Res.emptyFound();
+    const facts = (gig.facts || []).filter((f) => String(f.where || "").toLowerCase() === host);
+    const trends = (gig.competitors || []).includes(host) ? Res.relevantTrends(gig, H.sites, host) : [];
+    const got = facts.filter((f) => found.facts.includes(f.id)).length +
+      trends.filter((t) => ((found.trends || {})[host] || []).includes(t.id)).length;
+    return { got, total: facts.length + trends.length };
   }
 
   function webStatus(text) {
@@ -333,11 +459,73 @@ const Hustle = (() => {
   }
 
   /* ── delivery ──────────────────────────────────────────── */
+  /* ── likeness: the renderer's half ───────────────────────
+   * For every subject marker, draw only the shapes sitting mostly inside it,
+   * on their own, and hand the pixels to HustleLikeness.compare with the model
+   * sheet. Images never count as drawing, so pasted art cannot pass as work. */
+  const DRAWN = ["rect", "ellipse", "path"];
+
+  function insideFrac(l, box) {
+    const a = (l.rot || 0) * Math.PI / 180, cx = l.x + l.w / 2, cy = l.y + l.h / 2;
+    const hw = Math.abs(l.w / 2 * Math.cos(a)) + Math.abs(l.h / 2 * Math.sin(a));
+    const hh = Math.abs(l.w / 2 * Math.sin(a)) + Math.abs(l.h / 2 * Math.cos(a));
+    const x0 = Math.max(cx - hw, box.x), x1 = Math.min(cx + hw, box.x + box.w);
+    const y0 = Math.max(cy - hh, box.y), y1 = Math.min(cy + hh, box.y + box.h);
+    const area = 4 * hw * hh;
+    return area > 0 && x1 > x0 && y1 > y0 ? ((x1 - x0) * (y1 - y0)) / area : 0;
+  }
+
+  function measureLikeness(doc) {
+    const report = { subjects: {}, scaleOK: null, pasted: false };
+    if (typeof Characters === "undefined" || typeof HustleLikeness === "undefined") return report;
+    const official = new Set(Suite.cards().filter((c) => c.tags.includes("official-art")).map((c) => c.id));
+    report.pasted = doc.layers.some((l) => l.type === "image" && !l.hidden && (official.has(l.card) || official.has(l.cards && l.cards.src)));
+    for (const sj of SuiteDoc.subjects(doc)) {
+      const id = sj.ref.id, pose = sj.ref.pose;
+      if (!Characters.has(id, pose)) continue;
+      const ref = Characters.reference(id, pose);
+      const shapes = doc.layers.filter((l) => DRAWN.includes(l.type) && !l.hidden && insideFrac(l, sj) >= 0.6);
+      const s = Math.max(1, (ref.h * 2) / Math.max(1, sj.h));
+      const cv = document.createElement("canvas");
+      cv.width = Math.max(1, Math.ceil(sj.w * s)); cv.height = Math.max(1, Math.ceil(sj.h * s));
+      const ctx = cv.getContext("2d", { willReadFrequently: true });
+      ctx.setTransform(s, 0, 0, s, -sj.x * s, -sj.y * s);
+      for (const l of shapes) SuiteRender.drawLayer(ctx, Object.assign({}, l, { opacity: 1 }));
+      const r = HustleLikeness.compare(ref, { w: cv.width, h: cv.height, rgba: ctx.getImageData(0, 0, cv.width, cv.height).data });
+      const entry = Object.assign({}, r, { pose, drawnH: r.drawn ? r.drawn.h / s : 0, shapes: shapes.length });
+      if (!report.subjects[id] || entry.quality > report.subjects[id].quality) report.subjects[id] = entry;
+    }
+    const t = report.subjects.toma, k = report.subjects.kiyoshi;
+    if (t && k && t.pose === k.pose) {
+      report.scaleOK = HustleLikeness.relativeScale(t.drawnH, k.drawnH, Characters.heightOf("toma", t.pose), Characters.heightOf("kiyoshi", k.pose));
+    }
+    return report;
+  }
+
+  // Warnings before a delivery goes out — only about things the player knows
+  // the client wants.
+  function preflight(id, doc) {
+    const gig = gigOf(id), gs = G().gigs[id];
+    if (!gig || !gs) return [];
+    const known = new Set((gs.dlg && gs.dlg.revealed) || []);
+    const out = [];
+    for (const need of gig.needs || []) {
+      if (!need.subjects || !known.has(need.id)) continue;
+      const marked = new Set(SuiteDoc.subjects(doc).map((l) => l.ref.id));
+      for (const cid of need.subjects) {
+        if (marked.has(cid)) continue;
+        const name = typeof Characters !== "undefined" && Characters.CAST[cid] ? Characters.CAST[cid].name.split(" ")[0] : cid;
+        out.push("Mark where " + name + " is: drag his pin from the reference board onto the canvas, or the on-model check can't find him.");
+      }
+    }
+    return out;
+  }
+
   function deliver(id, doc, appId) {
     const gig = gigOf(id), gs = gsOf(id);
     if (!gig || !["research", "production"].includes(gs.stage)) return { ok: false, reason: "That gig isn't open for delivery." };
     const late = gs.production ? Math.max(0, gs.production.used - gig.deadline) : 0;
-    const r = Sc.score({ gig, doc, cards: Suite.cards(), appId, lateSeconds: late });
+    const r = Sc.score({ gig, doc, cards: Suite.cards(), appId, lateSeconds: late, likeness: measureLikeness(doc) });
     if (!r.ok) return r;
     if (gs.stage === "research") { gs.stage = "production"; gs.production = { used: 0 }; }
 
@@ -345,6 +533,7 @@ const Hustle = (() => {
     gs.stage = "delivered";
     gs.result = { total: r.total, stars: r.stars, rep: r.rep, gap: r.gap, lines: r.lines, at: now(), appId };
     G().rep = Math.min(100, G().rep + r.rep);
+    tune({ fullness: repFullness() });
     if (gig.output && doc.mode !== "layout") {
       try { gs.output = SuiteRender.toPNG(doc, doc.mode === "pixel" ? 4 : 1); } catch { gs.output = null; }
     }
@@ -361,7 +550,8 @@ const Hustle = (() => {
     }
     focusId = activeGigs()[0] || null;
     focusPager(handle);
-    balloon(gig.poster.name + " reviewed your work", "★".repeat(r.stars) + " · " + r.total + "/100", () => focusPager(handle));
+    sound("deliver", { stars: r.stars });
+    balloon(gig.poster.name + " reviewed your work", "★".repeat(r.stars) + " · " + r.total + "/100", () => focusPager(handle), true);
     setTimeout(() => { checkChains(); checkInbound(); }, 5000);
     save();
     renderTicket(id);
@@ -417,9 +607,29 @@ const Hustle = (() => {
         gs.production.used += 1;
       }
     }
+    tune({ pressure: pressureNow(), call: callLive() });
     if (tickN % 5 === 0) save();
     document.querySelectorAll("[data-hx-timer]").forEach((el) => { el.textContent = timerText(el.dataset.hxTimer); });
     paintTray();
+  }
+
+  // For the music: how close the nearest clock is to running out (0-1), and
+  // whether anybody is on a call right now.
+  function pressureNow() {
+    if (typeof MusicTheme === "undefined") return 0;
+    let p = 0;
+    for (const id of Object.keys(H.gigs)) {
+      const gig = gigOf(id), gs = G().gigs[id];
+      if (!gs) continue;
+      p = Math.max(p, MusicTheme.pressureOf({
+        stage: gs.stage, left: gs.research && gs.research.left, total: (gig.research && gig.research.seconds) || 240,
+        used: gs.production && gs.production.used, deadline: gig.deadline,
+      }));
+    }
+    return p;
+  }
+  function callLive() {
+    return Object.keys(H.gigs).some((id) => { const gs = G().gigs[id]; return !!(gs && gs.dlg && !gs.dlg.ended && getWin(callKey(id))); });
   }
 
   function timerText(id) {
@@ -445,6 +655,11 @@ const Hustle = (() => {
         parts.push('<span class="hx-tb__gig"><b>' + esc(gig.short) + '</b> <span class="hx-tb__t" data-hx-timer="' + rid + '">' + timerText(rid) + "</span></span>");
         parts.push('<button class="w98btn" data-hx="ticket" data-gig="' + rid + '">Ticket</button>');
         parts.push('<button class="w98btn" data-hx="compare" data-gig="' + rid + '">Compare rivals</button>');
+        const here = foundHere(rid, host);
+        if (here) {
+          parts.push('<span class="hx-tb__here' + (here.total && here.got === here.total ? " done" : "") + '" title="What this site holds for ' + esc(gig.short) + '">' +
+            (here.total ? "Here: " + here.got + "/" + here.total + " clipped" : "Nothing here for this gig") + "</span>");
+        }
       } else {
         const pid = activeGigs()[0];
         if (pid) parts.push('<span class="hx-tb__gig"><b>' + esc(gigOf(pid).short) + '</b> <span class="hx-tb__t" data-hx-timer="' + pid + '">' + timerText(pid) + '</span></span><button class="w98btn" data-hx="suite" data-gig="' + pid + '">Design Suite</button>');
@@ -468,7 +683,10 @@ const Hustle = (() => {
         Suite.cutoutFrom({ src: extra.src, label: extra.q, tags }, researchGig() || activeGigs()[0]);
       }
     },
-    lightbox(q) {
+    lightbox(q, i) {
+      if (typeof Characters !== "undefined" && Characters.poseFor(q, i)) {
+        return '<span class="lb__hint">Official art. No screenshots in fan work: pin it, and draw by eye.</span>';
+      }
       return activeGigs().length
         ? '<button class="w98btn" data-hx="cut">Cut out…</button><span class="lb__hint">' +
           (tagsForQuery(q).length ? "Useful for your gig." : "Not obviously useful for your gig.") + "</span>"
@@ -597,7 +815,7 @@ const Hustle = (() => {
     pagerTrayEl.className = "tray__mail";
     pagerTrayEl.type = "button";
     pagerTrayEl.title = "Pager";
-    pagerTrayEl.innerHTML = "<i>" + iconSVG("pager", 14) + '</i><span class="tray__n"></span>';
+    pagerTrayEl.innerHTML = "<i>" + iconSVG("pager", 16) + '</i><span class="tray__n"></span>';
     pagerTrayEl.addEventListener("click", () => openPager());
     trayEl = document.createElement("button");
     trayEl.className = "tray__hx";
@@ -620,14 +838,15 @@ const Hustle = (() => {
     pagerTrayEl.querySelector(".tray__n").textContent = n ? String(n) : "";
   }
 
-  function balloon(title, text, onClick) {
+  function balloon(title, text, onClick, quiet) {
+    if (!quiet) sound("chime");
     if (!balloonEl) {
       balloonEl = document.createElement("div");
       balloonEl.className = "balloon balloon--hx";
       document.getElementById("sideScreen").appendChild(balloonEl);
     }
     balloonEl.innerHTML = '<button class="balloon__x" data-x aria-label="Dismiss">&#215;</button>' +
-      '<div class="balloon__h">' + iconSVG("pager", 14) + "<span>" + esc(title) + "</span></div>" +
+      '<div class="balloon__h">' + iconSVG("pager", 16) + "<span>" + esc(title) + "</span></div>" +
       '<div class="balloon__b">' + esc(text) + "</div>";
     balloonEl.onclick = (e) => {
       balloonEl.classList.remove("on");
@@ -679,11 +898,11 @@ const Hustle = (() => {
             : m.cta === "review" ? '<button class="w98btn" data-pg="ticket" data-gig="' + m.gig + '">Read the review</button>' : "";
           return '<div class="pg__sys">' + esc(m.text) + (btn ? "<div>" + btn + "</div>" : "") + "</div>";
         }
-        return '<div class="pg__m pg__m--' + m.who + '"><b>' + (m.who === "you" ? "you" : esc(t.name)) + "</b><span>" + esc(m.text) +
+        return '<div class="pg__m pg__m--' + m.who + '"><b>' + (m.who === "you" ? esc(myName()) : esc(t.name)) + "</b><span>" + esc(m.text) +
           (m.file ? '<em class="pg__file">📎 ' + esc(m.file) + "</em>" : "") + "</span></div>";
       }).join("");
-      const opts = gs && !isTyping ? Dlg.available(gigOf(gid).dialogue, gs.dlg).map((o) =>
-        '<button class="w98btn pg__opt' + (o.end ? " pg__opt--end" : "") + '" data-pg="ask" data-gig="' + gid + '" data-opt="' + o.id + '">' + esc(o.ask) + "</button>").join("") : "";
+      // The briefing happens on the call now; the thread keeps the transcript.
+      const opts = gs ? '<button class="w98btn pg__opt pg__opt--end" data-pg="call" data-gig="' + gid + '">Back to the call with ' + esc(t.name) + "</button>" : "";
       chat = '<div class="pg__who"><b>' + esc(t.name) + '</b><span>' + esc(t.handle === SYSTEM ? "system" : t.site) + "</span>" + meter + "</div>" +
         '<div class="pg__log">' + msgs + (isTyping ? '<div class="pg__typing">' + esc(t.name) + " is typing…</div>" : "") + "</div>" +
         '<div class="pg__opts">' + (gs ? (isTyping ? '<span class="pg__wait">…</span>' : opts) : "") + "</div>";
@@ -710,8 +929,247 @@ const Hustle = (() => {
     const a = b.dataset.pg;
     if (a === "sel") { pagerSel = b.dataset.h; renderPager(); }
     if (a === "ask") choose(b.dataset.gig, b.dataset.opt);
+    if (a === "call") openCall(b.dataset.gig);
     if (a === "ticket") renderTicket(b.dataset.gig, true);
     if (a === "suite") Suite.launcher(b.dataset.gig);
+  }
+
+  /* ── the call ──────────────────────────────────────────────
+   * A briefing is a live meeting, so it gets a window of its own rather than
+   * a list of buttons in the Pager. The rules are in meeting.js; everything
+   * here is the face, the room and the glass.
+   *
+   * One interval drives every open call. State changes — asking, flipping,
+   * a silence they fill themselves — rebuild the window through advance();
+   * the rest of the time only the canvas, the hourglass and the clock move.
+   */
+  const callKey = (id) => "call:" + id;
+  const personFor = (gig) => (H.people && H.people[gig.poster.handle]) || {};
+
+  function openCall(id) {
+    const gig = gigOf(id);
+    if (!gig) return null;
+    const who = personFor(gig);
+    let w = getWin(callKey(id));
+    if (!w) {
+      w = createWindow({
+        key: callKey(id), title: "CALL — " + String(who.co || gig.poster.name).toUpperCase(),
+        iconId: "pager", w: 566, h: 660, minW: 470, minH: 520, className: "w98--call",
+      });
+      w.client.classList.add("client--flush");
+      w.client.addEventListener("click", onCallClick);
+      renderCall(id);
+    }
+    startCallLoop();
+    return revealWin(w);
+  }
+
+  function onCallClick(e) {
+    const b = e.target.closest("[data-cl]");
+    if (!b) return;
+    const id = b.dataset.gig, a = b.dataset.cl;
+    if (a === "ask") choose(id, b.dataset.opt);
+    if (a === "flip") flipGlass(id);
+    if (a === "ticket") renderTicket(id, true);
+    if (a === "visit") {
+      const gig = gigOf(id);
+      focusId = id; clipping = true;
+      Web.visit("http://" + gig.poster.site + "/", siteForWeb(id, gig.poster.site));
+      // They are still on the line: the site opens beside the call, not over it.
+      pairWins(getWin(callKey(id)), getWin("browser"));
+    }
+  }
+
+  // portraits.js lights a room by how dark it is.
+  function portraitTheme(t) {
+    t = t || {};
+    const hex = String(t.bg || "#202020");
+    const n = parseInt(hex.slice(1), 16) || 0;
+    const lum = (((n >> 16) & 255) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114) / 255;
+    return { bg: t.bg || "#202020", panel: t.panel || "#2A2A2A", ink: t.ink || "#EEE",
+             dim: t.dim || "#888", line: t.line || "#444", brand: t.brand || "#4E6E88",
+             brand2: t.brand2, dark: lum < 0.5 };
+  }
+
+  function renderCall(id) {
+    const w = getWin(callKey(id));
+    if (!w) return;
+    const gig = gigOf(id), gs = gsOf(id), st = gs.dlg, who = personFor(gig);
+    if (!st) return;
+    const site = siteClient(gig.poster.site) || {};
+    const brand = (site.theme && site.theme.brand) || "#4E6E88";
+    const opts = Mtg.available(gig.dialogue, st, clippedFacts(gs));
+    const waiting = !st.ended && st.speaking > 0;
+
+    const pips = Array.from({ length: st.max }, (_, i) =>
+      '<i class="' + (i < st.patience ? "on" : "") + '"></i>').join("");
+
+    let actions;
+    if (st.ended) {
+      actions = '<p class="cl__over">' + esc(
+        st.reason === "wrapped" ? "Call closed. They have what they need."
+        : st.reason === "bored" ? "They ran out of patience and hung up."
+        : st.reason === "drifted" ? "The silences did it. They wrapped up on their own."
+        : "You asked everything there was.") + "</p>" +
+        '<button class="w98btn cl__go" data-cl="ticket" data-gig="' + id + '">Open the ticket</button>';
+    } else if (waiting) {
+      actions = '<p class="cl__wait">' + esc(who.name || gig.poster.name) + " is speaking…</p>";
+    } else {
+      actions = opts.map((o) =>
+        '<button class="w98btn cl__opt' + (o.challenge ? " cl__opt--win" : "") + (o.end ? " cl__opt--end" : "") +
+        '" data-cl="ask" data-gig="' + id + '" data-opt="' + esc(o.id) + '">' +
+        (o.challenge ? '<span class="cl__read">YOU READ THIS</span>' : "") + esc(o.ask) +
+        (o.cost > 1 ? '<em class="cl__cost">costs ' + o.cost + "</em>" : "") + "</button>").join("");
+    }
+
+    const lines = st.log.slice(-40).map((m) =>
+      '<div class="cl__l cl__l--' + (m.who === "you" ? "you" : "them") +
+      (m.filler ? " cl__l--fill" : "") + (m.challenge ? " cl__l--win" : "") + '">' +
+      "<b>" + esc(m.who === "you" ? myName() : String(who.name || gig.poster.name).split(" ")[0]) + "</b>" +
+      "<span>" + esc(m.text) + "</span></div>").join("");
+
+    w.client.innerHTML =
+      '<div class="cl">' +
+        '<div class="cl__stage">' +
+          '<canvas class="cl__feed" width="320" height="240" data-px="4"></canvas>' +
+          (typeof Camera !== "undefined" && Camera.paintSelf ? '<canvas class="cl__me" width="320" height="240" data-px="4" data-max="120x90" title="You"></canvas>' : "") +
+          '<div class="cl__hud">' +
+            '<span class="cl__rec">● LIVE <b data-cl-clock>00:00</b></span>' +
+            '<span class="cl__fps" data-cl-fps>8 fps · 320×240</span>' +
+            '<span class="cl__low" style="border-left-color:' + esc(brand) + '">' +
+              "<b>" + esc(who.name || gig.poster.name) + "</b>" +
+              "<span>" + esc(who.role || "") + (who.dom ? " · " + esc(who.dom) : "") + "</span></span>" +
+          "</div>" +
+          '<div class="cl__glass" title="How long they will sit in this pause">' +
+            "<span data-cl-art></span><b data-cl-secs>0</b></div>" +
+        "</div>" +
+        '<div class="cl__said" data-cl-said></div>' +
+        '<div class="cl__bar">' +
+          '<span class="cl__att"><em>ATTENTION</em><span class="cl__pips">' + pips + "</span></span>" +
+          '<button class="w98btn" data-cl="visit" data-gig="' + id + '" title="Read their site while they wait. Clipping stays on.">Their site</button>' +
+          '<button class="w98btn" data-cl="flip" data-gig="' + id + '"' +
+            (Mtg.canFlip(st) ? "" : " disabled") + ' title="Sorry — give me a second. Costs a pip of attention.">' +
+            "Turn the glass (" + Math.max(0, st.maxFlips - st.flips) + ")</button>" +
+        "</div>" +
+        '<div class="cl__opts">' + actions + "</div>" +
+        '<div class="cl__log">' + lines + "</div>" +
+      "</div>";
+
+    const log = w.client.querySelector(".cl__log");
+    if (log) log.scrollTop = log.scrollHeight;
+    animOf(id).sig = callSig(gig, gs, st);
+    paintCall(id);
+  }
+
+  // Everything that moves between state changes.
+  function paintCall(id) {
+    const w = getWin(callKey(id));
+    if (!w) return false;
+    const gig = gigOf(id), gs = gsOf(id), st = gs.dlg, who = personFor(gig);
+    if (!st) return false;
+    const a = animOf(id);
+    const t = now();
+    const talking = st.speaking > 0 && !st.ended;
+
+    if (t > a.blinkUntil && t > a.nextBlink) { a.blinkUntil = t + 130; a.nextBlink = t + 2200 + Math.random() * 4200; }
+    if (t > a.nextGlitch) { a.glitchUntil = t + 170; a.nextGlitch = t + 3600 + Math.random() * 6000; }
+    a.phase = (a.phase + 1) % 4;
+
+    const canvas = w.client.querySelector(".cl__feed");
+    if (canvas && Por) {
+      const site = siteClient(gig.poster.site) || {};
+      Por.paintFeed(canvas, gig.poster.handle, who.look, {
+        theme: portraitTheme(site.theme), room: who.room, frame: who.frame, framing: who.framing,
+        mood: Mtg.mood(st), blink: t < a.blinkUntil,
+        mouthOpen: talking && a.phase % 2 === 0,
+        bob: Math.floor(t / 900) % 3 === 0,
+        glance: Mtg.glancing(st),
+        glitch: t < a.glitchUntil ? Math.floor(t / 170) : 0,
+      });
+      const mine = w.client.querySelector(".cl__me");
+      if (mine && typeof Camera !== "undefined") {
+        const last = st.log[st.log.length - 1];
+        const asking = !talking && last && last.who === "you";
+        Camera.paintSelf(mine, { blink: (t % 4100) < 140, mouthOpen: asking && a.phase % 2 === 1, mood: st.ended ? "warm" : "neutral" });
+      }
+    }
+
+    const secs = Mtg.seconds(st), ratio = Mtg.ratio(st);
+    const art = w.client.querySelector("[data-cl-art]");
+    if (art) {
+      const tone = st.ended || talking ? "calm" : secs <= 3 ? "out" : ratio < 0.4 ? "low" : "calm";
+      art.innerHTML = hourglassSVG(talking || st.ended ? 1 : ratio, 32, a.phase, tone);
+      const box = art.parentNode;
+      box.classList.toggle("cl__glass--low", !talking && !st.ended && ratio < 0.4);
+      box.classList.toggle("cl__glass--out", !talking && !st.ended && secs <= 3);
+      box.classList.toggle("cl__glass--held", talking || st.ended);
+    }
+    const num = w.client.querySelector("[data-cl-secs]");
+    if (num) num.textContent = st.ended ? "—" : talking ? "·" : String(secs);
+
+    const said = w.client.querySelector("[data-cl-said]");
+    if (said && said.dataset.line !== st.said) {
+      said.dataset.line = st.said;
+      said.textContent = st.said ? "“" + st.said + "”" : "";
+    }
+    const clock = w.client.querySelector("[data-cl-clock]");
+    if (clock) {
+      const el = Math.max(0, Math.floor((t - (gs.callAt || t)) / 1000));
+      clock.textContent = String(Math.floor(el / 60)).padStart(2, "0") + ":" + String(el % 60).padStart(2, "0");
+    }
+    const fps = w.client.querySelector("[data-cl-fps]");
+    if (fps) fps.textContent = (t < a.glitchUntil ? "3" : "8") + " fps · 320×240";
+    return true;
+  }
+
+  // Everything the options pane depends on. When this changes, redraw it.
+  function callSig(gig, gs, st) {
+    return [st.speaking > 0 ? "talk" : "wait", st.ended ? st.reason : "live", st.patience, st.flips,
+            Mtg.available(gig.dialogue, st, clippedFacts(gs)).map((o) => o.id).join(",")].join("|");
+  }
+
+  function startCallLoop() {
+    if (callTimer) return;
+    callTimer = setInterval(callTick, 90);
+  }
+
+  function callTick() {
+    const live = Object.keys(H.gigs).filter((id) => getWin(callKey(id)));
+    if (!live.length || !state) { clearInterval(callTimer); callTimer = 0; tune({ call: false }); return; }
+    tune({ call: callLive() });                      // muffled the moment they pick up
+    for (const id of live) {
+      const gig = gigOf(id), gs = gsOf(id);
+      if (!gs || !gs.dlg) continue;
+      if (gs.stage === "briefing" && !gs.dlg.ended) {
+        const before = gs.dlg.log.length;
+        const next = Mtg.tick(gig.dialogue, gs.dlg, 90);
+        if (next.log.length !== before || next.ended) { advance(id, next); continue; }
+        gs.dlg = next;
+      }
+      const a = animOf(id);
+      const sig = callSig(gig, gs, gs.dlg);
+      if (sig !== a.sig) { renderCall(id); continue; }   // she stopped talking, or a window opened
+      paintCall(id);
+    }
+  }
+
+  /* ── where your first job is up to ─────────────────────── *
+   * The gig you touched last, as your camera's tour reads it. */
+  function progress() {
+    const ids = Object.keys(G().gigs).filter((k) => stageOf(k));
+    const id = ids.sort((a, b) => (G().gigs[b].contactAt || 0) - (G().gigs[a].contactAt || 0))[0] || null;
+    const gs = id ? G().gigs[id] : {}, dlg = gs.dlg || {};
+    const found = gs.found || { facts: [], trends: {} };
+    return {
+      id, stage: gs.stage || null, url: Web.currentURL ? Web.currentURL() : "",
+      site: id ? gigOf(id).poster.site : null, app: id ? gigOf(id).app : null,
+      callOpen: !!(id && getWin(callKey(id))),
+      suiteOpen: !!(id && ["banner", "type", "pixel", "layout"].some((a) => getWin("suite:" + a + ":" + id))),
+      facts: found.facts.length, trends: Object.values(found.trends).reduce((n, t) => n + t.length, 0),
+      gap: !!gs.gapFound, misses: gs.misses || 0, silences: dlg.silences || 0,
+      window: dlg.openWindow || null, ended: dlg.ended ? dlg.reason : null,
+      stars: gs.result ? gs.result.stars : null,
+    };
   }
 
   /* ── ticket window ─────────────────────────────────────── */
@@ -756,7 +1214,7 @@ const Hustle = (() => {
     const r = gs.result;
 
     let body = "";
-    if (gs.stage === "briefing" || gs.stage === "contacted") body = '<p class="tk__note">Still talking this one through in the Pager.</p>';
+    if (gs.stage === "briefing" || gs.stage === "contacted") body = '<p class="tk__note">Still on the call. What you never ask stays ??? — and is scored anyway.</p>';
     else {
       body =
         '<div class="tk__cols"><section><h3>WHAT THEY NEED</h3><ul class="tk__list">' + gig.needs.map(item).join("") + "</ul>" +
@@ -781,7 +1239,7 @@ const Hustle = (() => {
         : "";
 
     w.client.innerHTML = '<div class="tk">' +
-      '<header class="tk__head"><i>' + iconSVG("ticket", 34) + "</i><div><b>" + esc(gig.title) + "</b><span>" + esc(gig.poster.name) + " · " + esc(gig.poster.site) + " · " + esc(gig.pay) + "</span></div>" +
+      '<header class="tk__head"><i>' + iconSVG("ticket", 32) + "</i><div><b>" + esc(gig.title) + "</b><span>" + esc(gig.poster.name) + " · " + esc(gig.poster.site) + " · " + esc(gig.pay) + "</span></div>" +
         '<span class="tk__stage tk__stage--' + (gs.stage || "none") + '">' + esc(gs.stage || "open") + "</span></header>" +
       '<div class="tk__time"><span data-hx-timer="' + id + '">' + timerText(id) + "</span>" + (gs.stage === "production" ? '<span class="tk__dim">Deliver from the suite, or here.</span>' : "") + "</div>" +
       '<div class="tk__body">' + body + "</div>" +
@@ -829,11 +1287,20 @@ const Hustle = (() => {
   }
 
   return {
-    boot, jobs, deliver,
-    openPager, openTicket: (id) => renderTicket(id, true),
+    boot, jobs, deliver, preflight, measureLikeness,
+    openPager, openCall, openTicket: (id) => renderTicket(id, true),
     board: () => Web.visit(GL("/")),
     rep: () => (state ? G().rep : 0),
     // For testing and for the content pipeline: the whole game state.
     debug: () => JSON.parse(JSON.stringify(G())),
+    progress,
+    // What your camera's "show me" buttons do, the same way the game's own do.
+    tour: {
+      board: () => Web.visit(GL("/")),
+      site: (id) => { if (!gigOf(id)) return; focusId = id; clipping = true; Web.visit("http://" + gigOf(id).poster.site + "/", siteForWeb(id, gigOf(id).poster.site)); },
+      ticket: (id) => renderTicket(id, true),
+      compare: (id) => renderCompare(id, true),
+      suite: (id) => { if (!gigOf(id)) return; if (stageOf(id) === "research") endResearch(id, "early"); Suite.launcher(id); },
+    },
   };
 })();

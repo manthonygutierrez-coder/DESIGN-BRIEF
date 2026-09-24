@@ -240,11 +240,21 @@ const Web = (() => {
     });
     w.client.classList.add("client--flush");
     w.client.innerHTML =
-      '<div class="lb"><img src="' + Imagery.make(q, i, 640, 460) + '" alt="">' +
+      '<div class="lb"><div class="lb__stage"><img src="' + Imagery.make(q, i, 640, 460) + '" alt="" data-px="auto" data-fit="contain"></div>' +
       '<div class="lb__meta"><b>' + Imagery.filename(q, i).replace(/[&<>]/g, "") + '</b>' +
       '<span>' + Imagery.dimensions(q, i) + ' · from a search for “' + q.replace(/[&<>]/g, "") + '”</span></div>' +
-      (tools && tools.lightbox ? '<div class="lb__acts">' + tools.lightbox(q, i) + "</div>" : "") +
-      "</div>";
+      '<div class="lb__acts">' +
+        (typeof RefBoard !== "undefined" ? '<button class="w98btn" data-lbpin>Pin reference</button>' : "") +
+        (tools && tools.lightbox ? tools.lightbox(q, i) : "") +
+      "</div></div>";
+    // Pinning works in either slot: the board is a tool, not a game rule.
+    w.client.addEventListener("click", (e) => {
+      if (!e.target.closest("[data-lbpin]")) return;
+      const official = typeof Characters !== "undefined" ? Characters.poseFor(q, i) : null;
+      const src = official ? Characters.art(official.id, official.pose, { scale: 1, variant: official.variant }) : w.client.querySelector(".lb img").src;
+      const label = official ? official.name + " — " + official.pose + (official.variant === "dusk" ? ", ep. 12 dusk" : "") : Imagery.filename(q, i);
+      RefBoard.pin({ src, label, char: official && official.id, pose: official && official.pose, variant: official && official.variant });
+    });
     if (tools){
       w.client.addEventListener("click", (e) => {
         const hx = e.target.closest("[data-hx]");

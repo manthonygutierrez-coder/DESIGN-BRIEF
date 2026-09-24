@@ -49,6 +49,14 @@ const Sites = (() => {
 
   function themeOf(c){ return Object.assign({}, DEFAULT_THEME, c.theme || {}); }
 
+  // portraits.js lights a room differently depending on how dark it is.
+  function portraitTheme(t){
+    const n = parseInt(String(t.bg).slice(1), 16);
+    const lum = (((n >> 16) & 255) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114) / 255;
+    return { bg: t.bg, panel: t.panel, ink: t.ink, dim: t.dim, line: t.line,
+             brand: t.brand, brand2: t.brand2, dark: lum < 0.5 };
+  }
+
   function themeVars(t){
     return [
       "--bg:" + t.bg, "--panel:" + t.panel, "--ink:" + t.ink, "--dim:" + t.dim,
@@ -118,7 +126,7 @@ const Sites = (() => {
       return '<section class="blk blk--products">' + head(b) + sub(b) +
         '<div class="prods">' + b.items.map((p, i) =>
           '<article class="prod">' +
-            '<img src="' + Imagery.make(p.ref || refAt(c, i), 40 + i, 240, 180) + '" alt="">' +
+            '<img src="' + Imagery.make(p.ref || refAt(c, i), 40 + i, 240, 180) + '" alt="" data-px="auto">' +
             '<h3 class="prod__n">' + esc2(p.name) + "</h3>" +
             (p.meta ? '<p class="prod__m">' + esc2(p.meta) + "</p>" : "") +
             '<p class="prod__f"><span class="prod__p">' + esc2(p.price) + "</span>" +
@@ -213,7 +221,7 @@ const Sites = (() => {
     swatches(b){
       return '<section class="blk blk--sw">' + head(b) + sub(b) +
         '<div class="sws">' + b.items.map((s) =>
-          '<div class="sw"><span class="sw__c" style="background:' + attr(s.c) +
+          '<div class="sw"' + (/^#[0-9A-Fa-f]{6}$/.test(s.c || "") ? ' data-hex="' + s.c.toUpperCase() + '"' : "") + '><span class="sw__c" style="background:' + attr(s.c) +
             (s.tex ? ";background-image:" + attr(s.tex) : "") + '"></span>' +
           '<b class="sw__n">' + esc2(s.n) + "</b>" +
           (s.m ? '<span class="sw__m">' + esc2(s.m) + "</span>" : "") + "</div>").join("") +
@@ -224,7 +232,7 @@ const Sites = (() => {
       const caps = b.caps || c.site.gallery || [];
       return '<section class="blk blk--gal">' + head(b) +
         '<div class="gal">' + caps.map((cap, i) =>
-          "<figure><img src=\"" + Imagery.make(b.q || refAt(c, i), i + 11, 260, 190) + "\" alt=\"\">" +
+          "<figure><img src=\"" + Imagery.make(b.q || refAt(c, i), i + 11, 260, 190) + "\" alt=\"\" data-px=\"auto\">" +
           "<figcaption>" + esc2(cap) + "</figcaption></figure>").join("") +
         "</div>" + note(b) + "</section>";
     },
@@ -232,16 +240,58 @@ const Sites = (() => {
     // One image, given room. For studios whose work is the argument.
     plate(b, c){
       return '<section class="blk blk--plate">' +
-        "<img src=\"" + Imagery.make(b.q || refAt(c, 0), b.seed || 3, 720, 320) + "\" alt=\"\">" +
+        "<img src=\"" + Imagery.make(b.q || refAt(c, 0), b.seed || 3, 720, 320) + "\" alt=\"\" data-px=\"auto\">" +
         (b.cap ? '<p class="plate__cap">' + esc2(b.cap) + "</p>" : "") + "</section>";
     },
 
-    people(b){
+    // An About page. An item with a `seed` gets a photograph: the same person
+    // portraits.js draws on a call, shot in this site's own colours. Which is
+    // the point of the block — the face on your screen is either on this page
+    // or it is not, and either way that is a fact about who you are talking to.
+    people(b, c){
+      const t = themeOf(c);
+      const shot = (p) => {
+        if (!p.seed || typeof Portraits === "undefined") return "";
+        const who = (typeof HUSTLE !== "undefined" && HUSTLE.people && HUSTLE.people[p.seed]) || {};
+        const src = Portraits.photo(p.seed, p.look || who.look, {
+          theme: portraitTheme(t), room: p.room || who.room,
+          frame: p.plate || who.plate, w: 132, h: 158,
+        });
+        return '<img class="prs__f" src="' + src + '" width="132" height="158" alt="" loading="lazy" data-px="1" data-max="150x180">';
+      };
       return '<section class="blk blk--people">' + head(b) +
         '<div class="ppl">' + b.items.map((p) =>
-          '<div class="prs"><b>' + esc2(p.n) + "</b><span>" + esc2(p.r) + "</span>" +
-          (p.p ? "<p>" + esc2(p.p) + "</p>" : "") + "</div>").join("") +
-        "</div></section>";
+          '<div class="prs' + (p.lead ? " prs--lead" : "") + '">' + shot(p) +
+          '<div class="prs__t"><b>' + esc2(p.n) + "</b><span>" + esc2(p.r) + "</span>" +
+          (p.p ? "<p>" + esc2(p.p) + "</p>" : "") + "</div></div>").join("") +
+        "</div>" + note(b) + "</section>";
+    },
+
+    // Official model sheets: every pose at one whole-number scale, so the
+    // figures are crisp and their heights compare honestly. `lineup` stands
+    // several characters side by side on one baseline with a height guide.
+    sheet(b){
+      if (typeof Characters === "undefined") return "";
+      const scale = Math.max(1, Math.min(4, Math.round(b.scale || 3)));
+      const fig = (id, pose, label) => Characters.has(id, pose)
+        ? '<figure class="sheet__fig" data-pose="' + attr(id + ":" + pose) + '"><img src="' + Characters.art(id, pose, { scale }) +
+          '" alt="" width="' + Characters.pose(id, pose).w * scale + '" height="' + Characters.pose(id, pose).h * scale + '">' +
+          "<figcaption>" + esc2(label) + "</figcaption></figure>"
+        : "";
+      if (Array.isArray(b.lineup)){
+        // The figures share one baseline and one canvas height, so a guide at
+        // a canvas row lines up across all of them.
+        return '<section class="blk blk--sheet">' + head(b) + sub(b) +
+          '<div class="sheet sheet--lineup" style="--eye:' + (b.eyeline ? b.eyeline * scale : -99) + 'px">' +
+          b.lineup.map((id) => fig(id, "front", Characters.CAST[id].name + " · " + Characters.CAST[id].height + " cm")).join("") +
+          "</div>" + note(b) + "</section>";
+      }
+      const c = Characters.CAST[b.char];
+      if (!c) return "";
+      return '<section class="blk blk--sheet">' + head(b) + sub(b) +
+        '<div class="sheet">' + fig(b.char, "front", "front") + fig(b.char, "side", "side") + fig(b.char, "bust", "bust") + "</div>" +
+        '<p class="sheet__h">' + esc2(c.name) + " · " + c.height + " cm · " + esc2(Characters.SCHOOLS[c.school].name) +
+          (c.transfer ? " → " + esc2(Characters.SCHOOLS[c.transfer].name) : "") + "</p>" + note(b) + "</section>";
     },
 
     // A brand's banner ad. The brand is only named, never linked: finding the
@@ -265,10 +315,13 @@ const Sites = (() => {
     },
   };
 
+  // In the Layout app's preview (c.editMarks) every block's root carries its
+  // index, so a click or a dropped card can find the block it landed on.
   function renderBlocks(list, c){
-    return (list || []).map((b) => {
+    return (list || []).map((b, i) => {
       const fn = BLOCKS[b.t];
-      return fn ? fn(b, c) : "";
+      const html = fn ? fn(b, c) : "";
+      return c && c.editMarks && html ? html.replace(/^<([a-z0-9]+)/i, '<$1 data-block="' + i + '"') : html;
     }).join("");
   }
 
@@ -424,7 +477,7 @@ const Sites = (() => {
       return '<div class="fr-studio__bar"><span>' + markImg(c, t, 24) + "<b>" + esc2(c.co) + "</b></span>" +
           navHTML(c, path, "fr-studio__nav") + "</div>" +
         '<header class="fr-studio__hero">' +
-          "<img src=\"" + Imagery.make(refAt(c, 0), 7, 760, 260) + "\" alt=\"\">" +
+          "<img src=\"" + Imagery.make(refAt(c, 0), 7, 760, 260) + "\" alt=\"\" data-px=\"auto\" data-fit=\"cover\">" +
           '<div class="fr-studio__over"><h1>' + esc2(c.site.tagline) + "</h1></div></header>" +
         '<main class="fr-studio__body">' + renderBlocks(pageFor(c, path), c) + "</main>" +
         '<footer class="fr-studio__foot">' + esc2(c.co) + " · " + esc2(clientEmail(c)) +
@@ -477,7 +530,7 @@ const Sites = (() => {
     let grid = "";
     for (let i = 0; i < n; i++){
       grid += '<a class="ifr" href="#" data-img="' + attr(q) + '" data-i="' + i + '">' +
-        '<img src="' + Imagery.make(q, i, 200, 150) + '" alt="">' +
+        '<img src="' + Imagery.make(q, i, 200, 150) + '" alt="" data-px="auto">' +
         '<span class="ifr__n">' + esc2(Imagery.filename(q, i)) + "</span>" +
         '<span class="ifr__d">' + esc2(Imagery.dimensions(q, i)) + "</span></a>";
     }

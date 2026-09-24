@@ -154,7 +154,12 @@ test("content: every research match is really on its page", () => {
       }
     }
     assert.equal((gig.features || []).filter((f) => f.gap).length, gig.features ? 1 : 0, id + " has exactly one gap");
-    const revealable = new Set(Object.values(gig.dialogue.options).flatMap((o) => o.reveals || []));
+    const windows = Object.entries(gig.dialogue.challenges || {});
+    for (const [wid, w] of windows) {
+      assert.ok(gig.dialogue.options[w.after], id + ": window " + wid + " opens after a real question");
+      assert.ok(!w.needsFact || (gig.facts || []).some((f) => f.id === w.needsFact), id + ": window " + wid + " needs a real fact");
+    }
+    const revealable = new Set([...Object.values(gig.dialogue.options), ...windows.map(([, w]) => w)].flatMap((o) => o.reveals || []));
     for (const r of revealable) {
       assert.ok(gig.needs.some((n) => n.id === r) || gig.limits.some((l) => l.id === r), id + ": reveal " + r + " names a need or limit");
     }
@@ -171,4 +176,91 @@ test("content: every research match is really on its page", () => {
     }
     assert.equal(Res.proven(gig, H.sites, found), gig.features.find((f) => f.gap).id, id + ": gap is provable");
   }
+});
+
+test("content: every need can be met with what the gig hands you", () => {
+  const H = require("../src/js/hustle/content.js");
+  const A = require("../src/js/suite/apps.js");
+  const hues = new Set();
+  for (let r = 0; r < 256; r += 17) for (let g = 0; g < 256; g += 17) for (let b = 0; b < 256; b += 17) {
+    C.colourTags("#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("").toUpperCase()).forEach((t) => hues.add(t));
+  }
+  for (const [id, gig] of Object.entries(H.gigs)) {
+    const parent = gig.after && H.gigs[gig.after.gig];
+    const reach = new Set([...hues,
+      ...(gig.facts || []).flatMap((f) => f.tags),
+      ...(gig.refs || []).flatMap((r) => r.tags),
+      ...((parent && parent.output && parent.output.tags) || [])]);
+    const app = A.APPS[gig.app];
+    assert.ok(app && A.forDiscipline(gig.discipline).includes(gig.app), id + ": " + gig.app + " is an app for " + gig.discipline);
+    const canType = app.mode === "layout" || app.tools.includes("text");
+    const docName = gig.short.toLowerCase();
+    for (const n of gig.needs) {
+      if (n.subjects) continue;
+      for (const any of [...(n.tags ? [n.tags] : []), ...(n.all || []).map((t) => [t])]) {
+        assert.ok(any.some((t) => reach.has(t)), id + ": need " + n.id + " can be met (" + any.join(" or ") + ")");
+      }
+      if (n.text) {
+        assert.ok(canType, id + ": need " + n.id + " asks for words in an app without text");
+        assert.ok(!n.text.every((s) => docName.includes(s.toLowerCase())), id + ": need " + n.id + " is not met by the document's own name");
+      }
+      if (n.blocks) assert.equal(app.mode, "layout", id + ": need " + n.id + " asks for blocks outside Layout");
+    }
+    for (const l of gig.limits.filter((x) => x.rule === "size")) {
+      assert.ok(app.presets.some(([, w, h]) => w === l.w && h === l.h), id + ": " + l.w + "×" + l.h + " is a " + gig.app + " preset");
+    }
+  }
+});
+
+test("score: a rebrand can rule out an old colour, and a franchise a word", () => {
+  const gig = { needs: [], limits: [
+    { rule: "avoid", tags: ["purple"], label: "No purple" },
+    { rule: "avoid", text: ["best"], label: "Never the word best" },
+  ] };
+  const doc = D.create({ w: 600, h: 850, name: "best poster ever" });
+  D.add(doc, D.layer("rect", { fill: "#111111" }));
+  D.add(doc, D.layer("text", { text: "The Baron's own", fill: "#E0B83A" }));
+  const limits = () => Score.score({ gig, doc, cards: [] }).lines.filter((l) => l.kind === "limit");
+  assert.deepEqual(limits().map((l) => l.ok), [true, true], "the document's own name is not on the poster");
+  D.add(doc, D.layer("rect", { fill: "#6B2FA0" }));
+  D.add(doc, D.layer("text", { text: "The BEST burrito", fill: "#E0B83A" }));
+  const [hue, word] = limits();
+  assert.ok(!hue.ok && /purple/.test(hue.text));
+  assert.ok(!word.ok && /best/.test(word.text));
+});
+
+test("score: the on-model need is graded by likeness, and pasted art zeroes it", () => {
+  const gig = { needs: [{ id: "onmodel", label: "On-model", missed: "Off-model", subjects: ["toma", "kiyoshi"], weight: 1 }], limits: [] };
+  const doc = D.create({ w: 100, h: 50 });
+  D.add(doc, D.layer("rect", { fill: "#FF7A1A" }));
+  const line = (likeness) => Score.score({ gig, doc, cards: [], likeness }).lines.find((l) => l.kind === "need");
+
+  const both = line({ subjects: { toma: { quality: 0.9 }, kiyoshi: { quality: 0.7 } }, scaleOK: true, pasted: false });
+  assert.equal(both.pts, 56, "70 × (0.9 + 0.7) / 2");
+  assert.ok(both.ok && /Toma 90% · Kiyoshi 70%/.test(both.text) && /relative scale ✓/.test(both.text));
+
+  const one = line({ subjects: { toma: { quality: 0.9 } }, scaleOK: null, pasted: false });
+  assert.equal(one.pts, 32);
+  assert.ok(!one.ok && /Kiyoshi not marked/.test(one.text));
+
+  const off = line({ subjects: { toma: { quality: 0.8 }, kiyoshi: { quality: 0.8 } }, scaleOK: false, pasted: false });
+  assert.equal(off.pts, Math.round(70 * 0.8 * 0.85));
+
+  const pasted = line({ subjects: { toma: { quality: 1 }, kiyoshi: { quality: 1 } }, scaleOK: true, pasted: true });
+  assert.equal(pasted.pts, 0);
+  assert.match(pasted.text, /Pasted official art/);
+
+  assert.equal(line(undefined).pts, 0, "no report, nothing drawn");
+});
+
+test("subject markers never become part of the picture", () => {
+  const doc = D.create({ w: 100, h: 50 });
+  D.add(doc, D.layer("rect", { fill: "#FF7A1A" }));
+  const sj = D.add(doc, D.layer("subject", { x: 10, y: 5, w: 30, h: 40, ref: { id: "toma", pose: "front" }, label: "Toma — front" }));
+  assert.deepEqual(D.colours(doc).sort(), ["#FF7A1A", "#FFFFFF"]);
+  assert.equal(D.subjects(doc).length, 1);
+  assert.equal(D.hitTest(doc, 25, 25).type, "rect", "the inside of the box is not the box");
+  assert.equal(D.hitTest(doc, 11, 25).id, sj.id, "its edge is");
+  const back = D.parse(D.serialize(doc));
+  assert.deepEqual(back.layers[1].ref, { id: "toma", pose: "front" });
 });

@@ -19,10 +19,13 @@
 /* scene 1 — graphic */
 [data-scene="graphic"] .g-disc{position:absolute;left:44%;top:47%;width:46vmin;height:46vmin;margin:-23vmin 0 0 -23vmin;border-radius:50%;background:#E0442B;mix-blend-mode:multiply;animation:breathe 17s ease-in-out infinite}
 [data-scene="graphic"] .g-bar{position:absolute;left:16%;top:56%;width:70vmin;height:10vmin;background:#14110E;transform:rotate(-11deg);mix-blend-mode:multiply;animation:tilt 26s ease-in-out infinite}
-[data-scene="graphic"] .g-half{position:absolute;inset:0;opacity:.2;
-  background-image:radial-gradient(#14110E 1.5px,transparent 1.7px);background-size:10px 10px;
+/* the dots drift under a fixed mask by transform, not background-position,
+   which repainted the whole screen every frame (see .plane in desktop.css) */
+[data-scene="graphic"] .g-half{position:absolute;inset:0;opacity:.2;overflow:hidden;
   -webkit-mask-image:radial-gradient(58% 52% at 66% 62%,#000 0%,transparent 72%);
-  mask-image:radial-gradient(58% 52% at 66% 62%,#000 0%,transparent 72%);
+  mask-image:radial-gradient(58% 52% at 66% 62%,#000 0%,transparent 72%)}
+[data-scene="graphic"] .g-half::before{content:"";position:absolute;left:-110px;top:-70px;right:0;bottom:0;
+  background-image:radial-gradient(#14110E 1.5px,transparent 1.7px);background-size:10px 10px;
   animation:drift 34s linear infinite}
 
 /* scene 2 — interface */
@@ -80,7 +83,7 @@
 
 @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.055)}}
 @keyframes tilt{0%,100%{transform:rotate(-11deg)}50%{transform:rotate(-7.5deg)}}
-@keyframes drift{to{background-position:110px 70px}}
+@keyframes drift{to{transform:translate3d(110px,70px,0)}}
 @keyframes float{0%,100%{transform:translateY(0) rotate(var(--r,0deg))}50%{transform:translateY(-3.5vmin) rotate(var(--r,0deg))}}
 @keyframes sweepx{0%,100%{transform:translateX(0) skewX(-18deg)}50%{transform:translateX(220%) skewX(-18deg)}}
 @keyframes spin{to{transform:rotate(360deg)}}

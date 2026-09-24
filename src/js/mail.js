@@ -196,7 +196,7 @@ const Mail = (() => {
     trayEl.className = "tray__mail";
     trayEl.type = "button";
     trayEl.title = "Inbox";
-    trayEl.innerHTML = '<i>' + iconSVG("mail", 14) + '</i><span class="tray__n"></span>';
+    trayEl.innerHTML = '<i>' + iconSVG("mail", 16) + '</i><span class="tray__n"></span>';
     trayEl.addEventListener("click", () => open());   // not (event) as focusId
     tray.insertBefore(trayEl, tray.firstChild);
   }
@@ -211,6 +211,7 @@ const Mail = (() => {
 
   let balloonTimer = 0;
   function balloon(m){
+    if (typeof Music !== "undefined") Music.sfx("chime");
     if (!balloonEl){
       balloonEl = document.createElement("div");
       balloonEl.className = "balloon";
@@ -223,7 +224,7 @@ const Mail = (() => {
     const c = clientOf(m);
     balloonEl.innerHTML =
       '<button class="balloon__x" data-x aria-label="Dismiss">&#215;</button>' +
-      '<div class="balloon__h">' + iconSVG("mail", 14) + '<span>New message</span></div>' +
+      '<div class="balloon__h">' + iconSVG("mail", 16) + '<span>New message</span></div>' +
       '<div class="balloon__b"><b>' + esc(c ? c.co : "A client") + '</b> sent you a brief.<br>' +
       '<span class="ml-note">' + esc(subjectOf(m)) + '</span></div>';
     balloonEl.classList.add("on");
@@ -294,7 +295,7 @@ const Mail = (() => {
       const all = state.mail.filter(f.has);
       const un = all.filter((m) => m.state === "unread").length;
       return '<button class="mlf' + (f.id === folder ? " on" : "") + '" data-f="' + f.id + '">' +
-        '<i>' + iconSVG(f.id === "deleted" ? "trash" : "folder", 14) + '</i>' +
+        '<i>' + iconSVG(f.id === "deleted" ? "trash" : "folder", 16) + '</i>' +
         '<span>' + f.label + '</span>' +
         (un ? '<b class="mlf__n">' + un + '</b>' : (all.length ? '<em class="mlf__c">' + all.length + '</em>' : "")) +
         '</button>';
@@ -312,7 +313,7 @@ const Mail = (() => {
         return '<button class="mli' + (m.state === "unread" ? " un" : "") +
           (m.id === selectedId ? " on" : "") + (m.state === "rerolled" ? " dim" : "") +
           '" data-id="' + m.id + '" role="option">' +
-          '<i>' + iconSVG(clientIcon((clientOf(m) || {}).dom, CATS[m.ci].id), 14) + '</i>' +
+          '<i>' + iconSVG(clientIcon((clientOf(m) || {}).dom, CATS[m.ci].id), 16) + '</i>' +
           '<span class="mli__from">' + esc(c ? c.co : "Client") + '</span>' +
           '<span class="mli__sub">' + esc(subjectOf(m)) +
             (m.state === "rerolled" ? ' <em>(re-rolled)</em>' : "") +

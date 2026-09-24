@@ -30,8 +30,28 @@ test("every application writes provenance", () => {
   assert.equal(D.find(doc, text.id).stroke, "#E0442B");
   assert.ok(C.applyToCanvas(doc, gap).ok);
 
-  assert.deepEqual(D.cardsUsed(doc).sort(), [gap.id, img.id, red.id].sort());
+  assert.deepEqual(D.cardsUsed(doc).sort(), [face.id, gap.id, img.id, red.id].sort());
   assert.equal(C.applyToLayer(doc, placed.layer.id, face).ok, false, "type does not apply to an image");
+});
+
+test("a card on one part of a layer never erases the card on another", () => {
+  const doc = D.create({ w: 1200, h: 400 });
+  const t = D.add(doc, D.layer("text", { text: "THE IMPROBABLE DENNIS" }));
+  const gold = C.card("colour", "Sign gold", "#E0B83A", { tags: ["vegas"] });
+  const cream = C.card("colour", "Cream", "#FFF4D6");
+  const face = C.card("type", "Slab", "Georgia, serif");
+  C.applyToLayer(doc, t.id, gold);
+  C.applyToLayer(doc, t.id, face);
+  assert.deepEqual(D.cardsUsed(doc).sort(), [face.id, gold.id].sort(), "a typeface keeps the colour's card");
+  C.applyToLayer(doc, t.id, cream);
+  assert.deepEqual(D.cardsUsed(doc).sort(), [cream.id, face.id].sort(), "a new fill replaces the old fill's card");
+  const back = D.parse(D.serialize(doc));
+  assert.deepEqual(D.cardsUsed(back).sort(), [cream.id, face.id].sort(), "and it survives saving");
+
+  const pic = C.card("object", "Dove", PNG);
+  const placed = C.applyToCanvas(doc, pic, { x: 100, y: 100 }).layer;
+  C.applyToLayer(doc, placed.id, gold);
+  assert.ok(D.cardsUsed(doc).includes(pic.id), "tinting a picture does not hide where it came from");
 });
 
 test("palette caps at six in free mode", () => {
