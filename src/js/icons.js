@@ -315,3 +315,16 @@ ICON_ART.roomedit = {p:{k:"#0A0A0A",w:"#E8E4DA",b:"#4E6E88",a:"#E8913B",g:"#7FA3
   ".kwbbwwwwwwaawk.",".kwwwwwggwwaawk.",".kwwwwwggwwwwwk.",".kwwbbwggwwwwwk.",
   ".kwwbbwggwwwwwk.",".kwwwwwwwwwwwwk.",".kkkkkkkkkkkkkk.","......kaak......",
   ".....kaaaak.....","....kaaaaaak....","...kkkkkkkkkk...","................"]};
+// The tray speaker, on and off.
+Object.assign(ICON_ART, {
+  sound:{p:{k:"#0A0A0A",w:"#E8E8EC",g:"#8A8A96"},g:[
+    "................","................",".......k........","......kk....k...",
+    ".....kwk.....k..","kkkkkwwk..k...k.","kwwwwwwk...k..k.","kwgwwwwk...k..k.",
+    "kwgwwwwk...k..k.","kwwwwwwk...k..k.","kkkkkwwk..k...k.",".....kwk.....k..",
+    "......kk....k...",".......k........","................","................"]},
+  soundoff:{p:{k:"#0A0A0A",w:"#E8E8EC",g:"#8A8A96",r:"#C2452C"},g:[
+    "................","................",".......k........","......kk........",
+    ".....kwk........","kkkkkwwk........","kwwwwwwk.r...r..","kwgwwwwk..r.r...",
+    "kwgwwwwk...r....","kwwwwwwk..r.r...","kkkkkwwk.r...r..",".....kwk........",
+    "......kk........",".......k........","................","................"]},
+});

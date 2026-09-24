@@ -5,7 +5,7 @@ CATS.forEach((cat, i) => {
   const b = document.createElement("button");
   b.className = "si"; b.type = "button"; b.setAttribute("role", "menuitem");
   b.dataset.cat = cat.id;
-  b.innerHTML = '<i>' + iconSVG(cat.id, 20) + '</i><span></span>';
+  b.innerHTML = '<i>' + iconSVG(cat.id, 16) + '</i><span></span>';
   b.querySelector("span").textContent = pixelLabel(cat.label);
   b.addEventListener("click", () => {
     toggleStart(false);
@@ -16,7 +16,7 @@ CATS.forEach((cat, i) => {
 slist.insertAdjacentHTML("beforeend", '<div class="ssep"></div>');
 const backItem = document.createElement("button");
 backItem.className = "si"; backItem.type = "button"; backItem.setAttribute("role", "menuitem");
-backItem.innerHTML = '<i>' + iconSVG("back", 20) + '</i><span>Return to the World...</span>';
+backItem.innerHTML = '<i>' + iconSVG("back", 16) + '</i><span>Return to the World...</span>';
 backItem.addEventListener("click", () => { toggleStart(false); cross(-1); });
 slist.appendChild(backItem);
 

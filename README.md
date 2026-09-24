@@ -50,9 +50,13 @@ Every step of a job is a small puzzle, and all of it happens on the desktop.
    on you build yourself and dress the room behind you — 14 skin tones, 24 hair styles
    and head coverings from locs and puffs to a hijab or turban, glasses, freckles, a
    hearing aid, nine tops; 27 props, eight room palettes and seven walls — against
-   your own live feed. Then your camera talks you through the job, pointing at each
-   part of the desktop, and after that it sits in the corner of every call.
-   Start → Camera changes any of it later.
+   your own live feed. Then your camera stays on for your first job and talks you
+   through one whole gig — the board, replying, the call and its sand, clipping,
+   rivals and the gap, making it, delivering, the review — in your own voice, as
+   you actually get to each part. Each beat waits for you to do the thing, rings
+   what to press, and has a "show me"; slips get a line, never a stop. After that
+   it sits in the corner of every call. Start → Camera changes how you look;
+   Start → Setup guide walks the whole job again.
 1. **Find work.** `gigslist.org` has small jobs from real-sounding people. Not every
    business posts: some only advertise, and hovering an ad names the brand. Work out
    its address, type it in, and you have found a prospect you can pitch.
@@ -194,6 +198,8 @@ src/
   styles/        base · world · desktop (Win98 chrome) · apps (mail + browser) · fonts
   js/
     bridge.js      wraps the preload API; falls back to localStorage in a plain browser
+    pixelfit.js    whole pixels: sizes any img/canvas marked data-px to the biggest
+                   whole scale that fits, and again on resize or zoom (tested)
     briefs.js      21 briefs across 7 disciplines
     core.js        shared state and element refs
     world.js       discipline picker and scene preview
@@ -218,7 +224,34 @@ src/
     hustle/
       camera.js    your camera: the wardrobe, room pieces and palettes (pure, tested)
       camview.js   the camera builder, the setup guide, and you in the corner of a call
+    music/
+      theme.js     the score: one theme in D, arranged for the hub, the hunt and the
+                   studio, with the mix rules for reputation and deadlines (pure, tested)
+      synth.js     the instruments and the mixing desk, for the game and for files alike
+      music.js     plays it live through Web Audio on the audio clock; the tray speaker
 ```
+
+## Sound
+
+The desk has music, synthesized as it plays (no audio files, so it stays inside the
+page's security policy). Which window is in front picks the arrangement: the desktop,
+mail and the board get the mellow **hub**, the browser, ticket and rival comparison get
+the curious **hunt**, and the Design Suite gets the driving chiptune **studio**. All
+three share a key, tempo and sixteen-bar form, so switches wait for the next bar line
+and crossfade on the beat. On top of that:
+
+- **A call** muffles the music and turns it down, the moment they pick up.
+- **A deadline** brings in a ticking clock and a floor tom as the research or
+  production clock runs down. A job left long late settles back to a low tick.
+- **Reputation** fills the band in. Somebody nobody has heard of gets bass and chords;
+  an established name gets drums, the melody and the whole band. The Studio slot always
+  has the whole band.
+- **Clips** answer on the beat, in the key of the bar: a run of good clips climbs the
+  chord, a miss sags. Notifications chime in the key, and a delivery plays a run that
+  grows with the stars.
+
+The speaker by the clock opens a Win98 volume box: volume, music on or off, and mute,
+remembered on this computer.
 
 ## Notes for future work
 

@@ -191,8 +191,75 @@ const Camera = (() => {
 
   const visibleRows = (look) => YOU.filter((row) => !row.when || row.when(look));
 
+  /* ── the first job, as a level ──────────────────────────
+   * After setup, your camera stays on while you do one whole gig, and talks
+   * the way people do when they are new at something: to themselves. Each
+   * beat waits for you to do the thing, never for a Next button. `until`
+   * reads the gig's progress (Hustle.progress) and moves on when it is true;
+   * `lit` rings what to press; `act` is a "show me" for the critical path.
+   *
+   * Voice: first person, present tense, short. Dry, a little nervous, never
+   * telling you what to do — it is you, thinking out loud. */
+  const LATER = ["research", "production", "delivered"];
+  const ON = ["contacted", "briefing"].concat(LATER);
+  const past = (p, ...stages) => stages.includes(p.stage);
+
+  const TOUR = [
+    { id: "board", say: ["There's the board. Small jobs, real people.", "The ones that say “wants: anyone good” will take someone new. That's me."],
+      act: "board", lit: '.sc[data-key="gigslist"]', until: (p) => /\/gig\//.test(p.url || "") || ON.includes(p.stage) },
+    { id: "reply", say: ["This is the job, in their words. If I can do it, I reply before I talk myself out of it."],
+      lit: '[data-hx="reply"]', until: (p) => ON.includes(p.stage) },
+    { id: "pickup", say: ["They're paging me. That's a call. People don't wait long, so I pick up."],
+      lit: ".tray__mail", until: (p) => p.callOpen || past(p, ...LATER) },
+    { id: "call", say: ["The sand only runs when nobody's talking. I ask before it empties.",
+        "What it's for, what it has to say, what they'd hate. Money can wait. Money costs patience."],
+      lit: ".cl__glass", until: (p) => past(p, ...LATER) },
+    { id: "read", say: ["Call's done, and research is on the clock.",
+        "Their site first. Clipping's on, so I click the passage that answers what they asked."],
+      act: "site", lit: '[data-hx="clip"]', until: (p) => p.facts > 0 || past(p, "production", "delivered") },
+    { id: "rivals", say: ["That's a card. It's waiting for me in the Design Suite.",
+        "Now the competition. Their sites are on the ticket. I clip what each of them does."],
+      act: "ticket", lit: '.w98--ticket .tk__acts:has([data-tk="compare"]) [data-tk="visit"]', until: (p) => p.trends > 0 || past(p, "production", "delivered") },
+    { id: "gap", say: ["Compare rivals fills in as I clip. The row nobody does is the gap.", "That's the thing only mine will have."],
+      act: "compare", lit: '[data-tk="compare"],[data-hx="compare"]', until: (p) => p.gap || past(p, "production", "delivered") },
+    { id: "make", say: ["Enough reading. Time to make it.", "The Design Suite opens the app they need, with my cards in the tray."],
+      act: "suite", lit: (p) => '[data-hx="suite"],[data-tk="make"],[data-tk="suite"]' + (p.app ? ',[data-app="' + p.app + '"]' : ""), until: (p) => p.suiteOpen || past(p, "delivered") },
+    { id: "build", say: ["Size first. The ticket says what it has to be.",
+        "Then cards go on the canvas: their colours, the words they asked for, a picture I cut out. When it's right, I deliver."],
+      lit: '[data-tk="deliver"],[data-s="deliver"]', until: (p) => past(p, "delivered") },
+    { id: "review", say: (p) => [{
+        5: "Five stars. I'm going to be unbearable about this.", 4: "Four stars. They're going to tell people about me.",
+        3: "Three. Not my best. Not a disaster.", 2: "Two. Ouch. I know which lines I missed.", 1: "One star. Right. The next one's better.",
+      }[p.stars] || "Delivered.", "Every line is something they asked for, something they wouldn't take, or the gap.",
+      "That's a whole job. If I want new hair, it's Start, then Camera."], end: true },
+  ];
+
+  // What happens to you on the way, and what you say about it. `p` is now,
+  // `q` is the last look.
+  const REACT = [
+    { when: (p, q) => p.stage === "passed" && q.stage !== "passed", say: "They wanted someone with reviews. Fair. One that wants anyone good, then." },
+    { when: (p, q) => p.misses > (q.misses || 0), say: "Not that one. Five seconds gone. Read it, then click." },
+    { when: (p, q) => p.silences > (q.silences || 0), say: "Too slow. They filled the silence, and that cost me." },
+    { when: (p, q) => p.window && !q.window, say: "There. “You read this.” That one's free. Reading paid off." },
+    { when: (p, q) => p.ended === "drifted" && q.ended !== "drifted", say: "They wrapped up on me. Whatever I got is on the ticket." },
+    { when: (p, q) => p.ended === "bored" && q.ended !== "bored", say: "Lost them. Too many questions they didn't care about. It's on the ticket anyway." },
+    { when: (p, q) => q.stage === "research" && p.stage === "production" && !p.gap && p.trends === 0, say: "Research is over. What I found is what I've got." },
+  ];
+
+  // Where the tour is, given where it was and what just happened: the next
+  // beat whose condition is not yet met. A player who races ahead is never
+  // told to do what they have already done.
+  function tourStep(i, p){
+    let n = Math.max(0, Math.min(TOUR.length - 1, i));
+    while (n < TOUR.length - 1 && TOUR[n].until && TOUR[n].until(p)) n++;
+    return n;
+  }
+  const react = (p, q) => { const r = REACT.find((x) => x.when(p, q || {})); return r ? r.say : null; };
+  const lines = (step, p) => (typeof step.say === "function" ? step.say(p || {}) : step.say);
+
   // The windows are in camview.js, which adds itself to this object.
-  return { YOU, NAMES, PALETTES, PATTERN_NAMES, PIECES, placeFor, roll, rollRoom, fresh, normalize, themeOf, visibleRows, rngFrom };
+  return { YOU, NAMES, PALETTES, PATTERN_NAMES, PIECES, placeFor, roll, rollRoom, fresh, normalize, themeOf, visibleRows, rngFrom,
+           TOUR, REACT, tourStep, react, lines };
 })();
 
 if (typeof module !== "undefined") module.exports = Camera;

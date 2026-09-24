@@ -87,7 +87,7 @@ python3 .claude/skills/pixel-assets/png2grid.py icon.png --name compass
 Paste the printed block into `ICON_ART`. Add `--svg` to print the merged SVG to
 stderr if you want to eyeball it first. It reports the rect count after
 run-length merging — a 16×16 icon should land well under 60 rects; far more
-than that means the art is noisy and will read as static at 14px.
+than that means the art is noisy and will read as static at 16px.
 
 Constraints the converter enforces, because `icons.js` assumes them:
 - **8-bit PNG.** Indexed, RGB, greyscale and RGBA all decode.
@@ -97,12 +97,31 @@ Constraints the converter enforces, because `icons.js` assumes them:
   worth avoiding.
 - Square is assumed. A non-square sprite still converts but warns.
 
-## Two traps
+## Traps
 
 **Silent blur from a non-integer PNG scale.** If you must ship a PNG at a
 non-integer size, do not stretch it — snap the *container* to the nearest whole
 multiple and centre it. Stretching to 34px from 16 gives you 2.125px per source
 pixel and visible banding.
+
+**Scaling by a box that changes size.** A picture set to `width:100%` scales
+by whatever the window happens to be: the call came out at 3.45 screen pixels
+per art pixel, so some columns were a pixel wider than their neighbours. Mark
+it for `src/js/pixelfit.js` instead, which takes the biggest whole scale that
+fits and leaves the rest as border, like Unity's Pixel Perfect Camera:
+
+    <img src="…" data-px="2">        two of its own pixels per art pixel
+    <img src="…" data-px="auto">     measured from the picture itself
+    <canvas … data-px="4" data-fit="contain">   fit the height too
+    <canvas … data-px="4" data-max="120x90">    never bigger than this
+
+`data-fit="cover"` is for banners: next whole scale up, parent crops. Do not
+give a marked element a CSS width; the fitter sets it.
+
+**Sizes that are only whole at some densities.** Icons are 16 pixels square,
+so draw them at 16 or 32 CSS pixels: 20 is 2.5 screen pixels per icon pixel
+on a Retina screen, and 14 drops two rows entirely on a 1x screen.
+Silkscreen is an 8-pixel font and is only crisp at 8, 16 or 24px.
 
 **PNG row filters.** Any hand-rolled PNG reader must undo per-row filters
 (types 0–4) before reading pixels. Skipping that does not error — it returns

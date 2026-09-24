@@ -766,24 +766,29 @@ const Portraits = (() => {
     place(g, fig, callShot(o), W, H);
     paintRoom(g, W, H, th, o.room, seed, Object.assign({ layer: "fore", pattern: o.pattern }, fr));
 
+    // A whole number of canvas pixels per art pixel, centred. At 256 across
+    // it used to be 3.2, which made some pixels a column wider than others.
+    // The glitch and the mush below work in art pixels for the same reason.
     const ctx = canvas.getContext("2d");
+    const k = Math.max(1, Math.floor(Math.min(canvas.width / W, canvas.height / H)));
+    const ox = Math.floor((canvas.width - W * k) / 2), oy = Math.floor((canvas.height - H * k) / 2);
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(small, 0, 0, W, H, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(small, 0, 0, W, H, ox, oy, W * k, H * k);
 
     if (o.glitch){                                            // a dropped frame
       const r = rngFrom(seedOf(String(seed) + "|" + o.glitch));
-      const bs = canvas.width / 20;
+      const bs = 4 * k;
       for (let i = 0; i < 7; i++){
-        const bx = Math.floor(r() * 20) * bs, by = Math.floor(r() * 15) * bs;
+        const bx = ox + Math.floor(r() * (W / 4)) * bs, by = oy + Math.floor(r() * (H / 4)) * bs;
         ctx.drawImage(canvas, bx, by, bs, bs, bx + (r() < 0.5 ? -bs : bs), by, bs, bs);
       }
     }
     const rr = rngFrom(seedOf(String(seed) + "|mush"));       // compression mush
     ctx.globalAlpha = 0.05;
-    for (let k = 0; k < 150; k++){
+    for (let i = 0; i < 150; i++){
       ctx.fillStyle = rr() < 0.5 ? "#000" : "#fff";
-      ctx.fillRect(Math.floor(rr() * canvas.width / 4) * 4, Math.floor(rr() * canvas.height / 4) * 4, 4, 4);
+      ctx.fillRect(ox + Math.floor(rr() * W) * k, oy + Math.floor(rr() * H) * k, k, k);
     }
     ctx.globalAlpha = 1;
   }

@@ -6,7 +6,7 @@
 .logon__win{position:relative;width:min(520px,calc(100% - 32px));min-height:0}
 .logon__c{gap:14px;padding:16px 18px 14px;font-size:18px;line-height:1.2}
 .logon__top{display:flex;gap:14px;align-items:center}
-.logon__top i{flex:0 0 34px;line-height:0}
+.logon__top i{flex:0 0 32px;line-height:0}
 .logon__top p{margin:0}
 .logon__opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .logon__opt{display:flex;flex-direction:column;gap:8px;text-align:left;padding:12px;background:var(--w-face);color:var(--w-txt);

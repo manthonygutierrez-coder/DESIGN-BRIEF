@@ -192,7 +192,7 @@ const Suite = (() => {
         '<p class="su__note">' + (cat ? "Apps relevant to " + esc(pixelLabel(cat.label)) + "." : "Every app is available for scratch work.") + "</p>" +
         '<div class="su__apps">' + ids.map((id) => {
           const a = A.APPS[id];
-          return '<button class="su__app" data-app="' + id + '"><i>' + iconSVG(a.icon, 34) + "</i><b>" + a.label +
+          return '<button class="su__app" data-app="' + id + '"><i>' + iconSVG(a.icon, 32) + "</i><b>" + a.label +
             "</b><span>" + esc(a.blurb) + "</span></button>";
         }).join("") + "</div>" +
         '<div class="su__foot">Cards in tray: ' + S().cards.length + " · Bonus tools: " + bonusN +
@@ -369,7 +369,7 @@ const Suite = (() => {
         "</div>" +
         '<div class="su__body">' +
           '<div class="su__tools">' +
-            tools.map((t) => '<button class="su__tool" data-tool="' + t + '" title="' + esc(A.TOOLS[t].label + " (" + A.TOOLS[t].key.toUpperCase() + ")") + '">' + iconSVG("t-" + t, 20) + "</button>").join("") +
+            tools.map((t) => '<button class="su__tool" data-tool="' + t + '" title="' + esc(A.TOOLS[t].label + " (" + A.TOOLS[t].key.toUpperCase() + ")") + '">' + iconSVG("t-" + t, 16) + "</button>").join("") +
             '<input type="color" class="su__fg" data-s="fg" title="Current colour — new shapes, the pen and the shape builder use it">' +
             ed.bonus.filter((b) => ["snap", "mirror", "gradient"].includes(b)).map((b) =>
               '<label class="su__bonus" title="' + esc(A.BONUS[b]) + '"><input type="checkbox" data-bonus="' + b + '">' + b.toUpperCase() + "</label>").join("") +

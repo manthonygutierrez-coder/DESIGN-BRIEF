@@ -126,7 +126,7 @@ const Sites = (() => {
       return '<section class="blk blk--products">' + head(b) + sub(b) +
         '<div class="prods">' + b.items.map((p, i) =>
           '<article class="prod">' +
-            '<img src="' + Imagery.make(p.ref || refAt(c, i), 40 + i, 240, 180) + '" alt="">' +
+            '<img src="' + Imagery.make(p.ref || refAt(c, i), 40 + i, 240, 180) + '" alt="" data-px="auto">' +
             '<h3 class="prod__n">' + esc2(p.name) + "</h3>" +
             (p.meta ? '<p class="prod__m">' + esc2(p.meta) + "</p>" : "") +
             '<p class="prod__f"><span class="prod__p">' + esc2(p.price) + "</span>" +
@@ -232,7 +232,7 @@ const Sites = (() => {
       const caps = b.caps || c.site.gallery || [];
       return '<section class="blk blk--gal">' + head(b) +
         '<div class="gal">' + caps.map((cap, i) =>
-          "<figure><img src=\"" + Imagery.make(b.q || refAt(c, i), i + 11, 260, 190) + "\" alt=\"\">" +
+          "<figure><img src=\"" + Imagery.make(b.q || refAt(c, i), i + 11, 260, 190) + "\" alt=\"\" data-px=\"auto\">" +
           "<figcaption>" + esc2(cap) + "</figcaption></figure>").join("") +
         "</div>" + note(b) + "</section>";
     },
@@ -240,7 +240,7 @@ const Sites = (() => {
     // One image, given room. For studios whose work is the argument.
     plate(b, c){
       return '<section class="blk blk--plate">' +
-        "<img src=\"" + Imagery.make(b.q || refAt(c, 0), b.seed || 3, 720, 320) + "\" alt=\"\">" +
+        "<img src=\"" + Imagery.make(b.q || refAt(c, 0), b.seed || 3, 720, 320) + "\" alt=\"\" data-px=\"auto\">" +
         (b.cap ? '<p class="plate__cap">' + esc2(b.cap) + "</p>" : "") + "</section>";
     },
 
@@ -257,7 +257,7 @@ const Sites = (() => {
           theme: portraitTheme(t), room: p.room || who.room,
           frame: p.plate || who.plate, w: 132, h: 158,
         });
-        return '<img class="prs__f" src="' + src + '" width="132" height="158" alt="" loading="lazy">';
+        return '<img class="prs__f" src="' + src + '" width="132" height="158" alt="" loading="lazy" data-px="1" data-max="150x180">';
       };
       return '<section class="blk blk--people">' + head(b) +
         '<div class="ppl">' + b.items.map((p) =>
@@ -477,7 +477,7 @@ const Sites = (() => {
       return '<div class="fr-studio__bar"><span>' + markImg(c, t, 24) + "<b>" + esc2(c.co) + "</b></span>" +
           navHTML(c, path, "fr-studio__nav") + "</div>" +
         '<header class="fr-studio__hero">' +
-          "<img src=\"" + Imagery.make(refAt(c, 0), 7, 760, 260) + "\" alt=\"\">" +
+          "<img src=\"" + Imagery.make(refAt(c, 0), 7, 760, 260) + "\" alt=\"\" data-px=\"auto\" data-fit=\"cover\">" +
           '<div class="fr-studio__over"><h1>' + esc2(c.site.tagline) + "</h1></div></header>" +
         '<main class="fr-studio__body">' + renderBlocks(pageFor(c, path), c) + "</main>" +
         '<footer class="fr-studio__foot">' + esc2(c.co) + " · " + esc2(clientEmail(c)) +
@@ -530,7 +530,7 @@ const Sites = (() => {
     let grid = "";
     for (let i = 0; i < n; i++){
       grid += '<a class="ifr" href="#" data-img="' + attr(q) + '" data-i="' + i + '">' +
-        '<img src="' + Imagery.make(q, i, 200, 150) + '" alt="">' +
+        '<img src="' + Imagery.make(q, i, 200, 150) + '" alt="" data-px="auto">' +
         '<span class="ifr__n">' + esc2(Imagery.filename(q, i)) + "</span>" +
         '<span class="ifr__d">' + esc2(Imagery.dimensions(q, i)) + "</span></a>";
     }

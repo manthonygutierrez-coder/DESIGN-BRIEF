@@ -27,7 +27,7 @@ function addShortcut(key, label, iconId, onOpen){
   el.className = "sc";
   el.type = "button";
   el.dataset.key = key;
-  el.innerHTML = iconSVG(iconId, 34) + '<span class="sc__l"></span>';
+  el.innerHTML = iconSVG(iconId, 32) + '<span class="sc__l"></span>';
   el.querySelector(".sc__l").textContent = pixelLabel(label);
   el.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -57,6 +57,14 @@ function focusWin(w){
   w.el.classList.add("on");
   w.tb.classList.add("on");
   w.el.style.zIndex = String(++zTop);
+  announceFocus();
+}
+
+// Whatever follows the front window (the music does) listens for this,
+// so no app has to call it. An empty className is the bare desktop.
+function announceFocus(){
+  const w = activeWin && activeWin.el.isConnected && !activeWin.el.classList.contains("min") ? activeWin : null;
+  document.dispatchEvent(new CustomEvent("wm:focus", { detail: { key: w ? w.key : null, className: w ? w.el.className : "" } }));
 }
 
 function getWin(key){ return wins.get(key) || null; }
@@ -82,6 +90,7 @@ const shownWins = () => [...wins.values()].filter((w) => !isMin(w))
 function minimizeWin(w){
   w.el.classList.add("min");
   w.tb.classList.remove("on");
+  if (w === activeWin) announceFocus();
 }
 
 // Out of maximized and out of any snap, keeping the current position.
@@ -138,7 +147,7 @@ function createWindow(opts){
   const tb = document.createElement("button");
   tb.className = "task";
   tb.type = "button";
-  tb.innerHTML = '<i>' + iconSVG(iconId, 14) + '</i><span></span>';
+  tb.innerHTML = '<i>' + iconSVG(iconId, 16) + '</i><span></span>';
   tb.addEventListener("click", () => {
     if (el.classList.contains("min")){ el.classList.remove("min"); focusWin(w); }
     else if (activeWin === w) minimizeWin(w);
@@ -187,6 +196,7 @@ function closeWin(w){
     activeWin = null;
     const last = [...wins.values()].pop();
     if (last) focusWin(last);
+    else announceFocus();
   }
 }
 

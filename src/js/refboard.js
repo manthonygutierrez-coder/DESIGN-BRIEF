@@ -169,7 +169,7 @@ const RefBoard = (() => {
     trayBtn = document.createElement("button");
     trayBtn.className = "tray__ref";
     trayBtn.type = "button";
-    trayBtn.innerHTML = "<i>" + (typeof iconSVG === "function" ? iconSVG("ref", 14) : "") + "</i><span>REF</span>";
+    trayBtn.innerHTML = "<i>" + (typeof iconSVG === "function" ? iconSVG("ref", 16) : "") + "</i><span>REF</span>";
     trayBtn.addEventListener("click", () => {
       if (S().dock === "tray") { S().dock = null; place(); sticky = true; setActive(true); }
       else { sticky = !sticky; setActive(sticky); }

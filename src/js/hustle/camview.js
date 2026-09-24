@@ -59,12 +59,17 @@ Object.assign(Camera, (() => {
     const existing = getWin(KEY);
     if (existing){ revealWin(existing); return existing; }
     const w = createWindow({ key: KEY, title: "Your camera", iconId: "camera", w: 760, h: 540, minW: 640, minH: 460,
-                             className: "w98--cam", onClose: () => { clearInterval(anim); anim = 0; } });
+                             className: "w98--cam", onClose: () => {
+      clearInterval(anim); anim = 0;
+      // However the window closes during setup, the guide comes next.
+      const f = onFinish; onFinish = null;
+      if (f) setTimeout(f, 0);
+    } });
     w.client.classList.add("client--flush");
     w.client.innerHTML =
       '<div class="cam">' +
         '<div class="cam__left">' +
-          '<div class="cam__stage"><canvas class="cam__feed" width="320" height="240"></canvas>' +
+          '<div class="cam__stage"><canvas class="cam__feed" width="320" height="240" data-px="4"></canvas>' +
             '<span class="cam__rec">● PREVIEW</span></div>' +
           '<p class="cam__hint" data-cam-hint></p>' +
           '<div class="cam__sel" data-cam-sel></div>' +
@@ -75,6 +80,7 @@ Object.assign(Camera, (() => {
           '<div class="cam__tabs" role="tablist"><button data-cam-tab="you">You</button><button data-cam-tab="room">Your room</button></div>' +
           '<div class="cam__rows" data-cam-rows></div>' +
           '<div class="cam__foot"><span data-cam-note>Everyone who calls you sees this.</span>' +
+            (opts.intro ? "" : '<button class="w98btn" data-cam="walk" title="Your camera talks you through the job again">Walk me through it</button>') +
             '<button class="w98btn cam__done" data-cam="done">' + (opts.intro ? "That's me" : "Done") + "</button></div>" +
         "</div>" +
       "</div>";
@@ -194,6 +200,7 @@ Object.assign(Camera, (() => {
       case "smaller": if (it){ it.w = Math.max(0.05, it.w / 1.15); it.h = Math.max(0.05, it.h / 1.15); changed(false); } break;
       case "remove": if (it){ me.room.splice(sel, 1); sel = -1; changed(false); } break;
       case "done": finish(); break;
+      case "walk": finish(); walk(); break;
     }
   }
   function onInput(){ /* no free text in the builder */ }
@@ -222,12 +229,11 @@ Object.assign(Camera, (() => {
   }
   function onUp(){ if (drag){ drag = null; put(); render(); } }
 
+  // Closing the window hands over to whatever comes next (see onClose).
   function finish(){
     put();
     const w = getWin(KEY);
     if (w) closeWin(w);
-    const f = onFinish; onFinish = null;
-    if (f) f();
   }
 
   /* ── you, in the corner of a call ─────────────────── */
@@ -236,33 +242,49 @@ Object.assign(Camera, (() => {
     feed(canvas, o);
   }
 
-  /* ── the guide: your own camera talks you through setup ─
-   * Nobody else is on this call. It is you, checking your camera works and
-   * saying out loud how the job goes, the way people do before a first day.
-   * `show` lights up the desktop shortcut the line is about. */
+  /* ── the guide: your camera talks you through a first job ─
+   * Nobody else is on this call. It is you, checking your camera works, and
+   * then staying on while you do one whole gig, talking to yourself the way
+   * people do when they are new at something.
+   *
+   * Setup is three beats: hello, your name, off to gigslist. After that the
+   * tour (camera.js) follows the gig itself: each beat waits for you to do
+   * the thing, rings what to press, and has a "show me" for when you are
+   * lost. Slip up and it says so, in one line, and carries on. */
   const GKEY = "camera:guide";
-  const STEPS = [
+  const SETUP = [
     { say: ["Okay. Camera's on.", "That's me. I look like someone people would pay."], next: "Hi, me" },
     { say: ["What do clients call me?"], ask: "name", next: "That's me" },
-    { say: ["Work comes from gigslist. Small jobs from real people.", "Replying to a post is how it starts."], show: "gigslist", next: "Got it" },
-    { say: ["When someone bites, they page me. Then it's a call.", "They only have so much patience, so I pick my questions."], show: "pager", next: "Got it" },
-    { say: ["Before the call, and during it, I read their site.", "With clipping on, the right passage becomes a card. The wrong one costs me time."], show: "browser", next: "Got it" },
-    { say: ["Then I make it in the Design Suite and send it back.", "Good work gets me known. Some clients never post at all."], show: "suite", next: "Got it" },
-    { say: ["I can fix my hair or my room any time: Start, then Camera.", "Right. Let's find something."], next: "Open gigslist", end: true },
+    { say: ["Right. Let's find some work."], next: "Open gigslist", leave: true },
   ];
-  let gi = 0, typed = 0, typeTimer = 0, guideDone = null;
+  const ACTS = {
+    board: () => "Show me the board", site: () => "Open their site", ticket: () => "Open the ticket",
+    compare: () => "Compare rivals", suite: (p) => (p.stage === "research" ? "Stop researching, make it" : "Open the Design Suite"),
+  };
+  let gi = 0, typed = 0, typeTimer = 0, pollTimer = 0, guideDone = null, defaultDone = null;
+  let said = "", aside = "", asideUntil = 0, last = {};
 
-  const lines = () => STEPS[gi].say.join(" ");
+  const inTour = () => gi >= SETUP.length;
+  const tourAt = () => C.TOUR[gi - SETUP.length];
+  const prog = () => (typeof Hustle !== "undefined" && Hustle.progress ? Hustle.progress() : {});
+  const lineFor = () => (inTour() ? C.lines(tourAt(), prog()) : SETUP[gi].say).join(" ");
   const nameOf = () => (get().name || "").trim();
+
+  // The whole walkthrough again, from the first line.
+  function walk(){
+    get();
+    me.guide = 0; put();
+    return guide({ onDone: defaultDone });
+  }
 
   function guide(opts = {}){
     get();
-    guideDone = opts.onDone || guideDone;
-    gi = typeof me.guide === "number" ? Math.min(me.guide, STEPS.length - 1) : 0;
+    guideDone = opts.onDone || guideDone || defaultDone;
+    gi = typeof me.guide === "number" ? Math.min(me.guide, SETUP.length + C.TOUR.length - 1) : 0;
     let w = getWin(GKEY);
     if (!w){
-      w = createWindow({ key: GKEY, title: "Your camera", iconId: "camera", w: 300, h: 420, minW: 280, minH: 400,
-                         className: "w98--camguide", onClose: () => { clearInterval(typeTimer); hint(null); } });
+      w = createWindow({ key: GKEY, title: "Your camera", iconId: "camera", w: 300, h: 420, minW: 280, minH: 300,
+                         className: "w98--camguide", onClose: () => { clearInterval(typeTimer); clearInterval(pollTimer); hint(null); } });
       w.client.classList.add("client--flush");
       w.client.addEventListener("click", onGuideClick);
       w.client.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.matches("[data-cam-name]")) step(1); });
@@ -270,71 +292,110 @@ Object.assign(Camera, (() => {
       w.el.style.left = Math.max(8, dr.width - 316) + "px";
       w.el.style.top = Math.max(8, dr.height - 470) + "px";
     }
+    last = prog();
     say();
+    clearInterval(pollTimer);
+    pollTimer = setInterval(poll, 700);
     return w;
   }
 
-  function say(){
-    const w = getWin(GKEY), s = STEPS[gi];
+  function say(text){
+    const w = getWin(GKEY);
     if (!w) return;
+    const tour = inTour(), s = tour ? tourAt() : SETUP[gi], p = prog();
+    said = text || lineFor();
     typed = 0;
+    const act = tour && s.act && (s.act === "board" || p.id) ? '<button class="w98btn" data-g="act">' + esc(ACTS[s.act](p)) + "</button>" : "";
+    const next = tour ? (s.end ? "Done" : "Next") : s.next;
     w.client.innerHTML =
-      '<div class="camg">' +
-        '<div class="cam__stage cam__stage--sm"><canvas class="cam__feed" width="256" height="192"></canvas><span class="cam__rec">● YOU</span></div>' +
+      '<div class="camg' + (tour ? " camg--tour" : "") + '">' +
+        '<div class="cam__stage cam__stage--sm"><canvas class="cam__feed" width="320" height="240" data-px="4"></canvas><span class="cam__rec">● YOU</span></div>' +
         '<p class="camg__said" data-said></p>' +
-        (s.ask === "name" ? '<input class="camg__name" data-cam-name maxlength="24" placeholder="Your name, or what you go by" value="' + esc(nameOf()) + '">' : "") +
-        '<div class="camg__bar"><button class="w98btn" data-g="skip">Skip setup</button><span></span>' +
-          (gi > 0 ? '<button class="w98btn" data-g="back">Back</button>' : "") +
-          '<button class="w98btn camg__next" data-g="next">' + esc(s.next) + "</button></div>" +
-        '<p class="camg__step">' + (gi + 1) + " of " + STEPS.length + "</p>" +
+        (!tour && s.ask === "name" ? '<input class="camg__name" data-cam-name maxlength="24" placeholder="Your name, or what you go by" value="' + esc(nameOf()) + '">' : "") +
+        '<div class="camg__bar"><button class="w98btn" data-g="skip">' + (tour ? "Skip the tour" : "Skip setup") + "</button><span></span>" +
+          (!tour && gi > 0 ? '<button class="w98btn" data-g="back">Back</button>' : "") + act +
+          '<button class="w98btn camg__next" data-g="next">' + esc(next) + "</button></div>" +
+        '<p class="camg__step">' + (tour ? "First job · " + (gi - SETUP.length + 1) + " of " + C.TOUR.length : "Setup · " + (gi + 1) + " of " + SETUP.length) + "</p>" +
       "</div>";
-    hint(s.show || null);
+    hint(tour ? litFor(s, p) : null);
     clearInterval(typeTimer);
     typeTimer = setInterval(() => {
       const ww = getWin(GKEY);
       if (!ww){ clearInterval(typeTimer); return; }
-      typed = Math.min(lines().length, typed + 2);
-      ww.client.querySelector("[data-said]").textContent = lines().slice(0, typed);
-      const talking = typed < lines().length, t = Date.now();
+      typed = Math.min(said.length, typed + 2);
+      ww.client.querySelector("[data-said]").textContent = said.slice(0, typed);
+      const talking = typed < said.length, t = Date.now();
       feed(ww.client.querySelector(".cam__feed"), { mouthOpen: talking && Math.floor(t / 120) % 2 === 0, blink: (t % 3600) < 140,
-        mood: talking ? "neutral" : "warm", bob: talking && Math.floor(t / 700) % 2 === 0 });
+        mood: talking ? "neutral" : aside ? "cool" : "warm", bob: talking && Math.floor(t / 700) % 2 === 0 });
     }, 60);
     const input = w.client.querySelector("[data-cam-name]");
     if (input) setTimeout(() => input.focus(), 0);
   }
 
-  // Lights up the shortcut the camera is talking about.
-  function hint(key){
+  // Follows the gig: moves on when you have done the thing, and says
+  // something when it goes wrong. Re-rings the next control every tick,
+  // since windows repaint and lose it.
+  function poll(){
+    if (!getWin(GKEY)){ clearInterval(pollTimer); return; }
+    if (!inTour()) return;
+    const p = prog(), r = C.react(p, last);
+    last = p;
+    const i = C.tourStep(gi - SETUP.length, p) + SETUP.length, moved = i !== gi;
+    if (moved){ gi = i; me.guide = gi; put(); }
+    // A slip gets its line first; the next beat follows once it has been said.
+    if (r){ aside = r; asideUntil = Date.now() + 5000; say(r); return; }
+    if (aside && Date.now() > asideUntil){ aside = ""; say(); return; }
+    if (moved && !aside){ say(); return; }
+    hint(litFor(tourAt(), p));
+  }
+
+  const litFor = (s, p) => (typeof s.lit === "function" ? s.lit(p || {}) : s.lit);
+
+  // Rings whatever the camera is talking about: a desktop shortcut, or a
+  // control inside a window.
+  function hint(sel){
+    document.querySelectorAll(".cam-lit").forEach((el) => el.classList.remove("cam-lit"));
     document.querySelectorAll(".sc.sc--cam").forEach((el) => el.classList.remove("sc--cam"));
-    if (key){ const el = document.querySelector('.sc[data-key="' + key + '"]'); if (el) el.classList.add("sc--cam"); }
+    if (!sel) return;
+    document.querySelectorAll(sel).forEach((el) => el.classList.add(el.classList.contains("sc") ? "sc--cam" : "cam-lit"));
   }
 
   function step(d){
     const w = getWin(GKEY);
     const input = w && w.client.querySelector("[data-cam-name]");
     if (input){ me.name = input.value.trim().slice(0, 24); }
-    if (typed < lines().length && d > 0){ typed = lines().length; return; }   // first click finishes the sentence
-    if (STEPS[gi].end && d > 0) return end(true);
-    gi = Math.max(0, Math.min(STEPS.length - 1, gi + d));
-    me.guide = gi; put();
+    if (typed < said.length && d > 0){ typed = said.length; return; }   // the first click finishes the sentence
+    if (!inTour() && SETUP[gi].leave && d > 0){
+      // Setup is over: the desktop is yours, and the first job starts.
+      const done = guideDone || defaultDone;
+      if (done) done(true);
+      gi = SETUP.length; me.guide = gi; put(); last = prog(); say(); return;
+    }
+    if (inTour() && tourAt().end && d > 0) return end();
+    gi = Math.max(0, Math.min(SETUP.length + C.TOUR.length - 1, gi + d));
+    me.guide = gi; put(); aside = "";
     say();
   }
 
-  function end(go){
+  function end(){
     me.guide = "done"; put();
-    clearInterval(typeTimer); hint(null);
+    clearInterval(typeTimer); clearInterval(pollTimer); hint(null);
     const w = getWin(GKEY);
     if (w) closeWin(w);
-    const f = guideDone; guideDone = null;
-    if (f) f(go);
+    guideDone = null;
   }
 
   function onGuideClick(e){
     const b = e.target.closest("[data-g]");
     if (!b) return;
-    if (b.dataset.g === "next") step(1);
-    else if (b.dataset.g === "back") step(-1);
-    else if (b.dataset.g === "skip") end(false);
+    const g = b.dataset.g;
+    if (g === "next") step(1);
+    else if (g === "back") step(-1);
+    else if (g === "skip"){ const done = guideDone || defaultDone; if (!inTour() && done) done(false); end(); }
+    else if (g === "act" && inTour() && typeof Hustle !== "undefined" && Hustle.tour){
+      const s = tourAt(), p = prog();
+      if (Hustle.tour[s.act]) Hustle.tour[s.act](p.id);
+    }
   }
 
   /* ── first run ──────────────────────────────────────── */
@@ -350,10 +411,11 @@ Object.assign(Camera, (() => {
 
   function init(access){
     io = access;
+    defaultDone = access.done || null;
     if (!io.get()) io.set(C.fresh((Date.now() ^ (Math.random() * 1e9)) >>> 0));
     get();
   }
   const ready = () => !!(io && io.get() && io.get().guide === "done");
 
-  return { init, open, guide, intro, paintSelf, ready, name: nameOf, current: () => get(), STEPS };
+  return { init, open, guide, walk, intro, paintSelf, ready, name: nameOf, current: () => get(), SETUP };
 })());

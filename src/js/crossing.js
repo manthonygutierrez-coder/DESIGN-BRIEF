@@ -6,11 +6,15 @@ let dA = [], sA = [], dB = [], sB = [];
 
 function rnd(){ return Math.random(); }
 function sizeFX(){
+  // Each cell is a whole number of screen pixels, and the canvas runs a
+  // little past the window instead of stretching cells to fit it exactly
+  // (stretched, they came out 12.9 pixels wide, some wider than others).
   const w = Math.max(1, innerWidth), h = Math.max(1, innerHeight);
-  cols = Math.max(8, Math.ceil(w / CELL));
-  rows = Math.max(8, Math.ceil(h / CELL));
+  const dpr = window.devicePixelRatio || 1, cell = Math.max(1, Math.round(CELL * dpr)) / dpr;
+  cols = Math.max(8, Math.ceil(w / cell));
+  rows = Math.max(8, Math.ceil(h / cell));
   cv.width = cols; cv.height = rows;
-  cv.style.width = w + "px"; cv.style.height = h + "px";
+  cv.style.width = cols * cell + "px"; cv.style.height = rows * cell + "px";
   ctx.imageSmoothingEnabled = false;
   img = ctx.createImageData(cols, rows);
   dA = new Float32Array(cols); sA = new Float32Array(cols);
@@ -93,6 +97,7 @@ function cross(dir){
     if (mid) return;
     mid = true;
     atScreen = dir === 1;
+    if (typeof Music !== "undefined") Music.screen(atScreen);   // the desk's music goes with the desk
     sideWorld.inert = atScreen;
     sideScreen.inert = !atScreen;
     if (atScreen) desk.arrive();

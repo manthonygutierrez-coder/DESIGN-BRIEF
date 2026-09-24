@@ -155,7 +155,7 @@
 .task.on{border-color:var(--w-dk) var(--w-hi) var(--w-hi) var(--w-dk);
   box-shadow:inset 1px 1px 0 var(--w-sh);
   background:repeating-conic-gradient(var(--w-face) 0 25%,var(--w-lt) 0 50%) 0 0/3px 3px}
-.task i{flex:0 0 14px;height:14px;line-height:0}
+.task i{flex:0 0 16px;height:16px;line-height:0}
 .tray{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:0 10px;font-size:9px;
   letter-spacing:.05em;color:var(--w-txt);font-variant-numeric:tabular-nums;
   border:1px solid;border-color:var(--w-sh) var(--w-hi) var(--w-hi) var(--w-sh)}
@@ -172,7 +172,7 @@
 .slist{flex:1;min-width:0;display:flex;flex-direction:column;padding:2px}
 .si{display:flex;align-items:center;gap:9px;padding:7px 8px;font-size:9px;letter-spacing:.03em;
   color:var(--w-txt);text-align:left}
-.si i{flex:0 0 20px;height:20px;line-height:0}
+.si i{flex:0 0 16px;height:16px;line-height:0}
 .si:hover,.si:focus-visible{background:var(--w-nav);color:#fff;outline:none}
 .ssep{height:2px;margin:3px 5px;border-top:1px solid var(--w-sh);border-bottom:1px solid var(--w-hi)}
 /* the taskbar's menu: Cascade, Tile, Minimize All */

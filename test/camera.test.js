@@ -96,3 +96,38 @@ test("nobody already in the game changes: builder pieces are opt-in", () => {
     assert.ok(P.STYLES.includes(t.style), "a rolled person only rolls the old styles");
   }
 });
+
+test("the first-job tour follows a whole gig from the board to the review", () => {
+  const seq = [
+    { url: "http://gigslist.org/" },
+    { url: "http://gigslist.org/gig/weird-things-4" },
+    { stage: "contacted" },
+    { stage: "briefing", callOpen: true },
+    { stage: "research" },
+    { stage: "research", facts: 1 },
+    { stage: "research", facts: 1, trends: 2 },
+    { stage: "research", facts: 1, trends: 4, gap: true },
+    { stage: "production", suiteOpen: true },
+    { stage: "delivered", stars: 4 },
+  ];
+  let i = 0;
+  const seen = seq.map((p) => Cam.TOUR[(i = Cam.tourStep(i, Object.assign({ facts: 0, trends: 0 }, p)))].id);
+  assert.deepEqual(seen, ["board", "reply", "pickup", "call", "read", "rivals", "gap", "make", "build", "review"]);
+  assert.equal(Cam.TOUR[Cam.tourStep(0, { stage: "delivered", stars: 5, facts: 0, trends: 0 })].id, "review", "racing ahead skips what is done");
+  assert.match(Cam.lines(Cam.TOUR.at(-1), { stars: 5 })[0], /Five stars/);
+});
+
+test("mistakes get a line, not a lecture", () => {
+  assert.match(Cam.react({ misses: 1 }, { misses: 0 }), /Five seconds/);
+  assert.match(Cam.react({ window: "since" }, {}), /You read this/);
+  assert.match(Cam.react({ stage: "passed" }, { stage: "contacted" }), /reviews/);
+  assert.equal(Cam.react({ misses: 1 }, { misses: 1 }), null, "the same miss is not said twice");
+});
+
+test("the camera only ever talks to itself", () => {
+  const all = Cam.TOUR.flatMap((s) => Cam.lines(s, { stars: 3 })).concat(Cam.REACT.map((r) => r.say));
+  for (const line of all) {
+    const unquoted = line.replace(/“[^”]*”/g, "");
+    assert.ok(!/\byou(r|rs|rself)?\b/i.test(unquoted), "second person in: " + line);
+  }
+});

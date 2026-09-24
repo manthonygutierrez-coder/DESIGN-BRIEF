@@ -240,7 +240,7 @@ const Web = (() => {
     });
     w.client.classList.add("client--flush");
     w.client.innerHTML =
-      '<div class="lb"><img src="' + Imagery.make(q, i, 640, 460) + '" alt="">' +
+      '<div class="lb"><div class="lb__stage"><img src="' + Imagery.make(q, i, 640, 460) + '" alt="" data-px="auto" data-fit="contain"></div>' +
       '<div class="lb__meta"><b>' + Imagery.filename(q, i).replace(/[&<>]/g, "") + '</b>' +
       '<span>' + Imagery.dimensions(q, i) + ' · from a search for “' + q.replace(/[&<>]/g, "") + '”</span></div>' +
       '<div class="lb__acts">' +

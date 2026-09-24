@@ -34,6 +34,7 @@ const Hustle = (() => {
   let trayEl = null, pagerTrayEl = null, balloonEl = null, balloonTimer = 0;
   let pagerSel = null;
   let renderTimer = 0;
+  let welcome = () => {};           // set in boot; the camera's walkthrough ends with it
   let callTimer = 0;               // one interval drives every open call
   const callAnim = {};             // per-call blink, speech and dropped frames
 
@@ -46,6 +47,10 @@ const Hustle = (() => {
   const hostOf = (url) => { try { return new URL(url).hostname.toLowerCase().replace(/^www\./, ""); } catch { return ""; } };
   const clock = (sec) => { const s = Math.max(0, Math.round(sec)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
   const siteClient = (dom) => (typeof CLIENTS !== "undefined" ? CLIENTS["HUSTLE:" + dom] : null) || null;
+  // The music hears about the game only through these, and may not be loaded.
+  const sound = (name, o) => { if (typeof Music !== "undefined") Music.sfx(name, o); };
+  const tune = (p) => { if (typeof Music !== "undefined") Music.set(p); };
+  const repFullness = () => (typeof MusicTheme !== "undefined" ? MusicTheme.fullnessFromRep(G().rep) : 0);
 
   /* ── boot ──────────────────────────────────────────────── */
   async function boot() {
@@ -60,7 +65,8 @@ const Hustle = (() => {
       welcomed: !!h.welcomed,
       me: h.me && typeof h.me === "object" ? h.me : null,
     };
-    if (typeof Camera !== "undefined" && Camera.init) Camera.init({ get: () => G().me, set: (m) => { G().me = m; save(); } });
+    if (typeof Camera !== "undefined" && Camera.init) Camera.init({ get: () => G().me, set: (m) => { G().me = m; save(); }, done: (go) => welcome(go) });
+    tune({ fullness: repFullness() });                // an unknown hears a sparse band
 
     if (typeof RoomEdit !== "undefined") RoomEdit.applySaved(state);
     registerSites();
@@ -77,7 +83,7 @@ const Hustle = (() => {
     Web.onNavigate(onNavigate);
 
     mountTray();
-    const welcome = (go) => {
+    welcome = (go) => {
       if (!G().welcomed) {
         G().welcomed = true;
         post(SYSTEM, "sys", [
@@ -269,6 +275,7 @@ const Hustle = (() => {
       : "Nothing left to ask. Brief written to your ticket.";
     post(gig.poster.handle, "sys", note + " Research is open — the clock starts now.", { gig: id, cta: "ticket" });
     startResearch(id);
+    tune({ call: callLive() });
   }
 
   function startResearch(id) {
@@ -340,6 +347,7 @@ const Hustle = (() => {
     const hit = Res.clip(gig, H.sites, dom, text, gs.found);
 
     if (!hit) {
+      gs.misses = (gs.misses || 0) + 1;              // your camera notices
       if (gs.stage === "briefing" && gs.dlg && !gs.dlg.ended) {
         gs.dlg.sand -= CLIP_MISS * 500;              // and they are still waiting
         flash(el, "miss");
@@ -376,6 +384,7 @@ const Hustle = (() => {
   }
 
   function flash(el, kind) {
+    sound("clip-" + kind);
     el.classList.remove("hx-hit", "hx-miss", "hx-dupe");
     void el.offsetWidth;
     el.classList.add("hx-" + kind);
@@ -521,6 +530,7 @@ const Hustle = (() => {
     gs.stage = "delivered";
     gs.result = { total: r.total, stars: r.stars, rep: r.rep, gap: r.gap, lines: r.lines, at: now(), appId };
     G().rep = Math.min(100, G().rep + r.rep);
+    tune({ fullness: repFullness() });
     if (gig.output && doc.mode !== "layout") {
       try { gs.output = SuiteRender.toPNG(doc, doc.mode === "pixel" ? 4 : 1); } catch { gs.output = null; }
     }
@@ -537,7 +547,8 @@ const Hustle = (() => {
     }
     focusId = activeGigs()[0] || null;
     focusPager(handle);
-    balloon(gig.poster.name + " reviewed your work", "★".repeat(r.stars) + " · " + r.total + "/100", () => focusPager(handle));
+    sound("deliver", { stars: r.stars });
+    balloon(gig.poster.name + " reviewed your work", "★".repeat(r.stars) + " · " + r.total + "/100", () => focusPager(handle), true);
     setTimeout(() => { checkChains(); checkInbound(); }, 5000);
     save();
     renderTicket(id);
@@ -593,9 +604,29 @@ const Hustle = (() => {
         gs.production.used += 1;
       }
     }
+    tune({ pressure: pressureNow(), call: callLive() });
     if (tickN % 5 === 0) save();
     document.querySelectorAll("[data-hx-timer]").forEach((el) => { el.textContent = timerText(el.dataset.hxTimer); });
     paintTray();
+  }
+
+  // For the music: how close the nearest clock is to running out (0-1), and
+  // whether anybody is on a call right now.
+  function pressureNow() {
+    if (typeof MusicTheme === "undefined") return 0;
+    let p = 0;
+    for (const id of Object.keys(H.gigs)) {
+      const gig = gigOf(id), gs = G().gigs[id];
+      if (!gs) continue;
+      p = Math.max(p, MusicTheme.pressureOf({
+        stage: gs.stage, left: gs.research && gs.research.left, total: (gig.research && gig.research.seconds) || 240,
+        used: gs.production && gs.production.used, deadline: gig.deadline,
+      }));
+    }
+    return p;
+  }
+  function callLive() {
+    return Object.keys(H.gigs).some((id) => { const gs = G().gigs[id]; return !!(gs && gs.dlg && !gs.dlg.ended && getWin(callKey(id))); });
   }
 
   function timerText(id) {
@@ -781,7 +812,7 @@ const Hustle = (() => {
     pagerTrayEl.className = "tray__mail";
     pagerTrayEl.type = "button";
     pagerTrayEl.title = "Pager";
-    pagerTrayEl.innerHTML = "<i>" + iconSVG("pager", 14) + '</i><span class="tray__n"></span>';
+    pagerTrayEl.innerHTML = "<i>" + iconSVG("pager", 16) + '</i><span class="tray__n"></span>';
     pagerTrayEl.addEventListener("click", () => openPager());
     trayEl = document.createElement("button");
     trayEl.className = "tray__hx";
@@ -804,14 +835,15 @@ const Hustle = (() => {
     pagerTrayEl.querySelector(".tray__n").textContent = n ? String(n) : "";
   }
 
-  function balloon(title, text, onClick) {
+  function balloon(title, text, onClick, quiet) {
+    if (!quiet) sound("chime");
     if (!balloonEl) {
       balloonEl = document.createElement("div");
       balloonEl.className = "balloon balloon--hx";
       document.getElementById("sideScreen").appendChild(balloonEl);
     }
     balloonEl.innerHTML = '<button class="balloon__x" data-x aria-label="Dismiss">&#215;</button>' +
-      '<div class="balloon__h">' + iconSVG("pager", 14) + "<span>" + esc(title) + "</span></div>" +
+      '<div class="balloon__h">' + iconSVG("pager", 16) + "<span>" + esc(title) + "</span></div>" +
       '<div class="balloon__b">' + esc(text) + "</div>";
     balloonEl.onclick = (e) => {
       balloonEl.classList.remove("on");
@@ -996,8 +1028,8 @@ const Hustle = (() => {
     w.client.innerHTML =
       '<div class="cl">' +
         '<div class="cl__stage">' +
-          '<canvas class="cl__feed" width="320" height="240"></canvas>' +
-          (typeof Camera !== "undefined" && Camera.paintSelf ? '<canvas class="cl__me" width="96" height="72" title="You"></canvas>' : "") +
+          '<canvas class="cl__feed" width="320" height="240" data-px="4"></canvas>' +
+          (typeof Camera !== "undefined" && Camera.paintSelf ? '<canvas class="cl__me" width="320" height="240" data-px="4" data-max="120x90" title="You"></canvas>' : "") +
           '<div class="cl__hud">' +
             '<span class="cl__rec">● LIVE <b data-cl-clock>00:00</b></span>' +
             '<span class="cl__fps" data-cl-fps>8 fps · 320×240</span>' +
@@ -1063,7 +1095,7 @@ const Hustle = (() => {
     const art = w.client.querySelector("[data-cl-art]");
     if (art) {
       const tone = st.ended || talking ? "calm" : secs <= 3 ? "out" : ratio < 0.4 ? "low" : "calm";
-      art.innerHTML = hourglassSVG(talking || st.ended ? 1 : ratio, 44, a.phase, tone);
+      art.innerHTML = hourglassSVG(talking || st.ended ? 1 : ratio, 32, a.phase, tone);
       const box = art.parentNode;
       box.classList.toggle("cl__glass--low", !talking && !st.ended && ratio < 0.4);
       box.classList.toggle("cl__glass--out", !talking && !st.ended && secs <= 3);
@@ -1100,7 +1132,8 @@ const Hustle = (() => {
 
   function callTick() {
     const live = Object.keys(H.gigs).filter((id) => getWin(callKey(id)));
-    if (!live.length || !state) { clearInterval(callTimer); callTimer = 0; return; }
+    if (!live.length || !state) { clearInterval(callTimer); callTimer = 0; tune({ call: false }); return; }
+    tune({ call: callLive() });                      // muffled the moment they pick up
     for (const id of live) {
       const gig = gigOf(id), gs = gsOf(id);
       if (!gs || !gs.dlg) continue;
@@ -1115,6 +1148,25 @@ const Hustle = (() => {
       if (sig !== a.sig) { renderCall(id); continue; }   // she stopped talking, or a window opened
       paintCall(id);
     }
+  }
+
+  /* ── where your first job is up to ─────────────────────── *
+   * The gig you touched last, as your camera's tour reads it. */
+  function progress() {
+    const ids = Object.keys(G().gigs).filter((k) => stageOf(k));
+    const id = ids.sort((a, b) => (G().gigs[b].contactAt || 0) - (G().gigs[a].contactAt || 0))[0] || null;
+    const gs = id ? G().gigs[id] : {}, dlg = gs.dlg || {};
+    const found = gs.found || { facts: [], trends: {} };
+    return {
+      id, stage: gs.stage || null, url: Web.currentURL ? Web.currentURL() : "",
+      site: id ? gigOf(id).poster.site : null, app: id ? gigOf(id).app : null,
+      callOpen: !!(id && getWin(callKey(id))),
+      suiteOpen: !!(id && ["banner", "type", "pixel", "layout"].some((a) => getWin("suite:" + a + ":" + id))),
+      facts: found.facts.length, trends: Object.values(found.trends).reduce((n, t) => n + t.length, 0),
+      gap: !!gs.gapFound, misses: gs.misses || 0, silences: dlg.silences || 0,
+      window: dlg.openWindow || null, ended: dlg.ended ? dlg.reason : null,
+      stars: gs.result ? gs.result.stars : null,
+    };
   }
 
   /* ── ticket window ─────────────────────────────────────── */
@@ -1184,7 +1236,7 @@ const Hustle = (() => {
         : "";
 
     w.client.innerHTML = '<div class="tk">' +
-      '<header class="tk__head"><i>' + iconSVG("ticket", 34) + "</i><div><b>" + esc(gig.title) + "</b><span>" + esc(gig.poster.name) + " · " + esc(gig.poster.site) + " · " + esc(gig.pay) + "</span></div>" +
+      '<header class="tk__head"><i>' + iconSVG("ticket", 32) + "</i><div><b>" + esc(gig.title) + "</b><span>" + esc(gig.poster.name) + " · " + esc(gig.poster.site) + " · " + esc(gig.pay) + "</span></div>" +
         '<span class="tk__stage tk__stage--' + (gs.stage || "none") + '">' + esc(gs.stage || "open") + "</span></header>" +
       '<div class="tk__time"><span data-hx-timer="' + id + '">' + timerText(id) + "</span>" + (gs.stage === "production" ? '<span class="tk__dim">Deliver from the suite, or here.</span>' : "") + "</div>" +
       '<div class="tk__body">' + body + "</div>" +
@@ -1238,5 +1290,14 @@ const Hustle = (() => {
     rep: () => (state ? G().rep : 0),
     // For testing and for the content pipeline: the whole game state.
     debug: () => JSON.parse(JSON.stringify(G())),
+    progress,
+    // What your camera's "show me" buttons do, the same way the game's own do.
+    tour: {
+      board: () => Web.visit(GL("/")),
+      site: (id) => { if (!gigOf(id)) return; focusId = id; clipping = true; Web.visit("http://" + gigOf(id).poster.site + "/", siteForWeb(id, gigOf(id).poster.site)); },
+      ticket: (id) => renderTicket(id, true),
+      compare: (id) => renderCompare(id, true),
+      suite: (id) => { if (!gigOf(id)) return; if (stageOf(id) === "research") endResearch(id, "early"); Suite.launcher(id); },
+    },
   };
 })();
