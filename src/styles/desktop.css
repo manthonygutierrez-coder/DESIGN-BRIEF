@@ -6,6 +6,16 @@
   --w-nav:#000080;--w-nav2:#1084D0;--w-in1:#7B7B7B;--w-in2:#ADADAD;
   --w-cli:#FFFFFF;--w-txt:#0A0A0A;
 }
+/* Keyboard focus is Windows 98's dotted rectangle, just inside the control
+   (as .logon__opt draws it). base.css's amber ring is for dark ground; on
+   this grey and white it barely showed. :where() leaves any control's own
+   :focus-visible rule in charge. */
+.side--screen :where(:focus-visible){outline:1px dotted var(--w-dk);outline-offset:-4px}
+/* just around instead: controls too small to draw inside, fields, links,
+   colour swatches, and tiles that already mark the one picked this way */
+.side--screen :where(.tb,.tray button,.ie__view,.cam__opts button,.su__chip,a,input,select,textarea):where(:focus-visible){outline-offset:1px}
+/* web pages have their own colours, some dark: focus takes the text's */
+.side--screen :where(.ie__view *,a):where(:focus-visible){outline-color:currentColor}
 .room{position:absolute;inset:0;perspective:620px;perspective-origin:50% 44%;overflow:hidden}
 .room__in{position:absolute;inset:0;transform-style:preserve-3d;
   transform:translate3d(calc(var(--px,0) * 14px),calc(var(--py,0) * 10px),0);transition:transform .5s cubic-bezier(.2,.8,.3,1)}

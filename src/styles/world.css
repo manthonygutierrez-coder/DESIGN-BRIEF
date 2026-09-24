@@ -1,6 +1,11 @@
 /* ─── THE WORLD ─────────────────────────────────────── */
+/* The background only shows mid-crossfade, while two scenes are each half
+   there. It matches the scene you are heading into, so two dark scenes never
+   pass through bone and two light ones never pass through black. */
 .side--world{background:var(--bone);--chrome:#14110E;--scrim:rgba(255,251,243,.78);--scrim-b:rgba(255,251,243,.62)}
-.side--world[data-chrome="light"]{--chrome:#F7F2E7;--scrim:rgba(6,4,2,.72);--scrim-b:rgba(6,4,2,.58)}
+.side--world[data-chrome="light"]{background:var(--ink);--chrome:#F7F2E7;--scrim:rgba(6,4,2,.72);--scrim-b:rgba(6,4,2,.58)}
+/* focus in the chrome's colour: base.css's amber barely shows on the light scenes */
+.side--world :where(:focus-visible){outline-color:var(--chrome)}
 .wscrim{position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(154deg,var(--scrim) 0%,transparent 46%),
              linear-gradient(to top,var(--scrim-b) 0%,transparent 26%)}
