@@ -14,7 +14,7 @@ const SuiteApps = (() => {
   const APPS = {
     banner: {
       label: "Banner", icon: "app-banner", mode: "free", blurb: "Banners, posters, marks, social cards",
-      presets: [["Leaderboard", 728, 90], ["Rectangle", 300, 250], ["Social card", 1200, 630], ["Square post", 1080, 1080], ["Poster", 600, 850], ["Zine page", 550, 850]],
+      presets: [["Leaderboard", 728, 90], ["Rectangle", 300, 250], ["Social card", 1200, 630], ["Square post", 1080, 1080], ["Poster", 600, 850], ["Zine page", 550, 850], ["Shop sign", 1200, 400]],
       // Pen and shape builder are core: drawing a character by eye needs them
       // from the first gig.
       tools: ["select", "rect", "ellipse", "pen", "build", "text", "image", "eyedrop"],
@@ -75,6 +75,51 @@ const SuiteApps = (() => {
     mirror: "Mirror drawing across the centre",
   };
 
+  /* ── modes ─────────────────────────────────────────────
+   * The suite is one tool with three modes, switched in place: Vector (the
+   * Banner and Type apps, which were always the same free canvas), Pixel and
+   * Layout. Every job has one document per mode; a gig's `app` still says
+   * which one is delivered, and which mode the suite opens in.
+   *
+   * Cutout and Swatch are no longer apps: they are drawers that pull out of
+   * any mode, and do what makes sense there.
+   */
+  const MODES = {
+    vector: { label: "Vector", icon: "mode-vector", apps: ["banner", "type"], blurb: "Marks, wordmarks, monograms, posters" },
+    pixel: { label: "Pixel", icon: "mode-pixel", apps: ["pixel"], blurb: "Sprites and icons, pixel by pixel" },
+    layout: { label: "Layout", icon: "mode-layout", apps: ["layout"], blurb: "A web page from real site blocks" },
+  };
+  const modeOf = (appId) => (appId === "pixel" ? "pixel" : appId === "layout" ? "layout" : "vector");
+  // Every size the mode's apps offer, the job's own app first.
+  function presetsFor(mode, appId) {
+    const ids = MODES[mode].apps.slice().sort((a, b) => (b === appId) - (a === appId));
+    const out = [];
+    for (const id of ids) for (const p of APPS[id].presets) if (!out.some(([, w, h]) => w === p[1] && h === p[2])) out.push(p);
+    return out;
+  }
+  // Bonus tools a mode has: whatever any of its apps has, once earned.
+  function bonusForMode(mode, slot, unlocks = []) {
+    const all = [...new Set(MODES[mode].apps.flatMap((id) => APPS[id].bonus || []))];
+    return slot === "studio" ? all : all.filter((b) => unlocks.includes(b));
+  }
+
+  /* ── fonts ─────────────────────────────────────────────
+   * What the type menu offers, by what it is good for. Bundled faces work
+   * with no network; the system ones are a fallback that every Mac has. */
+  const FONTS = [
+    { name: "Archivo", cat: "Sans", weights: [400, 500, 600, 700] },
+    { name: "Instrument Serif", cat: "Serif", weights: [400], italic: true },
+    { name: "Silkscreen", cat: "Pixel", weights: [400, 700] },
+    { name: "VT323", cat: "Pixel", weights: [400] },
+    { name: "Georgia", cat: "System", weights: [400, 700], italic: true },
+    { name: "Helvetica Neue", cat: "System", weights: [300, 400, 500, 700], italic: true },
+    { name: "Didot", cat: "System", weights: [400, 700], italic: true },
+    { name: "Futura", cat: "System", weights: [500, 700], italic: true },
+    { name: "Courier New", cat: "System", weights: [400, 700], italic: true },
+    { name: "Times New Roman", cat: "System", weights: [400, 700], italic: true },
+  ];
+  const FONT_CATS = ["Logotype", "Monogram", "Script", "Display", "Serif", "Sans", "Pixel", "System"];
+
   // Which apps a job may use. No discipline (scratch work) means everything.
   function forDiscipline(catId) {
     return Object.keys(APPS).filter((id) => !catId || APPS[id].for.includes(catId));
@@ -117,7 +162,7 @@ const SuiteApps = (() => {
     return o;
   }
 
-  return { APPS, TOOLS, BONUS, BLOCKS, MAX_ITEMS, forDiscipline, relevant, bonusFor, blankItem };
+  return { APPS, TOOLS, BONUS, BLOCKS, MAX_ITEMS, MODES, FONTS, FONT_CATS, forDiscipline, relevant, bonusFor, blankItem, modeOf, presetsFor, bonusForMode };
 })();
 
 if (typeof module !== "undefined") module.exports = SuiteApps;

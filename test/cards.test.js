@@ -100,3 +100,10 @@ test("object cards become a picture block's image", () => {
   assert.equal(C.applyToBlock(doc, 1, pic).ok, false);
   assert.deepEqual(D.cardsUsed(doc), [pic.id]);
 });
+
+test("a card remembers the job it was found for, and only as a note", () => {
+  const c = C.card("fact", "Thursdays", "Open kiln night is on Thursdays", { gig: "kiln-night" });
+  assert.equal(c.gig, "kiln-night");
+  assert.equal("gig" in C.card("fact", "x", "y"), false, "no job, no field");
+  assert.equal(C.normalize({ kind: "fact", value: "x", gig: "g".repeat(200) }).gig.length, 80);
+});

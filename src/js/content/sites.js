@@ -529,7 +529,7 @@ const Sites = (() => {
     const n = 24;
     let grid = "";
     for (let i = 0; i < n; i++){
-      grid += '<a class="ifr" href="#" data-img="' + attr(q) + '" data-i="' + i + '">' +
+      grid += '<a class="ifr" href="#" data-img="' + attr(q) + '" data-i="' + i + '" style="--i:' + i + '">' +
         '<img src="' + Imagery.make(q, i, 200, 150) + '" alt="" data-px="auto">' +
         '<span class="ifr__n">' + esc2(Imagery.filename(q, i)) + "</span>" +
         '<span class="ifr__d">' + esc2(Imagery.dimensions(q, i)) + "</span></a>";

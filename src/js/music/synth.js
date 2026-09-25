@@ -71,6 +71,25 @@ const MusicSynth = (() => {
       o.connect(g); g.connect(out);
       o.start(t); o.stop(t + d + 0.1);
     },
+    // An upright bass: a woody pluck, the filter closing as the string settles.
+    upright(h, m, t, d, v, out) {
+      const f = hz(m);
+      h.tone("triangle", f, t, d, v * 0.75, { a: 0.004, d: 0.35, s: 0.25, r: 0.12 }, out, [1400, 320, 0.25]);
+      h.tone("sine", f, t, d, v * 0.55, { a: 0.004, d: 0.4, s: 0.3, r: 0.12 }, out);
+    },
+    // Brushes on a snare: a swish that swells in rather than a hit.
+    brush: (h, m, t, d, v, out) => h.hiss(t, 0.16 + d * 0.2, v * 0.2, out, [["bandpass", 3200, 0.7], ["lowpass", 6500]], 0.03),
+    // Vibes: sine bars with the motor on, a slow tremolo on the ring.
+    vibes(h, m, t, d, v, out) {
+      const ctx = h.ctx, f = hz(m), len = Math.max(d, 0.6);
+      const trem = ctx.createGain(), depth = ctx.createGain(), lfo = ctx.createOscillator();
+      trem.gain.value = 1; trem.connect(out);
+      lfo.frequency.value = 5.2; depth.gain.value = 0.35;
+      lfo.connect(depth); depth.connect(trem.gain);
+      h.tone("sine", f, t, len, v * 0.5, { a: 0.003, d: 1.2, s: 0, r: 0.4 }, trem);
+      h.tone("sine", f * 4, t, 0.2, v * 0.07, { a: 0.002, d: 0.25, s: 0, r: 0.1 }, trem);
+      lfo.start(t); lfo.stop(t + len + 1.2);
+    },
     bell(h, m, t, d, v, out) {
       const f = hz(m);
       h.tone("sine", f, t, d, v * 0.5, { a: 0.002, d: 1.1, s: 0, r: 0.3 }, out);

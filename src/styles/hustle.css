@@ -41,6 +41,9 @@
 .gl__date{display:inline-block;width:52px;color:#777;font-size:13px}
 .gl__pay{color:#555;font-size:14px}
 .gl__tag{font-size:11px;padding:0 4px;border:1px solid #999;color:#555;text-transform:uppercase;letter-spacing:.04em}
+/* the tutorial chain: a job that teaches the suite */
+.gl__tag--lesson{border-color:#C9861F;color:#8A5A0A;background:#FFF3D1}
+.gl__lesson{margin:0 0 10px;padding:6px 9px;background:#FFF3D1;border:1px solid #E7C27A;color:#5A3A08;font-size:14px}
 .gl__tag--flagged{border-color:#C00;color:#C00}
 .gl__meta{color:#666;font-size:13px}
 .gl__note{padding:6px 8px;background:#FFFFE0;border:1px solid #E6DB55}
@@ -231,6 +234,9 @@
 .cl__low{position:absolute;left:6px;bottom:6px;max-width:calc(100% - 104px);padding:3px 7px;line-height:1.15;
   background:rgba(8,10,12,.74);border-left:3px solid #4E6E88}
 .cl__low b,.cl__low span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* the kind of day they are having (runs.js), beside their name */
+.cl__day{font-style:normal;font-family:"Silkscreen",monospace;font-size:7px;letter-spacing:.08em;text-transform:uppercase;
+  padding:1px 4px;margin-right:5px;vertical-align:2px;color:#14110E;background:#FFD24A}
 .cl__low b{font-family:"Archivo",Arial,sans-serif;font-size:11px;color:#fff}
 .cl__low span{font-size:13px;color:#B9CBC8}
 /* you, in the corner */
@@ -251,6 +257,14 @@
 .cl__glass--held{opacity:.55}
 @keyframes clShake{0%{transform:translate(0,0)}50%{transform:translate(1px,-1px)}100%{transform:translate(-1px,1px)}}
 @media (prefers-reduced-motion: reduce){.cl__glass--out{animation:none}}
+/* ringing: snow on the feed until the line opens, and nothing said yet */
+.cl--dial .cl__log>*{visibility:hidden}
+.cl__stage--dial .cl__rec,.cl__stage--dial .cl__att,.cl__stage--dial .cl__glass{visibility:hidden}
+.cl__stage--dial::after{content:"CONNECTING\2026";position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+  text-align:center;font-family:"Silkscreen",monospace;font-size:10px;letter-spacing:.2em;line-height:1;color:#D9F2EE;
+  text-shadow:1px 1px 0 #000,-1px 1px 0 #000,1px -1px 0 #000,-1px -1px 0 #000;animation:clDial .8s steps(2) infinite}
+@keyframes clDial{50%{opacity:.35}}
+@media (prefers-reduced-motion: reduce){.cl__stage--dial::after{animation:none}}
 /* staying on: their time is the research clock */
 .cl__clock{position:absolute;top:5px;right:6px;padding:3px 6px;font-family:"VT323",monospace;font-size:14px;line-height:1;
   color:#FFE3A8;background:rgba(8,10,12,.62);border:1px solid rgba(255,255,255,.22)}

@@ -9,7 +9,9 @@
  *   late     up to −15, five per started minute past the deadline.
  *
  * A need is met by any of:
- *   text    every string appears in the work's text (case-insensitive)
+ *   text    every string appears in the words shown on the work (case-insensitive).
+ *           A file's name is not on the work; a site's name is (Layout shows it)
+ *   file    every string appears in the file's name ("banner.gif")
  *   tags    any tag appears on a card the work used, or on a colour in the work
  *   all     every tag does
  *   blocks  every block type appears (Layout)
@@ -25,9 +27,13 @@ const HustleScore = (() => {
   const DOC = typeof SuiteDoc !== "undefined" ? SuiteDoc : require("../suite/doc.js");
   const CARDS = typeof SuiteCards !== "undefined" ? SuiteCards : require("../suite/cards.js");
 
+  // The words on the work. A poster's file name is not on the poster, so typing
+  // the client's words into it meets nothing; a site's name is its masthead.
   function textOf(doc) {
-    return [doc.meta && doc.meta.name, shownText(doc)].filter(Boolean).join("\n").toLowerCase();
+    const title = doc.mode === "layout" && doc.meta ? doc.meta.name : "";
+    return [title, shownText(doc)].filter(Boolean).join("\n").toLowerCase();
   }
+  const fileName = (doc) => String((doc.meta && doc.meta.name) || "").toLowerCase();
 
   function shownText(doc) {
     const out = [];
@@ -66,6 +72,7 @@ const HustleScore = (() => {
 
   function needMet(need, ctx) {
     if (need.text && !need.text.every((s) => ctx.text.includes(String(s).toLowerCase()))) return false;
+    if (need.file && !need.file.every((s) => fileName(ctx.doc).includes(String(s).toLowerCase()))) return false;
     if (need.tags && !need.tags.some((t) => ctx.tags.has(t))) return false;
     if (need.all && !need.all.every((t) => ctx.tags.has(t))) return false;
     if (need.blocks && !need.blocks.every((b) => ctx.doc.blocks.some((x) => x.t === b))) return false;
@@ -175,7 +182,7 @@ const HustleScore = (() => {
     return t;
   }
 
-  return { score, stars, tier, textOf, tagsOf, needMet, limitCheck, likenessLine, TIERS };
+  return { score, stars, tier, textOf, shownText, fileName, tagsOf, needMet, limitCheck, likenessLine, TIERS };
 })();
 
 if (typeof module !== "undefined") module.exports = HustleScore;

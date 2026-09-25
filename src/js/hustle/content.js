@@ -919,7 +919,7 @@ const HUSTLE = (() => {
   const gigs = {
 
     "otp-banner": {
-      kind: "listing", discipline: "graphic", app: "banner",
+      kind: "listing", discipline: "graphic", app: "banner", deliverable: "Banner",
       title: "need banner w/ my OTP for my anime fan site!!",
       short: "BATON PASS BANNER",
       pay: "$20 + credit on the site",
@@ -962,7 +962,7 @@ const HUSTLE = (() => {
       },
       needs: [
         { id: "filename", label: "Delivered as banner.gif \u2014 40 pages link to it",
-          missed: "It isn't named banner.gif, so forty pages stay broken", text: ["banner.gif"], weight: 1 },
+          missed: "It isn't named banner.gif, so forty pages stay broken", file: ["banner.gif"], weight: 1 },
         { id: "names", label: "Toma and Kiyoshi, both, by name", missed: "Toma and Kiyoshi aren't both named on it", text: ["toma", "kiyoshi"], weight: 3 },
         { id: "sitename", label: "The site's name: The Baton Pass", missed: "The site's name isn't on it", text: ["the baton pass"], weight: 2 },
         { id: "colours", label: "Their colours: Toma's orange, Kiyoshi's navy", missed: "Toma's orange and Kiyoshi's navy aren't both there", all: ["orange", "navy"], weight: 2 },
@@ -1016,7 +1016,7 @@ const HUSTLE = (() => {
     },
 
     "otp-site": {
-      kind: "chain", discipline: "webui", app: "layout",
+      kind: "chain", discipline: "webui", app: "layout", deliverable: "Site",
       after: { gig: "otp-banner", minStars: 3 },
       title: "redo my whole fan site around the banner",
       short: "BATON PASS SITE",
@@ -1073,7 +1073,7 @@ const HUSTLE = (() => {
     },
 
     "pell-sprite": {
-      kind: "listing", discipline: "character", app: "pixel",
+      kind: "listing", discipline: "character", app: "pixel", deliverable: "Sprite",
       title: "pixel artist wanted: shopkeeper sprite for a cosy game",
       short: "MRS. PELL SPRITE",
       pay: "$35",
@@ -1149,7 +1149,7 @@ const HUSTLE = (() => {
     },
 
     "kiln-night": {
-      kind: "prospect", discipline: "graphic", app: "banner",
+      kind: "prospect", discipline: "graphic", app: "banner", deliverable: "Poster",
       site: "kettleandkiln.com",
       minRep: 6,
       inboundRep: 16,
@@ -1226,7 +1226,7 @@ const HUSTLE = (() => {
     /* A rebrand in two parts. The old brand is still his website, and the
      * website remembers things he gets wrong on the phone. */
     "dennis-wordmark": {
-      kind: "listing", discipline: "type", app: "type",
+      kind: "listing", discipline: "type", app: "type", deliverable: "Wordmark",
       title: "MAGICIAN seeks designer (and possibly an assistant)",
       short: "MAGICIAN'S WORDMARK",
       pay: "$75",
@@ -1310,7 +1310,7 @@ const HUSTLE = (() => {
     },
 
     "dennis-poster": {
-      kind: "chain", discipline: "graphic", app: "banner",
+      kind: "chain", discipline: "graphic", app: "banner", deliverable: "Poster",
       after: { gig: "dennis-wordmark", minStars: 3 },
       title: "a poster for Fridays at the Starlite",
       short: "MAGICIAN'S LOUNGE POSTER",
@@ -1388,7 +1388,7 @@ const HUSTLE = (() => {
 
     /* Someone with a vibe and no budget. The constraint is the printer. */
     "weird-things-4": {
-      kind: "listing", discipline: "illustrative", app: "banner",
+      kind: "listing", discipline: "illustrative", app: "banner", deliverable: "Zine cover",
       title: "zine cover!! issue 4. a cryptid (it's a duck)",
       short: "CRYPTID ZINE COVER",
       pay: "$25 + five copies",
@@ -1471,7 +1471,7 @@ const HUSTLE = (() => {
     /* A franchise owner going rogue inside a brand that is not his. The
      * corporate site is his brand guide and the thing he is dodging. */
     "baron-burrito": {
-      kind: "listing", discipline: "graphic", app: "banner",
+      kind: "listing", discipline: "graphic", app: "banner", deliverable: "Poster",
       title: "NEED POSTER FOR BREAKFAST BURRITO (corporate does not need to know)",
       short: "DRIVE-THRU POSTER",
       pay: "$90 cash + free burritos",

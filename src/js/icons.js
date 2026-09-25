@@ -253,7 +253,10 @@ function iconSVG(id, px){
       if (ch === "."){ x++; continue; }
       let n = 1;
       while (x + n < row.length && row[x + n] === ch) n++;
-      r += '<rect x="' + x + '" y="' + y + '" width="' + n + '" height="1" fill="' + art.p[ch] + '"/>';
+      // A colour can be a CSS variable (the suite re-inks its icons per look);
+      // a presentation attribute can't hold one, a style can.
+      const c = art.p[ch];
+      r += '<rect x="' + x + '" y="' + y + '" width="' + n + '" height="1" ' + (c.startsWith("var(") ? 'style="fill:' + c + '"' : 'fill="' + c + '"') + '/>';
       x += n;
     }
   });
@@ -339,3 +342,70 @@ Object.assign(ICON_ART, {
     "kwgwwwwk...r....","kwwwwwwk..r.r...","kkkkkwwk.r...r..",".....kwk........",
     "......kk........",".......k........","................","................"]},
 });
+
+// The browser's buttons, the tools Hustle adds to it and to a call, and the
+// taskbar's Arrange menu: pictures where there were words and glyphs.
+Object.assign(ICON_ART, {
+  "nav-back":{p:{k:"#0A0A0A",g:"#2E9A3E",l:"#8BE09A"},g:[
+    "................","................","......k.........",".....kk.........",
+    "....kgk.........","...kggkkkkkkkk..","..kgllllllllllk.",".kgggggggggggggk",
+    ".kgggggggggggggk","..kgggggggggggk.","...kggkkkkkkkk..","....kgk.........",
+    ".....kk.........","......k.........","................","................"]},
+  "nav-stop":{p:{k:"#0A0A0A",r:"#D23A2A",w:"#FFFFFF"},g:[
+    "................","....kkkkkkkk....","...krrrrrrrrk...","..krrrrrrrrrrk..",
+    ".krrwwrrrrwwrrk.",".krrrwwrrwwrrrk.",".krrrrwwwwrrrrk.",".krrrrrwwrrrrrk.",
+    ".krrrrwwwwrrrrk.",".krrrwwrrwwrrrk.",".krrwwrrrrwwrrk.","..krrrrrrrrrrk..",
+    "...krrrrrrrrk...","....kkkkkkkk....","................","................"]},
+  "nav-reload":{p:{k:"#0A0A0A",b:"#2F6FC0",l:"#9CC4F0"},g:[
+    "................","................",".....kkkkk..k...","...kkbbbbbkkbk..",
+    "..kbbllllbbbbk..","..kbk....kbbbk..",".kbk....kbbbbk..",".kbk.....kkkkk..",
+    ".kbk............",".kbk.......kbk..","..kbk.....kbk...","..kbbk...kbbk...",
+    "...kbbbbbbbk....","....kkkkkkk.....","................","................"]},
+  "nav-home":{p:{k:"#0A0A0A",r:"#C2452C",w:"#F2ECE0",d:"#8A6A2A",b:"#5FC9E8"},g:[
+    "................",".......kk.......","......krrk......",".....krrrrk.kk..",
+    "....krrrrrrkdk..","...krrrrrrrrkk..","..krrrrrrrrrrk..",".kkkkkkkkkkkkkk.",
+    "..kwwwwwwwwwwk..","..kwbbwwwwkkwk..","..kwbbwwwwkdwk..","..kwwwwwwwkdwk..",
+    "..kwwwwwwwkdwk..","..kkkkkkkkkkkk..","................","................"]},
+  clip:{p:{k:"#0A0A0A",m:"#B8BCC2",w:"#F4F4F4",r:"#C2452C"},g:[
+    "................","..kk........kk..",".kmmk......kmmk.",".kmwmk....kmwmk.",
+    "..kmwmk..kmwmk..","...kmwmkkmwmk...","....kmwmmwmk....",".....kmmmmk.....",
+    ".....kkmmkk.....","....krrkkrrk....","...krkk..kkrk...","...kr.k..k.rk...",
+    "...krkk..kkrk...","....krk..krk....",".....k....k.....","................"]},
+  compare:{p:{k:"#0A0A0A",w:"#FFFFFF",n:"#000080",g:"#2E9A3E",r:"#C2452C"},g:[
+    "................","kkkkkkkkkkkkkkkk","knnnnnknnnnknnnk","knnnnnknnnnknnnk",
+    "kkkkkkkkkkkkkkkk","kwwwwwkwgwwkwrwk","kwwwwwkgwgwkrwrk","kwwwwwkwwwwkwwwk",
+    "kkkkkkkkkkkkkkkk","kwwwwwkwrwwkwgwk","kwwwwwkrwrwkgwgk","kwwwwwkwwwwkwwwk",
+    "kkkkkkkkkkkkkkkk","................","................","................"]},
+  pitch:{p:{k:"#0A0A0A",w:"#FFFFFF",d:"#3A3A44"},g:[
+    "................",".kkkkkkkkkkkkkk.","kwwwwwwwwwwwwwwk","kwddwdddwddwwwwk",
+    "kwwwwwwwwwwwwwwk","kwdddwddwdddwwwk","kwwwwwwwwwwwwwwk","kwddwddddwwwwwwk",
+    "kwwwwwwwwwwwwwwk",".kkkkkwkkkkkkkk.",".....kwk........","....kwk.........",
+    "....kk..........","................","................","................"]},
+  cascade:{p:{k:"#0A0A0A",n:"#000080",w:"#FFFFFF",f:"#C0C0C0"},g:[
+    "kkkkkkkk........","knnnnnnk........","kffffffk........","kffkkkkkkkk.....",
+    "kffknnnnnnk.....","kkkkffffffk.....","...kffkkkkkkkk..","...kffknnnnnnk..",
+    "...kkkkwwwwwwk..","......kwwwwwwk..","......kwwwwwwk..","......kwwwwwwk..",
+    "......kkkkkkkk..","................","................","................"]},
+  "tile-cols":{p:{k:"#0A0A0A",n:"#000080",w:"#FFFFFF"},g:[
+    "................","kkkkkkk.kkkkkkk.","knnnnnk.knnnnnk.","kwwwwwk.kwwwwwk.",
+    "kwwwwwk.kwwwwwk.","kwwwwwk.kwwwwwk.","kwwwwwk.kwwwwwk.","kwwwwwk.kwwwwwk.",
+    "kwwwwwk.kwwwwwk.","kwwwwwk.kwwwwwk.","kwwwwwk.kwwwwwk.","kwwwwwk.kwwwwwk.",
+    "kkkkkkk.kkkkkkk.","................","................","................"]},
+  "tile-rows":{p:{k:"#0A0A0A",n:"#000080",w:"#FFFFFF"},g:[
+    "kkkkkkkkkkkkkkk.","knnnnnnnnnnnnnk.","kwwwwwwwwwwwwwk.","kwwwwwwwwwwwwwk.",
+    "kwwwwwwwwwwwwwk.","kkkkkkkkkkkkkkk.","................","kkkkkkkkkkkkkkk.",
+    "knnnnnnnnnnnnnk.","kwwwwwwwwwwwwwk.","kwwwwwwwwwwwwwk.","kwwwwwwwwwwwwwk.",
+    "kkkkkkkkkkkkkkk.","................","................","................"]},
+  "min-all":{p:{k:"#0A0A0A",f:"#C0C0C0",n:"#000080"},g:[
+    "................","................","................","................",
+    "................","................","................","................",
+    "................","..kkkkkk.kkkkkk.","..knnnnk.knnnnk.","..kffffk.kffffk.",
+    "..kkkkkk.kkkkkk.","................","kkkkkkkkkkkkkkkk","kffffffffffffffk"]},
+  restore:{p:{k:"#0A0A0A",n:"#000080",w:"#FFFFFF"},g:[
+    "................","....kkkkkkkkkkk.","....knnnnnnnnnk.","....kwwwwwwwwwk.",
+    ".kkkkkkkkkkkwwk.",".knnnnnnnnnkwwk.",".kwwwwwwwwwkwwk.",".kwwwwwwwwwkwwk.",
+    ".kwwwwwwwwwkkkk.",".kwwwwwwwwwk....",".kwwwwwwwwwk....",".kkkkkkkkkkk....",
+    "................","................","................","................"]},
+});
+// Forward is back, the other way round.
+ICON_ART["nav-fwd"] = { p: ICON_ART["nav-back"].p, g: ICON_ART["nav-back"].g.map((r) => r.split("").reverse().join("")) };

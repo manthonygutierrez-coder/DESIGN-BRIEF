@@ -1,10 +1,12 @@
 "use strict";
 /* ── the score ────────────────────────────────────────────
- * One theme in three arrangements, all in D major at 96 bpm over the same
+ * One theme in four arrangements, all in D major at 96 bpm over the same
  * sixteen bars, so the desktop can move between them on any bar line:
  *
  *   hub     the desktop, mail, the board: lo-fi keys, a lazy bass, vinyl
- *   hunt    reading and clipping: plucked bass, marimba, a shaker groove
+ *   hunt    looking for work on the web: plucked bass, marimba, a shaker groove
+ *   case    researching a job: a walking upright, brushes in half time,
+ *           vibes, and the key's minor chords laid over its major ones
  *   studio  the design apps: pulse arpeggios, a triangle bass, four on the floor
  *
  * Every part comes in at a level of fullness from 0 to 1, and fullness is
@@ -34,6 +36,13 @@ const MusicTheme = (() => {
   };
   const FORM = ["Gmaj7", "F#m7", "Em7", "A7", "Gmaj7", "F#m7", "Bm7", "A7sus4",
                 "Em7", "A7", "Dmaj7", "Bm7", "Em7", "A7", "Dmaj7", "Dmaj7"];
+  // The minor (or diminished) triad from the key that sits over each chord:
+  // what research hears instead of the major colour. B minor shares D major's
+  // notes, so it is the same key in a darker room.
+  const SHADE = {
+    "Gmaj7": [59, 62, 66], "F#m7": [54, 57, 61], "Em7": [52, 55, 59], "A7": [61, 64, 67],
+    "Bm7": [59, 62, 66], "A7sus4": [52, 55, 59], "Dmaj7": [54, 57, 61],
+  };
   const wrap = (bar) => ((bar % BARS) + BARS) % BARS;
   const chordAt = (bar) => CHORDS[FORM[wrap(bar)]];
 
@@ -173,6 +182,49 @@ const MusicTheme = (() => {
       } },
     ] },
 
+    // Research. Turning things over: the same chords, with a minor triad from
+    // the key laid over each (B minor on G, F-sharp minor on D, a diminished
+    // one on A for the tension), a bass that walks instead of grooves, brushes
+    // that only lean on the third beat, and vibes that quote the tune slowly
+    // and leave room around it.
+    case: { swing: 0.34, parts: [
+      { id: "upright", patch: "upright", level: 0, gain: 1.2, notes(bar, r) {
+        // Walking quarters: the root, a chord tone, another, then a step into the next bar.
+        const c = chordAt(bar), low = c.tones.map((m) => m - 12).filter((m) => m > c.root);
+        const b2 = low[Math.floor(r() * Math.min(2, low.length))] || c.root + 12;
+        const b3 = r() < 0.5 ? low[low.length - 1] || c.root + 12 : c.root + 12;
+        return [[0, 3, c.root, 0.9], [4, 3, b2, 0.65], [8, 3, b3, 0.75],
+                [12, 3, approach(b3, chordAt(bar + 1).root), 0.7]];
+      } },
+      { id: "brush", patch: "brush", level: 0, gain: 1, notes(bar, r) {
+        // Half time: the swish lands on three; the taps keep a slow swung ride.
+        const out = [[8, 2, 0, 0.85]];
+        for (const s of [0, 4, 12]) out.push([s, 1, 0, 0.35 + r() * 0.1]);
+        for (const s of [6, 14]) if (r() < 0.6) out.push([s, 1, 0, 0.25 + r() * 0.1]);
+        return out;
+      } },
+      { id: "kick", patch: "kickSoft", level: 0.25, gain: 0.5, notes(bar, r) {
+        const out = [[0, 1, 0, 0.8]];
+        if (r() < 0.3) out.push([10, 1, 0, 0.45]);
+        return out;
+      } },
+      { id: "vibes", patch: "vibes", level: 0.25, gain: 0.55, notes(bar, r) {
+        // Even bars: the tune's first notes, late and let ring. Odd bars: one
+        // note of the shade, high, as if a thought just came.
+        if (bar % 2 === 0) return MELODY[wrap(bar)].slice(0, 2).map(([s, d, m], i) =>
+          [Math.min(STEPS - 2, s + 2 + i * 2), Math.min(6, STEPS - Math.min(STEPS - 2, s + 2 + i * 2)), m, 0.6]);
+        const sh = SHADE[FORM[wrap(bar)]];
+        return r() < 0.7 ? [[6, 6, sh[Math.floor(r() * sh.length)] + 12, 0.45]] : [];
+      } },
+      { id: "shade", patch: "pad", level: 0.5, gain: 0.5, notes(bar) {
+        return SHADE[FORM[wrap(bar)]].map((m) => [0, STEPS, m, 0.4]);
+      } },
+      { id: "lead", patch: "tri", level: 0.75, gain: 0.16, notes(bar) {
+        // Only the tune's long notes, an octave down: the melody, half-remembered.
+        return bar % 2 === 1 ? [] : MELODY[wrap(bar)].filter(([, d]) => d >= 4).map(([s, d, m]) => [s, d, m - 12, 0.5]);
+      } },
+    ] },
+
     studio: { swing: 0, parts: [
       { id: "arp", patch: "pulse12", level: 0, gain: 0.2, notes(bar) {
         const t = chordAt(bar).tones, up = t.concat(t.map((m) => m + 12));
@@ -246,10 +298,12 @@ const MusicTheme = (() => {
 
   // Which arrangement a window belongs to. Your camera floats over everything
   // and is not a place, so it keeps whatever was playing (null).
-  function zoneOf(className) {
+  // The web is the hunt for work, until a job is being researched; then the
+  // same windows play the case.
+  function zoneOf(className, o = {}) {
     const c = " " + String(className || "") + " ";
     if (/ w98--camguide /.test(c)) return null;
-    if (/ w98--(web|ticket|compare) /.test(c)) return "hunt";
+    if (/ w98--(web|ticket|compare) /.test(c)) return o.research ? "case" : "hunt";
     if (/ w98--(suite|re) /.test(c)) return "studio";
     return "hub";
   }
@@ -297,12 +351,42 @@ const MusicTheme = (() => {
       const run = [74, 78, 81, 86, 90, 93, 98], k = 2 + Math.max(1, Math.min(5, o.stars | 0 || 1));
       return run.slice(0, k).map((m, i) => [i, i === k - 1 ? 6 : 1, m, 0.55 + i * 0.04, "pulse25"]);
     }
+    // Finding the gap: the case's shade, climbing on the vibes.
+    if (name === "gap") { const sh = SHADE[FORM[wrap(bar)]]; return sh.map((m, i) => [i, i === 2 ? 5 : 1, m + 12, 0.5, "vibes"]); }
+    // A call: the phone, the line opening, the line going.
+    if (name === "ring") return [[0, 1, t[3], 0.3, "bell"], [1, 1, t[2], 0.26, "bell"], [3, 1, t[3], 0.3, "bell"], [4, 2, t[2], 0.26, "bell"]];
+    if (name === "pickup") return [[0, 0.5, t[0], 0.3, "blip"], [0.5, 1, t[2], 0.3, "blip"]];
+    if (name === "hangup") return [[0, 0.5, t[2], 0.26, "blip"], [0.5, 1.5, thirdBelow(t[0]), 0.26, "blip"]];
+    return UI_SOUNDS.has(name) ? uiNotes(name, c, t) : [];
+  }
+
+  // The interface's own small sounds: quiet, short, and still in the key of
+  // the bar, so clicking about never fights the music. The player can switch
+  // these off (the tray's volume box) without losing the game's own cues.
+  const UI_SOUNDS = new Set(["open", "close", "min", "menu", "pick", "press", "loaded", "tool", "layer", "drop", "drawer", "tuck", "grid"]);
+  function uiNotes(name, c, t) {
+    if (name === "open") return [[0, 0.5, t[0], 0.18, "blip"], [0.5, 1, t[2], 0.16, "blip"]];
+    if (name === "close") return [[0, 0.5, t[2], 0.15, "blip"], [0.5, 1, t[0], 0.13, "blip"]];
+    if (name === "min") return [[0, 1, t[0] - 12, 0.14, "blip"]];
+    if (name === "menu") return [[0, 1, t[1], 0.2, "mallet"]];
+    if (name === "pick") return [[0, 1, t[3], 0.2, "mallet"]];
+    if (name === "press") return [[0, 0.5, c.root + 36, 0.16, "pluck"]];
+    if (name === "loaded") return [[0, 1, t[1], 0.14, "mallet"], [1, 2, t[3], 0.12, "mallet"]];
+    // The design suite: a tool picked up, a layer made or moved, a card let
+    // go on the work, a drawer springing out and tucking back, and the focus
+    // grid blooming out from its cell.
+    if (name === "tool") return [[0, 0.5, t[2], 0.12, "mallet"]];
+    if (name === "layer") return [[0, 0.5, t[0], 0.14, "pluck"], [0.5, 0.5, t[1], 0.12, "pluck"]];
+    if (name === "drop") return [[0, 0.5, c.root + 24, 0.2, "pluck"], [0.5, 1, t[2], 0.14, "mallet"]];
+    if (name === "drawer") return [[0, 0.5, t[0], 0.14, "blip"], [0.5, 0.5, t[2], 0.13, "blip"], [1, 1, t[0] + 12, 0.12, "blip"]];
+    if (name === "tuck") return [[0, 0.5, t[2], 0.12, "blip"], [0.5, 1, t[0], 0.11, "blip"]];
+    if (name === "grid") return [[0, 1, t[0], 0.22, "vibes"], [0.5, 1, t[1], 0.2, "vibes"], [1, 1, t[2], 0.2, "vibes"], [1.5, 3, t[3], 0.18, "vibes"]];
     return [];
   }
 
   return {
-    BPM, STEPS, BARS, STEP_SEC, BAR_SEC, CHORDS, FORM, MELODY, TIERS, PRESSURE, TIER_IDS,
-    inKey, chordAt, partsOf, notes, mix, zoneOf, fullnessFromRep, pressureOf, nextGrid, sfxTime, sfxNotes,
+    BPM, STEPS, BARS, STEP_SEC, BAR_SEC, CHORDS, FORM, SHADE, MELODY, TIERS, PRESSURE, TIER_IDS,
+    inKey, chordAt, partsOf, notes, mix, zoneOf, fullnessFromRep, pressureOf, nextGrid, sfxTime, sfxNotes, UI_SOUNDS,
   };
 })();
 

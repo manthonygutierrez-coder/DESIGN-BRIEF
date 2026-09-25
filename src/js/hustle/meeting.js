@@ -23,6 +23,13 @@
  * meeting wears on, and the player reads the clock off the client rather than
  * off the number.
  *
+ * A run of a gig (runs.js) can tune the tree for the client's day, and these
+ * are read with today's behaviour as the default:
+ *
+ *   tree.silenceCost  pips an unfilled pause costs (1)
+ *   tree.given        option ids they volunteer before you ask ([])
+ *   tree.catchBonus   pips a caught contradiction wins back (0)
+ *
  * Every function returns a new state. Nothing here touches the DOM.
  */
 
@@ -64,6 +71,17 @@ const HustleMeeting = (() => {
       said: (tree.opening || []).slice(-1)[0] || "",
       ended: false, reason: null
     };
+    // A client in a hurry says some of it before you can ask: those answers
+    // join the opening, count as revealed, and the questions are gone.
+    const lines = (tree.opening || []).slice();
+    for (const id of tree.given || []) {
+      const o = (tree.options || {})[id];
+      if (!o || o.end || st.used.includes(id)) continue;
+      st.used.push(id);
+      for (const text of (o.reply || [])) { st.log.push({ who: "them", text, given: true }); lines.push(text); }
+      for (const r of (o.reveals || [])) if (!st.revealed.includes(r)) st.revealed.push(r);
+    }
+    if (lines.length > (tree.opening || []).length) { st.speaking = speakTime(lines); st.said = lines[lines.length - 1]; }
     st.glass = glassFor(tree, st);
     return st;
   }
@@ -132,7 +150,7 @@ const HustleMeeting = (() => {
       next.missed.push(next.openWindow);
       next.openWindow = null;
     }
-    next.patience = Math.max(0, next.patience - SILENCE_PIPS);
+    next.patience = Math.max(0, next.patience - (Number(tree.silenceCost) || SILENCE_PIPS));
 
     if (next.patience <= 0) return leave(tree, next, "bored");
     if (next.runSilences >= 2) return leave(tree, next, "drifted");
@@ -178,6 +196,8 @@ const HustleMeeting = (() => {
     }
 
     next.patience = Math.max(0, next.patience - pick.cost);
+    // A sceptical client warms to being caught out fairly.
+    if (pick.challenge && tree.catchBonus) next.patience = Math.min(next.max, next.patience + Number(tree.catchBonus));
     next.runSilences = 0;
     next.mood = o.mood || null;
     next.speaking = speakTime(o.reply, o.secs);
