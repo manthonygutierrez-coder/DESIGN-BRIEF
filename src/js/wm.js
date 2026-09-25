@@ -190,6 +190,14 @@ function toggleMax(w){
 function closeWin(w){
   clearWinTimers(w);
   if (typeof w.onClose === "function") { try { w.onClose(w); } catch (e) { console.error(e); } }
+  // A docked window's neighbour gets the whole width back, if it is still
+  // exactly where the dock put it (moved or resized since, it stays put).
+  const d = w.dock;
+  if (d && wins.get(d.other.key) === d.other && !isMin(d.other)){
+    const r = rectOf(d.other);
+    if (r.x === d.rect.x && r.y === d.rect.y && r.w === d.rect.w && r.h === d.rect.h)
+      setRect(d.other, { x: WinGeom.GAP, y: d.rect.y, w: deskSize().w - WinGeom.GAP * 2, h: d.rect.h });
+  }
   w.el.remove(); w.tb.remove();
   wins.delete(w.key);
   if (activeWin === w){
@@ -301,6 +309,20 @@ function pairWins(first, second){
   [[first, a], [second, b]].forEach(([w, r]) => { w.el.classList.remove("min"); unsnap(w); setRect(w, r); });
   focusWin(first);
   focusWin(second);
+}
+
+// A slim window down one side of the desk at full height, at the width it
+// already has; `other`, if given, takes the rest. A call docks like this so
+// the page it is about gets most of the screen. `other` ends up in front.
+function dockWins(docked, other, side = "right"){
+  if (!docked) return;
+  const [a, b] = WinGeom.dock(deskSize(), docked.el.offsetWidth, side);
+  const pairs = [[docked, a]];
+  if (other && other !== docked) pairs.push([other, b]);
+  pairs.forEach(([w, r]) => { w.el.classList.remove("min"); unsnap(w); setRect(w, r); });
+  docked.dock = other && other !== docked ? { other, rect: b } : null;   // closeWin gives the space back
+  focusWin(docked);
+  if (other && other !== docked) focusWin(other);
 }
 
 const arrangeMenu = document.createElement("div");

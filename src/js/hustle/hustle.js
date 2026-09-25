@@ -68,6 +68,8 @@ const Hustle = (() => {
       welcomed: !!h.welcomed,
       me: h.me && typeof h.me === "object" ? h.me : null,
     };
+    // A call does not survive a restart: nobody is still on the line.
+    for (const gs of Object.values(state.hustle.gigs)) if (gs && gs.line) gs.line = false;
     if (typeof Camera !== "undefined" && Camera.init) Camera.init({ get: () => G().me, set: (m) => { G().me = m; save(); }, done: (go) => welcome(go) });
     tune({ fullness: repFullness() });                // an unknown hears a sparse band
 
@@ -199,13 +201,14 @@ const Hustle = (() => {
     gs.stage = "contacted";
     gs.contactAt = now();
     post(gig.poster.handle, "you", "Hi " + gig.poster.name + " — I saw your post on gigslist and I'd like to help.");
-    // Decided now; the answer shows up once they have "typed" it.
-    if (G().rep >= (gig.minRep || 0)) startBriefing(id);
+    // Decided now; the answer shows up once they have "typed" it. A yes is a
+    // call, and the call is the conversation, so the Pager only opens for a no.
+    if (G().rep >= (gig.minRep || 0)) { pagerSel = gig.poster.handle; startBriefing(id); }
     else {
       gs.stage = "passed";
       post(gig.poster.handle, "them", ["Thanks for replying!", "I went with someone who has a few more reviews, sorry."]);
+      focusPager(gig.poster.handle);
     }
-    focusPager(gig.poster.handle);
     save();
     Web.repaint();
   }
@@ -217,13 +220,13 @@ const Hustle = (() => {
     const site = siteClient(gig.site);
     gs.stage = "contacted";
     post(gig.poster.handle, "you", "Hi — I'm a designer, and I'd love to work with " + (site ? site.co : gig.poster.name) + ". Is there anything you need?");
-    if (G().rep >= (gig.minRep || 0)) startBriefing(id);
+    if (G().rep >= (gig.minRep || 0)) { pagerSel = gig.poster.handle; startBriefing(id); }
     else {
       gs.stage = "declined";
       gs.retryRep = Math.max(gig.minRep || 0, G().rep + 4);
       post(gig.poster.handle, "them", gig.pitchReject || ["Thanks, but not right now."]);
+      focusPager(gig.poster.handle);
     }
-    focusPager(gig.poster.handle);
     save();
     Web.refreshTools();
   }
@@ -236,9 +239,10 @@ const Hustle = (() => {
     gs.logged = gs.dlg.log.length;
     gs.callAt = now();
     post(gig.poster.handle, "them", gs.dlg.log.map((m) => m.text));
+    gs.callEvents = [];
+    gs.caption = null;
     focusId = id;
-    balloon(gig.poster.name + " is calling", "Pick up — they only have a few minutes.", () => openCall(id));
-    openCall(id);
+    openCall(id);                                    // the call opening is the ring
   }
 
   function choose(id, optionId) {
@@ -269,15 +273,23 @@ const Hustle = (() => {
     scheduleRender();
   }
 
+  // The questions are over. Close well (wrap up, or ask everything) and they
+  // stay on the line while you look around, until research ends; leave them
+  // bored, or to fill the silences themselves, and they hang up now.
   function endCall(id) {
     const gig = gigOf(id), gs = gsOf(id);
     const s = Mtg.summary(gs.dlg);
-    const note = s.ended === "wrapped" ? "Call closed. Brief written to your ticket."
+    const stays = (s.ended === "wrapped" || s.ended === "exhausted") && !!getWin(callKey(id));
+    const staying = " " + firstName(gig) + " is staying on while you look around.";
+    const note = s.ended === "wrapped" ? "Brief written to your ticket." + (stays ? staying : "")
       : s.ended === "bored" ? "They hung up. The ticket keeps the gaps — the work is scored on them anyway."
       : s.ended === "drifted" ? "They drifted off and wrapped up on their own. What you never asked is still on the ticket."
-      : "Nothing left to ask. Brief written to your ticket.";
+      : "Nothing left to ask. Brief written to your ticket." + (stays ? staying : "");
     post(gig.poster.handle, "sys", note + " Research is open — the clock starts now.", { gig: id, cta: "ticket" });
+    gs.line = stays;
     startResearch(id);
+    if (stays) callEvent(id, "stay", firstName(gig) + " stays on the line while you look around.");
+    else if (getWin(callKey(id))) { callEvent(id, "gone", firstName(gig) + " hung up."); closeCallSoon(id, 3200); }
     tune({ call: callLive() });
   }
 
@@ -300,6 +312,12 @@ const Hustle = (() => {
     gs.stage = "production";
     gs.production = { used: 0 };
     clipping = true;
+    if (gs.line) {                                   // whoever stayed on goes now
+      gs.line = false;
+      callEvent(id, "gone", why === "time" ? firstName(gig) + " has to go." : "You thank " + firstName(gig) + " and hang up.");
+      closeCallSoon(id, 2400);
+      tune({ call: callLive() });
+    }
     post(gig.poster.handle, "sys", why === "time"
       ? "Research time is up. Make the work — deadline in " + Math.round(gig.deadline / 60) + " minutes."
       : "Research closed. Make the work — deadline in " + Math.round(gig.deadline / 60) + " minutes.", { gig: id, cta: "suite" });
@@ -379,6 +397,12 @@ const Hustle = (() => {
         webStatus("Trend card: " + hit.item.label + (Res.studied(gig, H.sites, gs.found, dom) ? " — that's everything on this rival." : ""));
       }
     }
+    // Whoever is on the call watches you do it: the face says how it went,
+    // and a find goes into the conversation beside what they told you.
+    if (getWin(callKey(id)) && ((gs.dlg && !gs.dlg.ended) || gs.line)) {
+      animOf(id).react = { mood: hit ? "warm" : "cool", until: now() + (hit ? 1600 : 1300) };
+      if (hit && hit.kind !== "dupe") callEvent(id, "clip", (hit.kind === "fact" ? "Fact: " : "Trend: ") + hit.item.label);
+    }
     save();
     renderTicket(id);
     renderCompare(id);
@@ -446,6 +470,7 @@ const Hustle = (() => {
     if (Res.guess(gig, featureId)) {
       gs.gapFound = featureId;
       Suite.addCards([{ kind: "gap", label: f.label, value: gig.gap.line, tags: [gig.gap.tag, "gap"], source: { url: "", ref: "gap:" + id } }]);
+      if (onLine(id)) { animOf(id).react = { mood: "warm", until: now() + 2200 }; callEvent(id, "clip", "Gap: " + f.label); }
       balloon("You found the gap", f.label + ". Build on it and the client will notice.", () => renderTicket(id, true));
     } else {
       gs.gapTries = (gs.gapTries || 0) + 1;
@@ -629,7 +654,10 @@ const Hustle = (() => {
     return p;
   }
   function callLive() {
-    return Object.keys(H.gigs).some((id) => { const gs = G().gigs[id]; return !!(gs && gs.dlg && !gs.dlg.ended && getWin(callKey(id))); });
+    return Object.keys(H.gigs).some((id) => {
+      const gs = G().gigs[id];
+      return !!(gs && getWin(callKey(id)) && ((gs.dlg && !gs.dlg.ended) || gs.line));
+    });
   }
 
   function timerText(id) {
@@ -678,6 +706,7 @@ const Hustle = (() => {
       if (a === "suite") Suite.launcher(id);
       if (a === "reply") reply(id);
       if (a === "pitch") pitch(id);
+      if (a === "call") openCall(id);
       if (a === "cut" && extra) {
         const tags = tagsForQuery(extra.q);
         Suite.cutoutFrom({ src: extra.src, label: extra.q, tags }, researchGig() || activeGigs()[0]);
@@ -745,7 +774,9 @@ const Hustle = (() => {
       const id = m[1], gig = H.gigs[id], st = stageOf(id);
       let act;
       if (!st) act = '<button class="w98btn" data-hx="reply" data-gig="' + id + '">Reply to this post</button>';
-      else if (st === "contacted" || st === "briefing") act = "<p class=\"gl__note\">You replied. Check your Pager.</p>";
+      else if (st === "contacted") act = "<p class=\"gl__note\">You replied. Check your Pager.</p>";
+      else if (st === "briefing") act = "<p class=\"gl__note\">You replied, and you're on a call with " + esc(firstName(gig)) + ".</p>" +
+        (getWin(callKey(id)) ? "" : '<button class="w98btn" data-hx="call" data-gig="' + id + '">Back to the call</button>');
       else if (st === "passed") act = "<p class=\"gl__note\">This gig went to someone else.</p>";
       else if (st === "delivered") act = "<p class=\"gl__note\">You delivered this one: " + "★".repeat(G().gigs[id].result.stars) + "</p>";
       else act = "<p class=\"gl__note\">You're on this job.</p>" + '<button class="w98btn" data-hx="ticket" data-gig="' + id + '">Open ticket</button>';
@@ -939,12 +970,23 @@ const Hustle = (() => {
    * a list of buttons in the Pager. The rules are in meeting.js; everything
    * here is the face, the room and the glass.
    *
+   * The window is a slim dock down the right of the desk, and the page the
+   * call is about gets the rest of it: the picture with its captions, the
+   * conversation and your questions all in one column, the way a call sits
+   * beside the work instead of in front of it. Close the call well and they
+   * stay on the line while you look around, watching what you clip; the
+   * dock goes when they do.
+   *
    * One interval drives every open call. State changes — asking, flipping,
    * a silence they fill themselves — rebuild the window through advance();
    * the rest of the time only the canvas, the hourglass and the clock move.
    */
   const callKey = (id) => "call:" + id;
   const personFor = (gig) => (H.people && H.people[gig.poster.handle]) || {};
+  const firstName = (gig) => String(personFor(gig).name || gig.poster.name).split(" ")[0];
+  // 240 CSS pixels of picture: the 80x60 call at 3x, or 6x on a Retina screen.
+  const DOCK_W = 262;
+  const onLine = (id) => !!(G().gigs[id] && G().gigs[id].line && getWin(callKey(id)));
 
   function openCall(id) {
     const gig = gigOf(id);
@@ -954,14 +996,54 @@ const Hustle = (() => {
     if (!w) {
       w = createWindow({
         key: callKey(id), title: "CALL — " + String(who.co || gig.poster.name).toUpperCase(),
-        iconId: "pager", w: 566, h: 660, minW: 470, minH: 520, className: "w98--call",
+        iconId: "pager", w: DOCK_W, h: 700, minW: 240, minH: 420, className: "w98--call",
+        onClose: () => hangUp(id),
       });
       w.client.classList.add("client--flush");
       w.client.addEventListener("click", onCallClick);
       renderCall(id);
+      dockCall(id);
     }
     startCallLoop();
     return revealWin(w);
+  }
+
+  // The call down the right edge, the browser (if it is up) in the rest, and
+  // your camera's guide moved off the call rather than over its questions.
+  function dockCall(id) {
+    const w = getWin(callKey(id));
+    if (!w) return;
+    const web = getWin("browser");
+    dockWins(w, web && !web.el.classList.contains("min") ? web : null, "right");
+    const g = getWin("camera:guide");
+    if (g && !g.el.classList.contains("min") && g.el.offsetLeft + g.el.offsetWidth > w.el.offsetLeft)
+      g.el.style.left = Math.max(8, w.el.offsetLeft - g.el.offsetWidth - 8) + "px";
+  }
+
+  // Closing the window is hanging up. Mid-briefing the meeting only waits for
+  // you (the Pager has a way back); once they are just staying on to watch you
+  // look around, they are gone.
+  function hangUp(id) {
+    const gs = state && G().gigs[id];
+    if (gs && gs.line) { gs.line = false; save(); }
+  }
+
+  function closeCallSoon(id, ms) {
+    setTimeout(() => {
+      const w = getWin(callKey(id));
+      if (w && state && !(G().gigs[id] || {}).line) closeWin(w);
+    }, ms);
+  }
+
+  // Something that happened on the call besides talking: a find they watched
+  // you make, them staying on, them going. Kept beside the transcript, after
+  // however many lines had been said by then.
+  function callEvent(id, kind, text) {
+    const gs = gsOf(id);
+    if (!gs.dlg) return;
+    (gs.callEvents || (gs.callEvents = [])).push({ pos: gs.dlg.log.length, kind, text });
+    if (kind !== "clip") gs.caption = text;
+    renderCall(id);
   }
 
   function onCallClick(e) {
@@ -971,13 +1053,21 @@ const Hustle = (() => {
     if (a === "ask") choose(id, b.dataset.opt);
     if (a === "flip") flipGlass(id);
     if (a === "ticket") renderTicket(id, true);
+    if (a === "compare") renderCompare(id, true);
+    if (a === "done") { endResearch(id, "early"); Suite.launcher(id); }
     if (a === "visit") {
       const gig = gigOf(id);
       focusId = id; clipping = true;
       Web.visit("http://" + gig.poster.site + "/", siteForWeb(id, gig.poster.site));
-      // They are still on the line: the site opens beside the call, not over it.
-      pairWins(getWin(callKey(id)), getWin("browser"));
+      besideCall(id);
     }
+  }
+
+  // They are still on the line: whatever opens a page for this gig puts the
+  // browser in the rest of the desk, beside the call rather than over it.
+  function besideCall(id) {
+    const c = getWin(callKey(id)), web = getWin("browser");
+    if (c && web) dockWins(c, web, "right");
   }
 
   // portraits.js lights a room by how dark it is.
@@ -998,61 +1088,74 @@ const Hustle = (() => {
     if (!st) return;
     const site = siteClient(gig.poster.site) || {};
     const brand = (site.theme && site.theme.brand) || "#4E6E88";
-    const opts = Mtg.available(gig.dialogue, st, clippedFacts(gs));
-    const waiting = !st.ended && st.speaking > 0;
+    const name = firstName(gig);
+    const asking = gs.stage === "briefing" && !st.ended;
+    const waiting = asking && st.speaking > 0;
+    const line = !!gs.line;
+    const btn = (act, label, title, off) => '<button class="w98btn cl__sm" data-cl="' + act + '" data-gig="' + id + '"' +
+      (title ? ' title="' + esc(title) + '"' : "") + (off ? " disabled" : "") + ">" + esc(label) + "</button>";
 
-    const pips = Array.from({ length: st.max }, (_, i) =>
-      '<i class="' + (i < st.patience ? "on" : "") + '"></i>').join("");
-
+    // Under the conversation: your questions, or what happens next.
     let actions;
-    if (st.ended) {
-      actions = '<p class="cl__over">' + esc(
-        st.reason === "wrapped" ? "Call closed. They have what they need."
-        : st.reason === "bored" ? "They ran out of patience and hung up."
-        : st.reason === "drifted" ? "The silences did it. They wrapped up on their own."
-        : "You asked everything there was.") + "</p>" +
-        '<button class="w98btn cl__go" data-cl="ticket" data-gig="' + id + '">Open the ticket</button>';
-    } else if (waiting) {
-      actions = '<p class="cl__wait">' + esc(who.name || gig.poster.name) + " is speaking…</p>";
-    } else {
-      actions = opts.map((o) =>
+    if (waiting) actions = '<p class="cl__wait">' + esc(name) + " is speaking…</p>";
+    else if (asking) {
+      actions = Mtg.available(gig.dialogue, st, clippedFacts(gs)).map((o) =>
         '<button class="w98btn cl__opt' + (o.challenge ? " cl__opt--win" : "") + (o.end ? " cl__opt--end" : "") +
         '" data-cl="ask" data-gig="' + id + '" data-opt="' + esc(o.id) + '">' +
         (o.challenge ? '<span class="cl__read">YOU READ THIS</span>' : "") + esc(o.ask) +
         (o.cost > 1 ? '<em class="cl__cost">costs ' + o.cost + "</em>" : "") + "</button>").join("");
+    } else if (line) {
+      actions = '<p class="cl__over">Clip what matters: they see what you find. Research time is how long they can stay.</p>' +
+        '<button class="w98btn cl__go" data-cl="done" data-gig="' + id + '">Hang up and make it →</button>';
+    } else {
+      actions = '<p class="cl__over">' + esc(
+        st.reason === "bored" ? "They ran out of patience and hung up."
+        : st.reason === "drifted" ? "The silences did it. They wrapped up on their own."
+        : "Call ended. Time to make the work.") + "</p>" +
+        '<button class="w98btn cl__go" data-cl="ticket" data-gig="' + id + '">Open the ticket</button>';
     }
 
-    const lines = st.log.slice(-40).map((m) =>
-      '<div class="cl__l cl__l--' + (m.who === "you" ? "you" : "them") +
-      (m.filler ? " cl__l--fill" : "") + (m.challenge ? " cl__l--win" : "") + '">' +
-      "<b>" + esc(m.who === "you" ? myName() : String(who.name || gig.poster.name).split(" ")[0]) + "</b>" +
-      "<span>" + esc(m.text) + "</span></div>").join("");
+    // The buttons that belong to this part of the call.
+    const tools = asking
+      ? btn("visit", "Their site", "Read their site while they wait. Clipping stays on.") +
+        btn("flip", "Turn glass (" + Math.max(0, st.maxFlips - st.flips) + ")",
+            "“Sorry — give me a second.” Fills the glass again for a pip of attention.", !Mtg.canFlip(st))
+      : line ? btn("visit", "Their site") + btn("ticket", "Ticket") + (gig.features ? btn("compare", "Compare rivals") : "")
+      : "";
 
+    // The conversation, with what happened around it put back in its place.
+    const evs = gs.callEvents || [];
+    const rows = [];
+    let last = null;
+    for (let i = 0; i <= st.log.length; i++) {
+      for (const e of evs) if (e.pos === i) { rows.push('<div class="cl__ev cl__ev--' + esc(e.kind) + '">' + esc(e.text) + "</div>"); last = null; }
+      if (i === st.log.length) break;
+      const m = st.log[i], you = m.who === "you";
+      rows.push('<div class="cl__l cl__l--' + (you ? "you" : "them") + (m.filler ? " cl__l--fill" : "") +
+        (m.challenge ? " cl__l--win" : "") + (m.aside ? " cl__l--aside" : "") + '">' +
+        (m.who !== last ? "<b>" + esc(you ? myName() : name) + "</b>" : "") + "<span>" + esc(m.text) + "</span></div>");
+      last = m.who;
+    }
+
+    const pips = Array.from({ length: st.max }, (_, i) => '<i class="' + (i < st.patience ? "on" : "") + '"></i>').join("");
     w.client.innerHTML =
-      '<div class="cl">' +
+      '<div class="cl' + (line ? " cl--line" : "") + (!asking && !line ? " cl--over" : "") + '">' +
         '<div class="cl__stage">' +
           '<canvas class="cl__feed" width="320" height="240" data-px="4"></canvas>' +
-          (typeof Camera !== "undefined" && Camera.paintSelf ? '<canvas class="cl__me" width="320" height="240" data-px="4" data-max="120x90" title="You"></canvas>' : "") +
+          (typeof Camera !== "undefined" && Camera.paintSelf ? '<canvas class="cl__me" width="320" height="240" data-px="4" data-max="80x60" title="You"></canvas>' : "") +
           '<div class="cl__hud">' +
             '<span class="cl__rec">● LIVE <b data-cl-clock>00:00</b></span>' +
-            '<span class="cl__fps" data-cl-fps>8 fps · 320×240</span>' +
-            '<span class="cl__low" style="border-left-color:' + esc(brand) + '">' +
-              "<b>" + esc(who.name || gig.poster.name) + "</b>" +
-              "<span>" + esc(who.role || "") + (who.dom ? " · " + esc(who.dom) : "") + "</span></span>" +
+            (asking ? '<span class="cl__att" title="How much attention they have left"><span class="cl__pips">' + pips + "</span></span>" : "") +
+            '<span class="cl__low" style="border-left-color:' + esc(brand) + '"><b>' + esc(who.name || gig.poster.name) + "</b>" +
+              (who.role ? "<span>" + esc(who.role) + "</span>" : "") + "</span>" +
           "</div>" +
-          '<div class="cl__glass" title="How long they will sit in this pause">' +
-            "<span data-cl-art></span><b data-cl-secs>0</b></div>" +
+          (asking ? '<div class="cl__glass" title="How long they will sit in this pause"><span data-cl-art></span><b data-cl-secs>0</b></div>'
+            : line ? '<span class="cl__clock" data-hx-timer="' + id + '">' + esc(timerText(id)) + "</span>" : "") +
         "</div>" +
         '<div class="cl__said" data-cl-said></div>' +
-        '<div class="cl__bar">' +
-          '<span class="cl__att"><em>ATTENTION</em><span class="cl__pips">' + pips + "</span></span>" +
-          '<button class="w98btn" data-cl="visit" data-gig="' + id + '" title="Read their site while they wait. Clipping stays on.">Their site</button>' +
-          '<button class="w98btn" data-cl="flip" data-gig="' + id + '"' +
-            (Mtg.canFlip(st) ? "" : " disabled") + ' title="Sorry — give me a second. Costs a pip of attention.">' +
-            "Turn the glass (" + Math.max(0, st.maxFlips - st.flips) + ")</button>" +
-        "</div>" +
+        (tools ? '<div class="cl__tools">' + tools + "</div>" : "") +
+        '<div class="cl__log">' + rows.slice(-60).join("") + "</div>" +
         '<div class="cl__opts">' + actions + "</div>" +
-        '<div class="cl__log">' + lines + "</div>" +
       "</div>";
 
     const log = w.client.querySelector(".cl__log");
@@ -1069,73 +1172,84 @@ const Hustle = (() => {
     if (!st) return false;
     const a = animOf(id);
     const t = now();
-    const talking = st.speaking > 0 && !st.ended;
+    const asking = gs.stage === "briefing" && !st.ended;
+    const talking = asking && st.speaking > 0;
 
     if (t > a.blinkUntil && t > a.nextBlink) { a.blinkUntil = t + 130; a.nextBlink = t + 2200 + Math.random() * 4200; }
     if (t > a.nextGlitch) { a.glitchUntil = t + 170; a.nextGlitch = t + 3600 + Math.random() * 6000; }
     a.phase = (a.phase + 1) % 4;
+    const react = a.react && t < a.react.until ? a.react.mood : null;
 
     const canvas = w.client.querySelector(".cl__feed");
     if (canvas && Por) {
       const site = siteClient(gig.poster.site) || {};
       Por.paintFeed(canvas, gig.poster.handle, who.look, {
         theme: portraitTheme(site.theme), room: who.room, frame: who.frame, framing: who.framing,
-        mood: Mtg.mood(st), blink: t < a.blinkUntil,
+        // Staying on, they watch their own screen and look up at what you find.
+        mood: react || (gs.line ? "neutral" : Mtg.mood(st)), blink: t < a.blinkUntil,
         mouthOpen: talking && a.phase % 2 === 0,
         bob: Math.floor(t / 900) % 3 === 0,
-        glance: Mtg.glancing(st),
+        glance: react ? false : gs.line ? Math.floor(t / 2600) % 4 === 3 : Mtg.glancing(st),
         glitch: t < a.glitchUntil ? Math.floor(t / 170) : 0,
       });
       const mine = w.client.querySelector(".cl__me");
       if (mine && typeof Camera !== "undefined") {
-        const last = st.log[st.log.length - 1];
-        const asking = !talking && last && last.who === "you";
-        Camera.paintSelf(mine, { blink: (t % 4100) < 140, mouthOpen: asking && a.phase % 2 === 1, mood: st.ended ? "warm" : "neutral" });
+        const lastLine = st.log[st.log.length - 1];
+        const you = asking && !talking && lastLine && lastLine.who === "you";
+        Camera.paintSelf(mine, { blink: (t % 4100) < 140, mouthOpen: you && a.phase % 2 === 1, mood: st.ended ? "warm" : "neutral" });
       }
     }
 
-    const secs = Mtg.seconds(st), ratio = Mtg.ratio(st);
     const art = w.client.querySelector("[data-cl-art]");
     if (art) {
-      const tone = st.ended || talking ? "calm" : secs <= 3 ? "out" : ratio < 0.4 ? "low" : "calm";
-      art.innerHTML = hourglassSVG(talking || st.ended ? 1 : ratio, 32, a.phase, tone);
+      const secs = Mtg.seconds(st), ratio = Mtg.ratio(st);
+      const tone = talking ? "calm" : secs <= 3 ? "out" : ratio < 0.4 ? "low" : "calm";
+      art.innerHTML = hourglassSVG(talking ? 1 : ratio, 28, a.phase, tone);
       const box = art.parentNode;
-      box.classList.toggle("cl__glass--low", !talking && !st.ended && ratio < 0.4);
-      box.classList.toggle("cl__glass--out", !talking && !st.ended && secs <= 3);
-      box.classList.toggle("cl__glass--held", talking || st.ended);
+      box.classList.toggle("cl__glass--low", !talking && ratio < 0.4);
+      box.classList.toggle("cl__glass--out", !talking && secs <= 3);
+      box.classList.toggle("cl__glass--held", talking);
+      const num = box.querySelector("[data-cl-secs]");
+      if (num) num.textContent = talking ? "·" : String(secs);
     }
-    const num = w.client.querySelector("[data-cl-secs]");
-    if (num) num.textContent = st.ended ? "—" : talking ? "·" : String(secs);
 
+    // The caption is what they just said; once the questions are over it is
+    // what is happening instead, and that is not in quotes.
     const said = w.client.querySelector("[data-cl-said]");
-    if (said && said.dataset.line !== st.said) {
-      said.dataset.line = st.said;
-      said.textContent = st.said ? "“" + st.said + "”" : "";
+    const aside = !asking && !!gs.caption;
+    const cap = aside ? gs.caption : st.said;
+    if (said && said.dataset.line !== cap) {
+      said.dataset.line = cap || "";
+      said.textContent = cap ? (aside ? cap : "“" + cap + "”") : "";
+      said.classList.toggle("cl__said--aside", aside);
     }
     const clock = w.client.querySelector("[data-cl-clock]");
     if (clock) {
       const el = Math.max(0, Math.floor((t - (gs.callAt || t)) / 1000));
       clock.textContent = String(Math.floor(el / 60)).padStart(2, "0") + ":" + String(el % 60).padStart(2, "0");
     }
-    const fps = w.client.querySelector("[data-cl-fps]");
-    if (fps) fps.textContent = (t < a.glitchUntil ? "3" : "8") + " fps · 320×240";
     return true;
   }
 
-  // Everything the options pane depends on. When this changes, redraw it.
+  // Everything the window's markup depends on. When this changes, redraw it.
   function callSig(gig, gs, st) {
     return [st.speaking > 0 ? "talk" : "wait", st.ended ? st.reason : "live", st.patience, st.flips,
+            gs.stage, gs.line ? "line" : "", (gs.callEvents || []).length,
             Mtg.available(gig.dialogue, st, clippedFacts(gs)).map((o) => o.id).join(",")].join("|");
   }
 
+  // While a call is up, notices open beside it rather than over its questions.
+  const markCall = (on) => { const s = document.getElementById("sideScreen"); if (s) s.classList.toggle("side--call", on); };
+
   function startCallLoop() {
+    markCall(true);
     if (callTimer) return;
     callTimer = setInterval(callTick, 90);
   }
 
   function callTick() {
     const live = Object.keys(H.gigs).filter((id) => getWin(callKey(id)));
-    if (!live.length || !state) { clearInterval(callTimer); callTimer = 0; tune({ call: false }); return; }
+    if (!live.length || !state) { clearInterval(callTimer); callTimer = 0; markCall(false); tune({ call: false }); return; }
     tune({ call: callLive() });                      // muffled the moment they pick up
     for (const id of live) {
       const gig = gigOf(id), gs = gsOf(id);
@@ -1186,7 +1300,7 @@ const Hustle = (() => {
         const b = e.target.closest("[data-tk]");
         if (!b) return;
         const a = b.dataset.tk;
-        if (a === "visit") { focusId = id; clipping = true; Web.visit(b.dataset.url, siteForWeb(id, hostOf(b.dataset.url))); }
+        if (a === "visit") { focusId = id; clipping = true; Web.visit(b.dataset.url, siteForWeb(id, hostOf(b.dataset.url))); besideCall(id); }
         if (a === "compare") renderCompare(id, true);
         if (a === "make") { endResearch(id, "early"); Suite.launcher(id); }
         if (a === "suite") Suite.launcher(id);
@@ -1297,7 +1411,7 @@ const Hustle = (() => {
     // What your camera's "show me" buttons do, the same way the game's own do.
     tour: {
       board: () => Web.visit(GL("/")),
-      site: (id) => { if (!gigOf(id)) return; focusId = id; clipping = true; Web.visit("http://" + gigOf(id).poster.site + "/", siteForWeb(id, gigOf(id).poster.site)); },
+      site: (id) => { if (!gigOf(id)) return; focusId = id; clipping = true; Web.visit("http://" + gigOf(id).poster.site + "/", siteForWeb(id, gigOf(id).poster.site)); besideCall(id); },
       ticket: (id) => renderTicket(id, true),
       compare: (id) => renderCompare(id, true),
       suite: (id) => { if (!gigOf(id)) return; if (stageOf(id) === "research") endResearch(id, "early"); Suite.launcher(id); },

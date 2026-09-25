@@ -79,6 +79,20 @@ test("a pair shares the desk: the first at its own width, the second the rest", 
   assert.equal(G.pair(DESK, 1300)[0].w, 720, "never more than half");
 });
 
+test("a docked window keeps its own narrow width down one side, full height", () => {
+  const CRT = { w: 1024, h: 728 };
+  const [call, web] = G.dock(CRT, 262, "right");
+  assert.equal(call.w, 262, "a pair would have widened it to a third");
+  assert.equal(call.x + call.w, CRT.w - G.GAP, "flush with the right edge");
+  assert.equal(call.h, CRT.h - G.GAP * 2);
+  assert.equal(G.overlap(call, web), 0);
+  assert.ok(web.x < call.x && inside(call, CRT) && inside(web, CRT));
+  const [left, rest] = G.dock(CRT, 262, "left");
+  assert.equal(left.x, G.GAP);
+  assert.ok(rest.x > left.x + left.w - 1);
+  assert.equal(G.dock(CRT, 900, "right")[0].w, Math.round(CRT.w * 0.45), "never more than 45%");
+});
+
 test("resizing from any edge keeps the far edge put and respects the minimum", () => {
   const start = { x: 200, y: 100, w: 600, h: 400 }, min = { w: 250, h: 170 };
   const w = G.resize(start, "w", -50, 0, min, DESK);
