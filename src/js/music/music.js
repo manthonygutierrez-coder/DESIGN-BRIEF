@@ -13,7 +13,7 @@
  * (setTargetAtTime), told once per change rather than stepped every frame.
  *
  * The game only sets parameters and fires sounds by name:
- *   Music.set({ zone, fullness, pressure, call })
+ *   Music.set({ zone, fullness, pressure, call, far })
  *   Music.sfx("clip-hit" | "clip-dupe" | "clip-miss" | "chime" | "deliver", opts)
  * Which window is in front comes from the window manager ("wm:focus"), so
  * no app has to know the music exists.
@@ -24,7 +24,7 @@ const Music = (() => {
   const PREFS_KEY = "pixel-crossing:sound";
   const AHEAD = 0.5, EVERY_MS = 50, SFX_VOICES = 6;
 
-  const params = { zone: "hub", fullness: 0, pressure: 0, call: false };
+  const params = { zone: "hub", fullness: 0, pressure: 0, call: false, far: false };
   let prefs = typeof window !== "undefined" ? readPrefs() : { volume: 0.6, muted: false, music: true };
   let ctx = null, bus = null, voices = null;
   let playing = false, wanted = false, away = false, timer = 0, stopTimer = 0;
@@ -87,13 +87,16 @@ const Music = (() => {
   }
 
   // A call is not on the beat: it muffles the music as soon as they pick up.
+  // So does getting up from the desk: the music is still playing, but in the
+  // computer's little speakers across the room.
   function applyCall() {
     if (!ctx) return;
-    const now = ctx.currentTime, on = !!params.call;
+    const now = ctx.currentTime, call = !!params.call, far = !!params.far;
+    const hz = Math.min(call ? S.FADE.muffleHz : 20000, far ? S.FADE.farHz : 20000);
     bus.muffle.frequency.cancelScheduledValues(now);
-    bus.muffle.frequency.setTargetAtTime(on ? S.FADE.muffleHz : 20000, now, S.FADE.call);
+    bus.muffle.frequency.setTargetAtTime(hz, now, S.FADE.call);
     bus.duck.gain.cancelScheduledValues(now);
-    bus.duck.gain.setTargetAtTime(on ? S.FADE.duck : 1, now, S.FADE.call);
+    bus.duck.gain.setTargetAtTime((call ? S.FADE.duck : 1) * (far ? S.FADE.far : 1), now, S.FADE.call);
   }
 
   function begin() {
@@ -160,7 +163,9 @@ const Music = (() => {
       if (v !== params[k]) { params[k] = v; mix = true; }
     }
     if (mix) applyMix();
-    if ("call" in p && !!p.call !== params.call) { params.call = !!p.call; applyCall(); }
+    let muffle = false;
+    for (const k of ["call", "far"]) if (k in p && !!p[k] !== params[k]) { params[k] = !!p[k]; muffle = true; }
+    if (muffle) applyCall();
   }
 
   /* ── sound effects ───────────────────────────────────────
@@ -260,7 +265,7 @@ const Music = (() => {
   function state() {
     return {
       playing, audio: ctx ? ctx.state : "none", zone: params.zone, fullness: params.fullness,
-      pressure: params.pressure, call: params.call, bar: ctx && playing ? barAt(ctx.currentTime) : null,
+      pressure: params.pressure, call: params.call, far: params.far, bar: ctx && playing ? barAt(ctx.currentTime) : null,
       live: [...liveLast], prefs: Object.assign({}, prefs),
       tiers: bus ? Object.fromEntries(Object.entries(bus.tiers).map(([k, g]) => [k, +g.gain.value.toFixed(3)])) : null,
       muffle: bus ? Math.round(bus.muffle.frequency.value) : null,

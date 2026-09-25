@@ -116,13 +116,16 @@ const Portraits = (() => {
     R(10, 23, 4, 2, clothD);                                 // collar notch
     // What you are wearing goes on before anything that hangs over it.
     const acc = t.accent || "#F4F1EA";
+    // An all-over pattern stays on the front, between the arms: carried across
+    // them, it ran off the sides of the shoulders.
+    const fx = bx + 2, fw = bw - 4;
     switch (t.top){
       case "tee":      R(10, 23, 4, 1, shade(cloth, -0.24)); break;
       case "hoodie":   R(8, 21, 8, 2, shade(cloth, -0.14)); R(10, 24, 1, 3, "#E8E4DA"); R(13, 24, 1, 3, "#E8E4DA"); R(bx + 3, 28, bw - 6, 1, clothD); break;
       case "shirt":    R(9, 23, 2, 2, shade(cloth, 0.26)); R(13, 23, 2, 2, shade(cloth, 0.26)); R(12, 24, 1, 6, clothD);
                        R(11, 25, 1, 1, shade(cloth, 0.3)); R(11, 27, 1, 1, shade(cloth, 0.3)); break;
-      case "stripes":  for (let y = 24; y < 30; y += 2) R(bx, y, bw, 1, shade(cloth, 0.28)); break;
-      case "sweater":  for (let y = 24; y < 30; y++) for (let x = bx + (y % 2); x < bx + bw; x += 2) R(x, y, 1, 1, shade(cloth, -0.07)); break;
+      case "stripes":  for (let y = 24; y < 30; y += 2) R(fx, y, fw, 1, shade(cloth, 0.28)); break;
+      case "sweater":  for (let y = 24; y < 30; y++) for (let x = fx + (y % 2); x < fx + fw; x += 2) R(x, y, 1, 1, shade(cloth, -0.07)); break;
       case "jacket":   R(11, 23, 2, 4, acc); R(9, 23, 2, 4, shade(cloth, -0.24)); R(13, 23, 2, 4, shade(cloth, -0.24)); R(12, 27, 1, 1, clothD); break;
       case "cardigan": R(10, 23, 4, 7, acc); R(9, 23, 1, 7, clothD); R(14, 23, 1, 7, clothD); R(9, 25, 1, 1, "#E8E4DA"); R(9, 28, 1, 1, "#E8E4DA"); break;
       case "overalls": R(9, 25, 6, 5, t.accent || "#3A5A8A"); R(9, 23, 1, 2, t.accent || "#3A5A8A"); R(14, 23, 1, 2, t.accent || "#3A5A8A");

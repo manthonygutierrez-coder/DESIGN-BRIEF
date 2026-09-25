@@ -105,7 +105,8 @@ app.whenReady().then(async () => {
     return true;
   });
 
-  const url = "file://" + path.join(ROOT, "src/index.html") + "?slot=hustle";
+  // room=0: the film starts at the world side, not across the room (src/room).
+  const url = "file://" + path.join(ROOT, "src/index.html") + "?slot=hustle&room=0";
   await w.loadURL(url);
   w.webContents.focus();                             // keys go where a person's would
   log("game loaded; handing over to the director");

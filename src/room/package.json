@@ -1,0 +1,4 @@
+{
+  "//": "The room is ES modules (the browser loads them as such); this tells node the same, for the tests.",
+  "type": "module"
+}

@@ -93,6 +93,12 @@ const Session = (() => {
     }
     addStartItem("suite", "Design Suite", () => Suite.launcher());
     addStartItem("logoff", "Log Off " + LABELS[slot].name + "...", logoff);
+    // The computer is on a desk in your room (src/room): get up from it, or
+    // switch it off.
+    if (!PC.without) {
+      addStartItem("standup", "Stand Up", () => { if (PC.hasRoom()) Room.standUp(); });
+      addStartItem("shutdown", "Shut Down...", shutDown);
+    }
 
     if (slot === "studio") {
       await Mail.boot().catch((e) => console.error("[mail] boot failed:", e));
@@ -137,8 +143,42 @@ const Session = (() => {
     slist.insertBefore(b, backItem);
   }
 
+  // Win98's Shut Down box, in the logon dialog's clothes.
+  function shutDown() {
+    if (dialog || !PC.hasRoom()) return;
+    dialog = document.createElement("div");
+    dialog.className = "logon shutdown";
+    dialog.innerHTML =
+      '<div class="w98 on logon__win" role="dialog" aria-modal="true" aria-labelledby="shutTitle">' +
+        '<div class="tbar"><span class="tbar__i">' + iconSVG("shutdown", 16) + '</span><span class="tbar__t" id="shutTitle">Shut Down Pixel Crossing</span></div>' +
+        '<div class="client logon__c">' +
+          '<div class="logon__top"><i>' + iconSVG("shutdown", 32) + "</i><p>What do you want the computer to do? Your work is saved either way.</p></div>" +
+          '<div class="logon__opts">' +
+            '<button class="logon__opt last" data-do="off"><b>SHUT DOWN</b><span>Switch it off. Turn it back on and the day starts over, at the logon.</span></button>' +
+            '<button class="logon__opt" data-do="stand"><b>STAND UP</b><span>Leave it running, music and all, and step back from the desk.</span></button>' +
+          "</div>" +
+          '<div class="logon__foot"><button class="w98btn" data-do="cancel">Cancel</button></div>' +
+        "</div>" +
+      "</div>";
+    deskEl.appendChild(dialog);
+    const close = () => { if (dialog) { dialog.remove(); dialog = null; } };
+    dialog.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); close(); desk.focusTarget()?.focus(); } });
+    dialog.addEventListener("click", async (e) => {
+      const b = e.target.closest("[data-do]");
+      if (!b) return;
+      close();
+      if (b.dataset.do === "stand") Room.standUp();
+      else if (b.dataset.do === "off") {
+        await Bridge.flush();
+        Room.shutDown();
+      } else desk.focusTarget()?.focus();
+    });
+    requestAnimationFrame(() => dialog && dialog.querySelector("[data-do=off]").focus({ preventScroll: true }));
+  }
+
   async function logoff() {
     await Bridge.flush();
+    if (PC.hasRoom()) Room.keepSeat();              // still at the computer when it comes back
     // Drop any ?slot so the logon dialog shows again.
     if (location.search) location.search = "";
     else location.reload();

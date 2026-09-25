@@ -1,0 +1,32 @@
+/* ─── the computer ────────────────────────────────────────
+   Everything the game draws. Its sizes come from here (container units), so
+   it lays out the same on the CRT in the room as in the whole window. */
+#pc{position:fixed;inset:0;width:100%;height:100%;container-type:size;overflow:hidden;background:var(--void,#010404)}
+/* On the CRT's glass (src/room): the glass is 4:3 and so is the game. The
+   room positions and transforms it; this is only its size. */
+#pc.pc--crt{width:1024px;height:768px}
+#pc.pc--off{visibility:hidden}
+html.room-boot #pc{visibility:hidden}
+html.room-boot body{background:#07080c}
+
+/* ─── the room ──────────────────────────────────────────── */
+.room3d{position:fixed;inset:0;z-index:1000;background:#0b0c12;overflow:hidden}
+.room3d[hidden]{display:none}
+.room3d__css{position:absolute;z-index:0}
+.room3d__gl{position:absolute;z-index:1;display:block;image-rendering:pixelated;outline:none;touch-action:none}
+.room3d__hint{position:absolute;left:50%;bottom:4.5vh;z-index:2;margin:0;width:max-content;max-width:calc(100vw - 32px);transform:translateX(-50%);
+  padding:8px 14px 7px;text-align:center;pointer-events:none;background:rgba(6,8,12,.72);box-shadow:4px 4px 0 rgba(0,0,0,.35);
+  font:400 16px/1.2 Silkscreen,monospace;letter-spacing:.06em;color:#FFCE6A;
+  animation:roomPulse 2.6s ease-in-out infinite}
+.room3d__hint:empty{display:none}
+.room3d__hint.is-label{animation:none;opacity:.95;color:#F2ECE0}
+@keyframes roomPulse{0%,100%{opacity:.62}50%{opacity:1}}
+
+/* A veil over everything: the white pop as you go through the glass, the
+   dark as you come back out of it. */
+.room-veil{position:fixed;inset:0;z-index:2147483000;pointer-events:none;opacity:0;background:#000}
+.room-veil.is-white{background:#f2fbff}
+
+/* ─── Shut Down (session.js) ───────────────────────────── */
+.shutdown .logon__opt b{display:flex;align-items:center;gap:8px}
+@media (prefers-reduced-motion:reduce){.room3d__hint{animation:none}}

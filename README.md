@@ -2,11 +2,14 @@
 
 A freelance design studio on the other side of the screen.
 
-You start in **the world** — an abstract scene per discipline. Choose one and a pixel
-waterfall carries you through to **the screen**: a Windows 98 desktop where the work
-actually arrives. Pick a discipline from the Start menu, a client emails you a brief,
-their link unlocks a browser where you can read their site and search reference, and
-when you're done you reply with the files.
+You start in **your room**: a studio in 3D, with the computer on the desk already on
+and the game running on its screen. Sit down, click the screen, and you go up to the
+glass and into it. There you are in **the world**, an abstract scene per discipline.
+Choose one and a pixel waterfall carries you through to **the screen**: a Windows 98
+desktop where the work actually arrives. Pick a discipline from the Start menu, a
+client emails you a brief, their link unlocks a browser where you can read their site
+and search reference, and when you're done you reply with the files. Start → Shut Down
+switches the computer off and leaves you in the room.
 
 macOS desktop app (Electron, arm64). Works entirely offline — fonts are bundled and
 every image in the app is generated on a canvas, nothing is fetched.
@@ -28,6 +31,42 @@ npm run build
 
 Output lands in `build/`. It is **unsigned**, so the first launch needs
 right-click → Open rather than a double-click.
+
+## The room
+
+The game runs on a computer on your desk. From across the room its screen is the
+real game, live, not a picture of it: the page is laid out at 1024×768 and set behind
+the CRT's glass in 3D, under a WebGPU canvas that is see-through where the glass is.
+Go up to the glass and it becomes the whole window again, the same page, so nothing
+is lost on the way in or out.
+
+| You do | You get |
+|---|---|
+| Click, scroll or Enter | Sit down (the chair rolls in under you) |
+| Drag, while seated | Turn your head all the way round |
+| Click the screen, Enter, or scroll forward | Go up to the glass and into the game |
+| A poster on the wall | Its discipline on the screen, without crossing over |
+| Esc (seated), or scroll back | Stand up |
+| Esc on the world side, or Start → Stand Up | Back from the game to the chair; it keeps running, the music muffled across the room |
+| Start → Shut Down | The tube folds to a line and a dot and goes dark. Switching it back on (the screen, or the tower's button) starts the game over, at the logon |
+
+Log Off still starts the game over, but you come back sitting at the screen. The window
+shows the real time of day, the same clock as the taskbar, over a city whose lights
+come on at dusk, in whatever weather the session drew (snow only in winter). The seven
+posters are the seven disciplines' world scenes, painted small in their own palettes.
+The speakers thump with the desk's music, the disk light chatters, and the keys you
+press go down.
+
+It is drawn at half resolution and scaled up by whole pixels (`PIXEL` in
+`room/layout.js`; 1 draws it at full resolution), with a one-pixel ink line round
+everything. Every surface is painted on a canvas and every sound is synthesized, so
+the page's security policy is unchanged: three.js is vendored under `room/vendor`
+(MIT) by `tools/room/vendor-three.mjs`, which rewrites its imports into relative
+paths, because an inline import map is exactly what the policy forbids. While you are
+in the room the game hears none of your input: it is `inert`, and the room takes every
+click and key on the way down. `?room=0` plays without it, as `tools/music/film.js`
+does. The scene grew out of the desk scene in the Father's Day project (its camera
+rig, CRT and lighting), rebuilt for this game with nothing in it loaded from a file.
 
 ## Two ways to play
 
@@ -195,8 +234,23 @@ electron/
   preload.js     the only bridge — contextIsolation + sandbox, no node in the renderer
 src/
   index.html     shell; classic scripts sharing one global scope, load order matters
-  styles/        base · world · desktop (Win98 chrome) · apps (mail + browser) · fonts
+  styles/        base · world · desktop (Win98 chrome) · apps (mail + browser) · fonts · room
+  room/          the room, as ES modules (three.js, vendored in room/vendor)
+    main.js        boot, input, and the handover: the game on the glass or the window
+    layout.js      where everything is, the lights and the camera's poses
+    rig.js         wide → seated → at the glass, and back
+    glass.js       the CRT's face: see-through where it is lit, scanlines, power on/off
+    post.js        the ink line, bloom, grade and vignette, keeping the glass see-through
+    shell.js       floor, walls, window, door, corkboard and the seven posters
+    furniture.js   desk, chair, lamps, shelves and what is on the desk
+    computer.js    the CRT, the tower and its button, speakers, keyboard, mouse
+    window.js      the view: the real time of day, a city, the session's weather
+    textures.js    every surface, painted on small canvases
+    sound.js       the hum, the tube, the rain; under the desk's volume and mute
+    fit.js         the arithmetic, free of three.js so it is tested
   js/
+    pc.js          #pc, the computer the game runs on: what the game measures instead of
+                   the window, and the hooks the room calls (a poster, Esc, focus)
     bridge.js      wraps the preload API; falls back to localStorage in a plain browser
     pixelfit.js    whole pixels: sizes any img/canvas marked data-px to the biggest
                    whole scale that fits, and again on resize or zoom (tested)
@@ -270,8 +324,12 @@ to the music it recorded with macOS's own encoders, so it needs nothing installe
   runs from any static server (`python3 -m http.server 8123 --directory src`).
   `Bridge` degrades to `localStorage` and hides the filesystem affordances, so the
   whole mail and browser flow is walkable in a normal browser tab.
-- **Zero runtime dependencies.** Electron's own `fs.watch` and `nativeImage` cover
-  watching and thumbnails; no `chokidar`, no `sharp`.
+- **Zero npm runtime dependencies.** Electron's own `fs.watch` and `nativeImage` cover
+  watching and thumbnails; no `chokidar`, no `sharp`. The one library, three.js for the
+  room, is vendored in `src/room/vendor`.
+- **The game measures `#pc`, never the window.** Its CSS uses container units
+  (`cqw`, `cqh`, `cqmin`) and scripts ask `PC.size()`, because on the desk the screen is
+  1024×768 whatever size the window is.
 - **Not yet built:** the books. This pass writes the project records they will read —
   `state.json` holds the mail and project state, and the four folders per project map
   1:1 onto the two-page spread's image slots.
