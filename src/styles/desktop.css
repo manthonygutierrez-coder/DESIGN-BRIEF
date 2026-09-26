@@ -41,7 +41,7 @@
 .bloom{position:absolute;inset:0;pointer-events:none;z-index:2;
   background:radial-gradient(60% 45% at 50% 50%,rgba(124,249,192,.07),transparent 70%)}
 .scan{position:absolute;inset:0;pointer-events:none;z-index:9;
-  background:repeating-linear-gradient(to bottom,rgba(0,0,0,.20) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,.15) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
 .crt{position:absolute;inset:0;pointer-events:none;z-index:10;
   background:radial-gradient(132% 102% at 50% 50%,transparent 58%,rgba(1,4,4,.86) 100%)}
 
@@ -235,3 +235,30 @@
   *{animation-duration:.001ms !important;animation-iteration-count:1 !important}
   .plane::before,.g-half::before{animation:none !important}
 }
+
+/* ── context menus (ctxmenu.js) ─────────────────────── */
+.ctx{position:absolute;z-index:9000;min-width:168px;max-width:280px;padding:2px;display:flex;flex-direction:column;
+  background:var(--w-face);border:2px solid;border-color:var(--w-hi) var(--w-dk) var(--w-dk) var(--w-hi);
+  box-shadow:inset 1px 1px 0 var(--w-lt),inset -1px -1px 0 var(--w-sh),3px 3px 0 rgba(0,0,0,.28);
+  font-family:"Silkscreen",monospace;font-size:8px;letter-spacing:.04em;color:var(--w-txt,#0A0A0A);animation:ctxIn .1s ease-out}
+@keyframes ctxIn{from{opacity:0;transform:translateY(-2px)}to{opacity:1;transform:none}}
+.ctx__i{display:grid;grid-template-columns:18px minmax(0,1fr) auto;align-items:center;gap:6px;width:100%;padding:3px 10px 3px 3px;
+  text-align:left;white-space:nowrap;color:inherit;cursor:default}
+.ctx__i span{overflow:hidden;text-overflow:ellipsis}
+.ctx__i em{font-style:normal;font-size:7px;color:var(--w-sh);padding-left:12px}
+.ctx__ic{display:grid;place-items:center;width:18px;height:16px;font-style:normal;line-height:1}
+.ctx__i:hover:not(:disabled),.ctx__i:focus-visible{background:var(--w-nav);color:#fff;outline:0}
+.ctx__i:hover:not(:disabled) em,.ctx__i:focus-visible em{color:#C8D0FF}
+.ctx__i:disabled{color:var(--w-sh);text-shadow:1px 1px 0 var(--w-hi)}
+.ctx__sep{height:2px;margin:3px 2px;border-top:1px solid var(--w-sh);border-bottom:1px solid var(--w-hi)}
+/* inside the Design Suite, in its dark look */
+.ctx--graphite{padding:3px;background:#1F1F23;border:1px solid #35353D;border-radius:4px;box-shadow:0 10px 28px rgba(0,0,0,.5);color:#E4E4EA}
+.ctx--graphite .ctx__i{border-radius:3px}
+.ctx--graphite .ctx__i em{color:#8E8E9A}
+.ctx--graphite .ctx__i:hover:not(:disabled),.ctx--graphite .ctx__i:focus-visible{background:#33404B;color:#fff}
+.ctx--graphite .ctx__i:hover:not(:disabled) em{color:#57E0FF}
+.ctx--graphite .ctx__i:disabled{color:#5A5A64;text-shadow:none}
+.ctx--graphite .ctx__sep{height:1px;margin:3px 4px;border:0;background:#35353D}
+.ctx--graphite .ctx__ic{--ico-paper:#3A3A44;--ico-mid:#8A8A96}
+@media (prefers-reduced-motion:reduce){.ctx{animation:none}}
+

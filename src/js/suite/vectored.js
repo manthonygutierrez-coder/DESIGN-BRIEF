@@ -22,7 +22,7 @@ const SuiteVectorEd = (() => {
     { id: "node", icon: "t-node", label: "Nodes: drag points and handles, click an outline to add a point", key: "a" },
     { id: "pen", icon: "t-pen", label: "Pen: click for a corner, drag for a curve", key: "p" },
     { id: "shape", flyout: true },
-    { id: "text", icon: "t-text", label: "Type: click to write, or click a shape to write along it", key: "t" },
+    { id: "text", icon: "t-text", label: "Type: click to write, or click a shape's outline to write along it", key: "t" },
     { id: "build", icon: "t-build", label: "Shape builder: drag across shapes to merge, Alt-drag to cut", key: "m" },
     { id: "eyedrop", icon: "t-eyedrop", label: "Eyedropper: take a colour from the work", key: "e" },
     { id: "image", icon: "t-image", label: "Place a picture from disk", key: "i" },
@@ -101,6 +101,7 @@ const SuiteVectorEd = (() => {
     ed.st = SuiteStage.make(body.querySelector(".sx__stage"), {
       view: () => { draw(ed); if (ed.onView) ed.onView(); }, redraw: () => draw(ed),
       guide: (axis, v, index, done, inside) => guideDrag(ed, H, axis, v, index, done, inside),
+      covered: () => H.covered(ed),
     });
     ed.st.look = SuiteStage.LOOKS[H.look()] || SuiteStage.LOOKS.graphite;
     ed.st.reduced = H.reduced();
@@ -123,6 +124,8 @@ const SuiteVectorEd = (() => {
     ed.place = (src, name) => placeSrc(ed, H, src, name);
     ed.unmount = () => { endText(ed, H); finishPen(ed, H, true); };
     ed.relook = () => { ed.st.look = SuiteStage.LOOKS[H.look()] || SuiteStage.LOOKS.graphite; draw(ed); };
+    // A face finished loading: words measured in the stand-in face get measured again.
+    ed.fontsReady = () => { for (const l of ed.doc.layers) if (l.type === "text") fitText(ed, l); draw(ed); };
     ed.viewClick = (o) => optClick(ed, H, o);
 
     wirePointer(ed, H);
@@ -202,7 +205,8 @@ const SuiteVectorEd = (() => {
     const hov = ed.hover && layerOf(ed, ed.hover);
     if (hov && !ed.sel.includes(hov.id) && !ed.drag) {
       if (ed.tool === "text" && DRAWN.includes(hov.type)) {
-        const p = R.pathInDoc(hov);
+        // Only an outline the words would follow lights up; inside a shape they just go there.
+        const p = ed.along === hov.id && R.pathInDoc(hov);
         if (p) { ctx.save(); ctx.strokeStyle = look.guide; ctx.lineWidth = 2; ctx.setLineDash([6, 3]); strokePath(ctx, st, p); ctx.restore(); }
       } else outline(hov, look.sel, 1);
     }
@@ -387,6 +391,7 @@ const SuiteVectorEd = (() => {
     cv.addEventListener("pointercancel", (e) => up(ed, H, e));
     cv.addEventListener("pointerleave", () => { if (!ed.drag) { ed.hover = null; if (ed.pen) ed.pen.hover = null; ed.hotGuide = null; draw(ed); } });
     cv.addEventListener("dblclick", (e) => dbl(ed, H, e));
+    cv.addEventListener("contextmenu", (e) => rightClick(ed, H, e));
   }
 
   function hitHandle(ed, e) {
@@ -477,7 +482,7 @@ const SuiteVectorEd = (() => {
       const t = { text: "Type here", font: ed.font || "Archivo", size: ed.fontSize || Math.max(12, Math.round(doc.h / 6)), weight: ed.weight || 700,
         style: ed.italic ? "italic" : "normal", fill: ed.fill && ed.fill !== "#FFFFFF" ? ed.fill : "#0A0A0A", track: ed.track || 0 };
       let l;
-      if (hit && DRAWN.includes(hit.type)) {
+      if (alongAt(ed, hit, p)) {
         // Writing along a shape: the words follow its outline.
         l = D.add(doc, D.layer("text", Object.assign(t, { on: hit.id, align: "center", text: "Write along the curve", size: Math.max(12, Math.round(Math.min(hit.w, hit.h) / 5)) })));
         H.status(ed, "Writing along " + (hit.name || hit.type) + ". Drag the words to slide them along it.");
@@ -531,7 +536,11 @@ const SuiteVectorEd = (() => {
         const pen = ed.pen;
         if (pen) pen.hover = snapPoint(ed, p, e);
         cursor = "crosshair";
-      } else if (ed.tool === "text") cursor = hit && DRAWN.includes(hit.type) ? "copy" : "text";
+      } else if (ed.tool === "text") {
+        const along = alongAt(ed, hit, p) ? hit.id : null;
+        cursor = along ? "copy" : "text";
+        if (along !== ed.along) { ed.along = along; draw(ed); }
+      }
       else if (ed.tool === "hand") cursor = "grab";
       else if (ed.tool === "eyedrop") cursor = "cell";
       else cursor = "crosshair";
@@ -1022,6 +1031,17 @@ const SuiteVectorEd = (() => {
     el.addEventListener("blur", () => { if (!el.isConnected) return; endText(ed, H); render(ed, H, {}); });
   }
 
+  // Does a click with the Type tool here write along `hit`? On an open line,
+  // anywhere on it; on a shape with no fill, its outline is all there is; on a
+  // filled shape, only near its outline: inside, the words just go where you click.
+  function alongAt(ed, hit, p) {
+    if (!hit || !DRAWN.includes(hit.type)) return false;
+    const path = R.pathInDoc(hit);
+    if (!path) return false;
+    if (!hit.fill || path.some((sub) => !sub.closed)) return true;
+    return V.near(path, p.x, p.y, 7 / ed.st.zoom);
+  }
+
   function startText(ed, H, l, selectAll) {
     endText(ed, H);
     const float = !!(l.on || Math.abs(l.bend || 0) >= 0.5 || l.rot);
@@ -1395,7 +1415,13 @@ const SuiteVectorEd = (() => {
       if (t.dataset.drawer) { H.toggleDrawer(ed, t.dataset.drawer); return; }
       if (t.dataset.tool) { ed.flyOpen = false; setTool(ed, H, t.dataset.tool); return; }
       if (t.dataset.flyout !== undefined) { ed.flyOpen = !ed.flyOpen; paintRail(ed, H); return; }
-      if (t.dataset.font) { const f = t.dataset.font; ed.fontMenu = false; applyText(ed, H, { font: f }); ed.font = f; H.sound("pick"); return; }
+      if (t.dataset.font) {
+        const f = t.dataset.font, fonts = H.fonts();
+        ed.fontMenu = false;
+        applyText(ed, H, (l) => ({ font: f, weight: A.weightFor(f, l.weight, fonts) }));
+        ed.font = f; ed.weight = A.weightFor(f, ed.weight || 700, fonts);
+        H.sound("pick"); return;
+      }
       if (t.dataset.eye) { H.mutate(ed, () => { const l = layerOf(ed, t.dataset.eye); if (l) l.hidden = !l.hidden; }); return; }
       if (t.dataset.lock) { H.mutate(ed, () => { const l = layerOf(ed, t.dataset.lock); if (l) l.locked = !l.locked; }); return; }
       if (t.dataset.layer) {
@@ -1426,6 +1452,15 @@ const SuiteVectorEd = (() => {
       const t = e.target;
       if (t.dataset.o) { optInput(ed, H, t, true); commit(); render(ed, H, {}); return; }
       if (t.dataset.xf) { xfInput(ed, t); commit(); render(ed, H, {}); }
+    });
+
+    // Right-click a row: the same menu as right-clicking the layer on the board.
+    ed.layersEl.addEventListener("contextmenu", (e) => {
+      const row = e.target.closest("[data-layer]");
+      if (!row) return;
+      e.preventDefault();
+      if (!ed.sel.includes(row.dataset.layer)) { select(ed, [row.dataset.layer]); render(ed, H, {}); }
+      layerMenu(ed, H, e);
     });
 
     // Rename on double-click.
@@ -1489,13 +1524,13 @@ const SuiteVectorEd = (() => {
       if (!f || !ed.fontMenu) return;
       const l = one(ed);
       if (!l || l.type !== "text") return;
-      if (!ed.fontPeek) ed.fontPeek = { id: l.id, font: l.font };
-      l.font = f.dataset.font; fitText(ed, l); draw(ed);
+      if (!ed.fontPeek) ed.fontPeek = { id: l.id, font: l.font, weight: l.weight };
+      l.font = f.dataset.font; l.weight = A.weightFor(l.font, ed.fontPeek.weight, H.fonts()); fitText(ed, l); draw(ed);
     });
     body.addEventListener("pointerout", (e) => {
       if (!ed.fontPeek || (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".sx__fm"))) return;
       const l = layerOf(ed, ed.fontPeek.id);
-      if (l) { l.font = ed.fontPeek.font; fitText(ed, l); draw(ed); }
+      if (l) { l.font = ed.fontPeek.font; l.weight = ed.fontPeek.weight; fitText(ed, l); draw(ed); }
       ed.fontPeek = null;
     });
   }
@@ -1505,11 +1540,13 @@ const SuiteVectorEd = (() => {
     if (!ls.length) return;
     H.mutate(ed, () => { for (const l of ls) { const n = D.update(ed.doc, l.id, patchOf(l)); if (n && n.type === "text") fitText(ed, n); } });
   }
+  // `patch` is the change, or a function of each text layer that returns it.
   function applyText(ed, H, patch) {
     const ls = chosen(ed).filter((l) => l.type === "text");
-    if (ed.fontPeek) { const l = layerOf(ed, ed.fontPeek.id); if (l) l.font = ed.fontPeek.font; ed.fontPeek = null; }
-    if (!ls.length) { Object.assign(ed, patch.font ? { font: patch.font } : {}); render(ed, H, {}); return; }
-    H.mutate(ed, () => { for (const l of ls) { const n = D.update(ed.doc, l.id, patch); if (n) fitText(ed, n); } });
+    if (ed.fontPeek) { const l = layerOf(ed, ed.fontPeek.id); if (l) { l.font = ed.fontPeek.font; l.weight = ed.fontPeek.weight; } ed.fontPeek = null; }
+    const of = (l) => (typeof patch === "function" ? patch(l) : patch);
+    if (!ls.length) { const p = of({ weight: ed.weight || 700 }); if (p.font) ed.font = p.font; render(ed, H, {}); return; }
+    H.mutate(ed, () => { for (const l of ls) { const n = D.update(ed.doc, l.id, of(l)); if (n) fitText(ed, n); } });
   }
 
   function optClick(ed, H, o, t, e) {
@@ -1602,6 +1639,71 @@ const SuiteVectorEd = (() => {
     const b = boxOf(ls);
     if (p === "x" || p === "y") { const d = v - b[p]; for (const l of ls) l[p] += d; }
     else { const k = v / (b[p] || 1); for (const l of ls) { l.x = b.x + (l.x - b.x) * k; l.y = b.y + (l.y - b.y) * k; l.w *= k; l.h *= k; if (l.type === "text") { l.size *= k; fitText(ed, l); } } }
+  }
+
+  /* ── right-click ──────────────────────────────────────── */
+  // On a layer: what can be done to it and the rest of the selection. On the
+  // empty board: selecting, guides where you clicked, and the view.
+  const menuLook = (H) => (H.look() === "classic" ? null : "graphite");
+  function restackAll(ed, H, where) {
+    H.mutate(ed, () => { for (const l of chosen(ed)) D.restack(ed.doc, l.id, where); });
+    H.sound("layer");
+  }
+  function layerMenu(ed, H, e) {
+    const ls = chosen(ed);
+    if (!ls.length) return;
+    const one1 = ls.length === 1 ? ls[0] : null, drawn = ls.some((l) => DRAWN.includes(l.type));
+    const locked = ls.every((l) => l.locked), mirrored = ls.every((l) => l.mirror && l.mirror.v != null);
+    CtxMenu.open(e, [
+      one1 && one1.type === "text" ? { label: "Edit the words", key: "Enter", icon: "t-text", act: () => startText(ed, H, one1, true) } : null,
+      one1 && one1.type === "text" && one1.on ? { label: "Take the words off the path", act: () => applyText(ed, H, { on: null, offset: 0 }) } : null,
+      one1 && DRAWN.includes(one1.type) ? { label: "Edit points", key: "A", icon: "t-node", act: () => {
+        setTool(ed, H, "node");
+        H.status(ed, "Editing points. Drag a point or a handle; click the outline to add a point; Delete removes one.");
+      } } : null,
+      "-",
+      { label: "Duplicate", key: "Cmd+D", icon: "l-dup", act: () => layerAct(ed, H, "dup") },
+      ls.length > 1 && drawn ? { label: "Merge into one shape", icon: "t-build", act: () => layerAct(ed, H, "merge") } : null,
+      "-",
+      { label: "Bring to front", key: "Shift+]", act: () => restackAll(ed, H, "top") },
+      { label: "Bring forward", key: "]", icon: "l-up", act: () => layerAct(ed, H, "up") },
+      { label: "Send backward", key: "[", icon: "l-down", act: () => layerAct(ed, H, "down") },
+      { label: "Send to back", key: "Shift+[", act: () => restackAll(ed, H, "bottom") },
+      "-",
+      drawn ? { label: "Flip left to right", icon: "flip-h", act: () => flip(ed, H, "h") } : null,
+      drawn ? { label: "Flip top to bottom", icon: "flip-v", act: () => flip(ed, H, "v") } : null,
+      { label: mirrored ? "Stop mirroring" : "Mirror across the middle", icon: "mirror", act: () => optClick(ed, H, "mirv") },
+      ls.some((l) => l.mirror) ? { label: "Make the mirror part of it", act: () => optClick(ed, H, "mirmerge") } : null,
+      "-",
+      { label: locked ? "Unlock" : "Lock", icon: locked ? "unlock" : "lock", act: () => H.mutate(ed, () => { for (const l of ls) l.locked = !locked; }) },
+      { label: "Hide", icon: "eye-off", act: () => H.mutate(ed, () => { for (const l of ls) l.hidden = true; select(ed, []); }) },
+      "-",
+      { label: "Delete", key: "Del", icon: "l-del", act: () => layerAct(ed, H, "del") },
+    ].filter(Boolean), { look: menuLook(H) });
+  }
+  function boardMenu(ed, H, e, p) {
+    const g = ed.doc.guides || { v: [], h: [] }, hidden = ed.doc.layers.filter((l) => l.hidden);
+    const guide = (axis, v) => { H.mutate(ed, () => { ed.doc.guides = G.put(ed.doc.guides || { v: [], h: [] }, axis, Math.round(v)); }, { panels: false }); H.sound("pick"); };
+    CtxMenu.open(e, [
+      { label: "Select all", key: "Cmd+A", act: () => { select(ed, ed.doc.layers.filter((l) => !l.hidden && !l.locked).map((l) => l.id)); render(ed, H, {}); } },
+      ed.sel.length ? { label: "Select nothing", key: "Esc", act: () => { select(ed, []); render(ed, H, {}); } } : null,
+      hidden.length ? { label: "Show what's hidden (" + hidden.length + ")", icon: "eye", act: () => H.mutate(ed, () => { for (const l of hidden) l.hidden = false; }) } : null,
+      "-",
+      { label: "Guide down here", act: () => guide("v", p.x) },
+      { label: "Guide across here", act: () => guide("h", p.y) },
+      g.v.length + g.h.length ? { label: "Clear the guides", icon: "guides-x", act: () => optClick(ed, H, "clearguides") } : null,
+      "-",
+      { label: "Grid", key: "'", checked: ed.grid, act: () => { ed.grid = !ed.grid; render(ed, H, {}); } },
+      { label: "Fit the board in view", icon: "z-fit", act: () => { ed.st.fit(ed.doc); draw(ed); if (ed.onView) ed.onView(); } },
+    ].filter(Boolean), { look: menuLook(H) });
+  }
+  function rightClick(ed, H, e) {
+    e.preventDefault();
+    if (ed.pen) { finishPen(ed, H); return; }
+    endText(ed, H);
+    const p = ed.st.toDoc(e), hit = D.hitTest(ed.doc, p.x, p.y);
+    if (hit && !ed.sel.includes(hit.id)) { select(ed, [hit.id]); render(ed, H, {}); }
+    if (hit) layerMenu(ed, H, e); else boardMenu(ed, H, e, p);
   }
 
   function layerAct(ed, H, a) {

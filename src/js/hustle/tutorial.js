@@ -281,10 +281,11 @@ const HustleTutorial = (() => {
       output: { label: "Your Tori's Ladle cart sign", tags: ["tori-sign"] },
       wrap: wrapOf("It's going on the cart tomorrow. The pizza box can retire.", "That's a proper sign. The honey man will be jealous."),
       teach: [
+        { id: "size", say: "First, the size she gave you. The size menu by the modes has Shop sign, 1200 × 400: pick it, then New.", with: ["size"], check: { size: [1200, 400] } },
         { id: "board", say: "Start with the board. The Rectangle (R): drag it out across the canvas.", with: ["tool:rect"], check: { layer: "rect" } },
         { id: "round", say: "Round its corners a little. With it selected, CORNER is in the strip along the top.", with: ["opt:radius"], check: { radius: true } },
-        { id: "paint", say: "Paint it tomato red: FILL, or drag a colour card from the Cards tray onto it.", with: ["opt:fill", "drawer:cards"], check: { fill: "red" } },
         { id: "words", say: "Type (T), click the board, write TORI'S LADLE. Double-click words later to change them.", with: ["tool:text"], check: { text: "tori's ladle" } },
+        { id: "cream", say: "Her colours are tomato red and cream. With the words selected, make them cream: FILL, or Swatch.", with: ["opt:fill", "drawer:swatch"], check: { textFill: "pastel" } },
         { id: "face", say: "Choose a face that tastes like soup. The menu shows each one in your own words.", with: ["opt:fontmenu"], check: { font: "custom" } },
         { id: "more", say: "Add SOUP and SATURDAYS the same way. Selecting two and more is Shift-click.", with: ["tool:text", "tool:select"], check: { texts: 3 } },
       ],
@@ -350,6 +351,7 @@ const HustleTutorial = (() => {
       output: { label: "Your menu board", tags: ["tori-menu"] },
       wrap: wrapOf("It's printed! It rained on Saturday and nothing ran.", "Everything lines up. My chalk never did that."),
       teach: [
+        { id: "size", say: "Set the size first, like last time: Poster, 600 × 850, then New.", with: ["size"], check: { size: [600, 850] } },
         { id: "guide", say: "Pull a guide down out of the ruler along the top. Let go where the first row starts.", with: ["ruler"], check: { guides: 1 } },
         { id: "four", say: "Three more: two across and two down. Where they cross four times, a focus grid appears.", with: ["ruler"], check: { grid: true } },
         { id: "sign", say: "Everything snaps to the grid now. Drag your sign's card across the top.", with: ["drawer:cards"], check: { card: "tori-sign" } },
@@ -415,6 +417,7 @@ const HustleTutorial = (() => {
       output: { label: "Your Tori's Ladle mark", tags: ["tori-mark"] },
       wrap: wrapOf("It's on my apron! My mother cried. Good crying.", "Round and even. The apron lady says it stitches beautifully."),
       teach: [
+        { id: "size", say: "A square this time: Glyph, 800 × 800, in the size menu.", with: ["size"], check: { size: [800, 800] } },
         { id: "circle", say: "A bowl starts as a circle: the Ellipse (O). Hold Shift to keep it round.", with: ["tool:ellipse"], check: { layer: "ellipse" } },
         { id: "cut", say: "Put a rectangle over its top half, then drag across both with the Shape builder (M) holding Alt: it cuts.", with: ["tool:rect", "tool:build"], check: { path: true } },
         { id: "half", say: "Draw half the ladle, then Mirror it. Both sides stay even while you work.", with: ["opt:mirv"], check: { mirror: true } },
@@ -480,6 +483,7 @@ const HustleTutorial = (() => {
       output: { label: "Your lid sticker", tags: ["tori-sticker"] },
       wrap: wrapOf("They're on every lid! Somebody peeled one off to keep.", "It looks like a seal. A soup seal."),
       teach: [
+        { id: "size", say: "The same square as the mark: 800 × 800.", with: ["size"], check: { size: [800, 800] } },
         { id: "mark", say: "Drag the mark's card from the tray into the middle.", with: ["drawer:cards"], check: { card: "tori-mark" } },
         { id: "bend", say: "Write TORI'S LADLE, then bend it: BEND arches the words over the top.", with: ["tool:text", "opt:bend"], check: { bend: true } },
         { id: "pen", say: "For the bottom, draw the curve yourself. The Pen (P): click, drag, click, then Enter.", with: ["tool:pen"], check: { open: true } },
@@ -534,7 +538,7 @@ const HustleTutorial = (() => {
       output: { label: "Your app icon", tags: ["tori-icon"] },
       wrap: wrapOf("It's in the app! Parsnip sat on the phone to look at it.", "Tiny, and it's still soup. How?"),
       teach: [
-        { id: "pixel", say: "Switch to Pixel: the same suite, one square at a time.", with: ["mode:pixel"], check: { drawn: 1 } },
+        { id: "pixel", say: "This is Pixel mode: the same suite, one square at a time. First the size: Sprite, 32 × 32, then New.", with: ["mode:pixel", "size"], check: { size: [32, 32] } },
         { id: "down", say: "Drag the mark's card onto the sprite: it comes down to pixels, in the sprite's colours.", with: ["drawer:cards"], check: { card: "tori-mark" } },
         { id: "palette", say: "Keep it to a few colours: Swatch has classic palettes, or take the colours from the work.", with: ["drawer:swatch"], check: { palette: 2 } },
         { id: "clean", say: "Clean it up with the Pencil (B) and Eraser (E). Every pixel counts at this size.", with: ["tool:pencil", "tool:erase"], check: { drawn: 60 } },
@@ -599,11 +603,10 @@ const HustleTutorial = (() => {
       deadline: 1800,
       wrap: wrapOf("It's live! The honey man asked who made it. I said you. Gold star.", "It's so calm. My nephew says it's very clean. He means it nicely."),
       teach: [
-        { id: "layout", say: "Switch to Layout: a page, built out of blocks.", with: ["mode:layout"], check: { blocks: 1 } },
+        { id: "name", say: "This is Layout mode: a page made of blocks. First its name: the name box up top is the masthead. Make it TORI'S LADLE.", with: ["mode:layout", "name"], check: { named: "tori's ladle" } },
         { id: "lede", say: "Drag a Lede block onto the page: say what Tori's Ladle is, in one sentence.", with: ["blk:lede"], check: { block: "lede" } },
         { id: "faq", say: "Add the questions: the FAQ block. Click it in the page to edit it on the right.", with: ["blk:faq"], check: { block: "faq" } },
         { id: "sticker", say: "Add a Big picture block, then drop the sticker's card on it.", with: ["blk:plate", "drawer:cards"], check: { card: "tori-sticker" } },
-        { id: "brand", say: "Set the brand colour to tomato red: BRAND in the strip, or Swatch.", with: ["opt:brand", "drawer:swatch"], check: { brand: "red" } },
         { id: "visit", say: "Look at it in The Web before you send it.", with: ["opt:visit"], check: null },
       ],
     },

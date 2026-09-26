@@ -48,7 +48,17 @@ const SuiteDrawers = (() => {
     const st = (id) => state[id] || (state[id] = { edge: byId[id].edge || "top", pos: byId[id].pos == null ? 0.5 : byId[id].pos, open: false });
     const sizeOf = (id) => {
       const d = byId[id], W = view ? view.clientWidth : 800, Hh = view ? view.clientHeight : 600;
-      return { w: Math.min(d.w, W - 12), h: Math.min(d.h, Hh - 12), W, H: Hh };
+      let h = d.h;
+      // `fit`: as tall as what is in it, up to its own height. Measured with
+      // no scrollbar in the way, and it only scrolls once it is that tall.
+      const e = d.fit && els[id] && !els[id].panel.hidden ? els[id] : null;
+      if (e && e.body.lastElementChild) {
+        e.body.style.overflowY = "hidden";
+        const last = e.body.lastElementChild, need = last.offsetTop + last.offsetHeight + 10;
+        h = Math.min(d.h, need);
+        e.body.style.overflowY = need > Math.min(d.h, Hh - 12) ? "" : "hidden";
+      }
+      return { w: Math.min(d.w, W - 12), h: Math.min(h, Hh - 12), W, H: Hh };
     };
 
     // Where the tab and the panel sit, in the view's own pixels.

@@ -307,8 +307,69 @@
 .dw__cards .cd{flex:0 0 76px}
 .dw__cards .sx__hint{margin:4px 0}
 
+/* ── lessons: the controls a step is about, and the client's notes ── */
+.sx{--sx-teach:#FFD24A}
+.sx[data-look="classic"]{--sx-teach:#D4006F}
+/* Every ringed control breathes in step: --teach-phase is set from one clock,
+   so a control that is repainted carries on where the others are. */
+.sx-teach{outline:2px solid var(--sx-teach)!important;outline-offset:1px;animation:sxTeach 1.3s ease-in-out infinite;animation-delay:var(--teach-phase,0ms)}
+.sx__rx.sx-teach,.sx__ry.sx-teach,.sx__layers.sx-teach{outline-offset:-2px;animation-name:sxTeachC}
+@keyframes sxTeach{50%{outline-offset:4px;outline-color:color-mix(in srgb,var(--sx-teach) 35%,transparent)}}
+@keyframes sxTeachC{50%{outline-color:color-mix(in srgb,var(--sx-teach) 35%,transparent)}}
+/* "Show me": a hard bounce, then back to breathing. */
+.sx-teach--now{outline:3px solid var(--sx-teach)!important;outline-offset:2px;animation:sxTeachNow .8s cubic-bezier(.34,1.56,.64,1) 3!important}
+.sx__rx.sx-teach--now,.sx__ry.sx-teach--now,.sx__layers.sx-teach--now{outline-offset:-3px;animation:sxTeachBlink .4s steps(1) 6!important}
+@keyframes sxTeachNow{0%,70%,100%{transform:none}18%{transform:scale(1.28)}36%{transform:scale(.94)}52%{transform:scale(1.08)}}
+@keyframes sxTeachBlink{50%{outline-color:transparent}}
+.sx__finger{position:absolute;z-index:30;pointer-events:none;color:#0A0A0A;--ico-paper:#FFFFFF;filter:drop-shadow(1px 2px 0 rgba(0,0,0,.4));
+  animation:sxPoke .42s ease-in-out infinite alternate}
+.sx__finger--down{animation-name:sxPokeD}
+.sx__finger--down svg{transform:scaleY(-1)}
+@keyframes sxPoke{from{translate:0 4px}to{translate:0 -3px}}
+@keyframes sxPokeD{from{translate:0 -4px}to{translate:0 3px}}
+
+.ls__head{display:flex;align-items:center;gap:8px;padding-bottom:7px;border-bottom:1px solid var(--sx-line)}
+.ls__face{flex:0 0 36px;width:36px;height:36px;image-rendering:pixelated;border:1px solid var(--sx-line);border-radius:4px;background:#F4EBDD}
+.ls__head div{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:4px}
+.ls__head b{font-weight:400;font-size:8.5px;letter-spacing:.08em}
+.ls__head span{font-family:"VT323",monospace;font-size:15px;line-height:1;letter-spacing:0;color:var(--sx-dim)}
+.ls__n{flex:0 0 auto;font-style:normal;font-family:"VT323",monospace;font-size:18px;line-height:1;letter-spacing:0;padding:2px 7px;border-radius:10px;
+  background:var(--sx-field);border:1px solid var(--sx-line)}
+.ls__bar{display:flex;gap:3px;margin-top:-1px}
+.ls__bar b{flex:1 1 0;height:4px;border-radius:2px;background:var(--sx-line)}
+.ls__bar b.on{background:var(--sx-go)}
+.ls__steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.ls__step{display:grid;grid-template-columns:18px minmax(0,1fr) 18px;align-items:center;gap:6px;padding:3px 3px 3px 4px;border:1px solid transparent;border-radius:5px}
+.ls__step i{width:18px;height:18px;display:grid;place-items:center;border:1px solid var(--sx-line);border-radius:50%;
+  font-style:normal;font-family:"VT323",monospace;font-size:15px;line-height:1;letter-spacing:0;color:var(--sx-dim)}
+.ls__step p{margin:0;font-family:"VT323",monospace;font-size:16px;line-height:1.05;letter-spacing:0;color:var(--sx-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ls__step--next{opacity:.62}
+.ls__step--open{grid-template-columns:18px minmax(0,1fr);align-items:start;padding:6px 6px 7px 5px}
+.ls__step--open i{margin-top:1px}
+.ls__step--open p{white-space:normal;color:var(--sx-ink)}
+.ls__step--now{background:color-mix(in srgb,var(--sx-teach) 12%,transparent);border-color:color-mix(in srgb,var(--sx-teach) 55%,transparent)}
+.ls__step--now i{background:var(--sx-teach);border-color:var(--sx-teach);color:#1A1A1A}
+.sx[data-look="classic"] .ls__step--now i{color:#fff}
+.ls__step--done i{background:var(--sx-go);border-color:var(--sx-go);color:#fff}
+.ls__step--fresh i{animation:lsTick .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes lsTick{from{transform:scale(.2) rotate(-40deg)}to{transform:none}}
+.ls__step--tip i{border-style:dashed;color:var(--sx-teach)}
+.sx[data-look="classic"] .ls__step--tip i{color:var(--sx-ink)}
+.ls__step--tip.ls__step--open{background:var(--sx-field);border-color:var(--sx-line)}
+.ls__show{grid-column:2;justify-self:start;display:inline-flex;align-items:center;gap:5px;height:22px;margin-top:6px;padding:0 9px 0 5px!important;
+  border:1px solid var(--sx-teach)!important;border-radius:var(--sx-r);background:color-mix(in srgb,var(--sx-teach) 18%,transparent)!important;
+  font-size:7.5px!important;letter-spacing:.12em!important}
+.ls__show:hover{background:color-mix(in srgb,var(--sx-teach) 34%,transparent)!important}
+.ls__peek{width:18px;height:18px;display:grid;place-items:center;border-radius:3px;opacity:0}
+.ls__step:hover .ls__peek,.ls__peek:focus-visible{opacity:.75}
+.ls__peek:hover{opacity:1;background:var(--sx-hover)!important}
+.ls__done{display:flex;align-items:center;gap:7px;margin:0;padding:6px 8px;border-radius:5px;background:color-mix(in srgb,var(--sx-go) 24%,transparent);
+  font-family:"VT323",monospace;font-size:16px;line-height:1.05;letter-spacing:0}
+.ls__done svg{flex:0 0 auto}
+
 @media (prefers-reduced-motion:reduce){
-  .sx__body--in,.dw__panel.is-opening,.dw__panel.is-closing,.dw__tab.is-boing,.sx__fm,.sx__flym,.sx__sp,.sx__page [data-block].is-new{animation:none!important}
+  .sx__body--in,.dw__panel.is-opening,.dw__panel.is-closing,.dw__tab.is-boing,.sx__fm,.sx__flym,.sx__sp,.sx__page [data-block].is-new,
+  .sx-teach,.sx-teach--now,.sx__finger,.ls__step--fresh i{animation:none!important}
   .dw__tab,.sx__blk{transition:none}
 }
 

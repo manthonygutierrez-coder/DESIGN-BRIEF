@@ -105,8 +105,22 @@ const SuiteApps = (() => {
 
   /* ── fonts ─────────────────────────────────────────────
    * What the type menu offers, by what it is good for. Bundled faces work
-   * with no network; the system ones are a fallback that every Mac has. */
+   * with no network; the system ones are a fallback that every Mac has.
+   * `weights` are the ones a face really has: choosing it snaps the text to
+   * the nearest, so nothing is ever drawn in a fake bold. */
   const FONTS = [
+    { name: "Syne", cat: "Logotype", weights: [700, 800] },
+    { name: "Bricolage Grotesque", cat: "Logotype", weights: [500, 600, 700, 800] },
+    { name: "Unbounded", cat: "Logotype", weights: [700] },
+    { name: "Cinzel", cat: "Monogram", weights: [400, 500, 600, 700] },
+    { name: "Cormorant", cat: "Monogram", weights: [500, 600, 700], italic: true },
+    { name: "Italiana", cat: "Monogram", weights: [400] },
+    { name: "Pinyon Script", cat: "Script", weights: [400] },
+    { name: "Pacifico", cat: "Script", weights: [400] },
+    { name: "Fraunces", cat: "Display", weights: [700, 800, 900], italic: true },
+    { name: "Abril Fatface", cat: "Display", weights: [400] },
+    { name: "Shrikhand", cat: "Display", weights: [400] },
+    { name: "Monoton", cat: "Display", weights: [400] },
     { name: "Archivo", cat: "Sans", weights: [400, 500, 600, 700] },
     { name: "Instrument Serif", cat: "Serif", weights: [400], italic: true },
     { name: "Silkscreen", cat: "Pixel", weights: [400, 700] },
@@ -162,7 +176,14 @@ const SuiteApps = (() => {
     return o;
   }
 
-  return { APPS, TOOLS, BONUS, BLOCKS, MAX_ITEMS, MODES, FONTS, FONT_CATS, forDiscipline, relevant, bonusFor, blankItem, modeOf, presetsFor, bonusForMode };
+  // The weight nearest `w` that a face has (any weight, for a face we don't know).
+  function weightFor(font, w, fonts = FONTS) {
+    const f = fonts.find((x) => x.name === font);
+    if (!f || !f.weights.length || f.weights.includes(w)) return w;
+    return f.weights.reduce((a, b) => (Math.abs(b - w) < Math.abs(a - w) ? b : a));
+  }
+
+  return { APPS, TOOLS, BONUS, BLOCKS, MAX_ITEMS, MODES, FONTS, FONT_CATS, forDiscipline, relevant, bonusFor, blankItem, modeOf, presetsFor, bonusForMode, weightFor };
 })();
 
 if (typeof module !== "undefined") module.exports = SuiteApps;

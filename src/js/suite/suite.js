@@ -126,6 +126,19 @@ const Suite = (() => {
     for (const c of S().cards) if (c.kind === "type" && !out.some((f) => f.name === c.value)) out.push({ name: c.value, cat: "Cards", weights: [400, 700] });
     return out;
   }
+  // A canvas draws in whatever face has loaded, so ask for the ones a document
+  // uses as it opens; when any arrive, every open editor measures and draws again.
+  function loadFonts(doc) {
+    if (typeof document === "undefined" || !document.fonts || !doc || !doc.layers) return;
+    const want = new Set(doc.layers.filter((l) => l.type === "text").map((l) => (l.style === "italic" ? "italic " : "") + (l.weight || 400) + ' 32px "' + String(l.font).replace(/"/g, "") + '"'));
+    want.forEach((f) => { document.fonts.load(f).catch(() => {}); });
+  }
+  if (typeof document !== "undefined" && document.fonts && document.fonts.addEventListener) {
+    document.fonts.addEventListener("loadingdone", () => wins.forEach((win) => {
+      const ed = win.eds[win.mode];
+      if (ed && ed.body && ed.body.isConnected) (ed.fontsReady || ed.draw || (() => {}))();
+    }));
+  }
 
   /* ── opening ───────────────────────────────────────────── */
   // The launcher is the suite itself now: it opens on the job, in its mode.
@@ -195,12 +208,50 @@ const Suite = (() => {
     win.root = w.client.querySelector(".sx");
     win.body = w.client.querySelector(".sx__body");
     win.lesson = lessonOf(job);
-    if (win.lesson && !S().drawers.lesson) S().drawers.lesson = { edge: "right", pos: 0.3, open: true };
-    win.drawers = SuiteDrawers.make(drawerDefs(win), S().drawers, { saved: () => save(), sound, opened: (id) => { if (id === "cutout") paintCutSources(win); if (id === "lesson") spotlight(win); } });
+    if (win.lesson && !S().drawers.lesson) S().drawers.lesson = { edge: "right", pos: 0, open: true };
+    win.drawers = SuiteDrawers.make(drawerDefs(win), S().drawers, { saved: () => save(), sound,
+      opened: (id) => { if (id === "cutout") paintCutSources(win); if (id === "lesson") spotlight(win); makeRoom(win, id); },
+      closed: () => makeRoom(win) });
     wins.set(key, win);
     wireTop(win);
     splash(win);
     return win;
+  }
+
+  // A panel opened over the board, or tucked away: a view nobody has zoomed
+  // or moved fits again around what is open now.
+  function makeRoom(win, opened) {
+    const ed = win.eds[win.mode], st = ed && ed.st;
+    if (!st || !st.auto || !ed.body || !ed.body.isConnected) return;
+    const b = opened && win.drawers.body(opened), p = b && b.closest(".dw__panel");
+    if (p) {
+      const x = st.x, y = st.y, w = ed.doc.w * st.zoom, h = ed.doc.h * st.zoom;
+      if (p.offsetLeft >= x + w || p.offsetLeft + p.offsetWidth <= x || p.offsetTop >= y + h || p.offsetTop + p.offsetHeight <= y) return;
+    }
+    st.fit(ed.doc);
+    ed.draw();
+    paintZoom(win);
+  }
+
+  // A job started over: its window closes (saving nothing more), its documents
+  // go, and the cards research found for it leave the tray (`refs` are their
+  // source refs), so doing it again means doing the reading again.
+  function forget(jobId, refs = []) {
+    if (!jobId || !state) return;
+    const key = "suite:" + jobId, win = wins.get(key);
+    if (win) { closeWindow(key); if (win.w.el.isConnected) closeWin(win.w); }
+    for (const k of Object.keys(S().docs)) if (k.endsWith(":" + jobId)) { delete S().docs[k]; delete S().touched[k]; }
+    const drop = new Set(refs);
+    for (let i = S().cards.length - 1; i >= 0; i--) { const c = S().cards[i]; if (c.source && drop.has(c.source.ref)) S().cards.splice(i, 1); }
+    save();
+    refreshDrawers();
+  }
+  // A job delivered again: whatever card came from its last delivery shows the new one.
+  function replaceCard(ref, value) {
+    let n = 0;
+    for (const c of S().cards) if (c.source && c.source.ref === ref && c.value !== value) { c.value = value; registerPicture(c); n++; }
+    if (n) { save(); refreshDrawers(); }
+    return n;
   }
 
   function closeWindow(key) {
@@ -258,6 +309,7 @@ const Suite = (() => {
     win.root.dataset.mode = mode;
     win.body.classList.remove("sx__body--in"); void win.body.offsetWidth; win.body.classList.add("sx__body--in");
     EDITORS[mode]().mount(ed, H);
+    loadFonts(ed.doc);
     ed.onView = () => paintZoom(win);
     ed.onGrid = () => sound("grid");
     win.drawers.attach(ed.view);
@@ -423,6 +475,9 @@ const Suite = (() => {
     switchMode: (ed, mode) => switchMode(ed.win, mode),
     // After any repaint: the lesson's controls light up again, and its ticks move.
     painted: (ed) => afterPaint(ed.win),
+    // Open panels over the canvas, in the view's pixels: fitting keeps the board clear of them.
+    covered: (ed) => (ed.view ? [...ed.view.querySelectorAll(".dw__panel:not([hidden]):not(.is-closing)")] : [])
+      .map((p) => ({ x: p.offsetLeft, y: p.offsetTop, w: p.offsetWidth, h: p.offsetHeight })),
     // The view's own switches (grid, smart guides, snap) sit by the zoom.
     viewBar: (ed, html) => { const el = ed.win.root && ed.win.root.querySelector(".sx__g--view"); if (el) el.innerHTML = html; },
     pickFile: (ed, cb) => { ed.win.fileCb = cb; ed.win.w.client.querySelector(".sx__file").click(); },
@@ -437,7 +492,7 @@ const Suite = (() => {
       blurb: { vector: "build a palette and check its contrast", pixel: "a palette for the sprite, or a classic one", layout: "brand colours, checked for contrast" } },
     cards: { icon: "card", label: "Cards", edge: "bottom", pos: 0.5, w: 660, h: 150,
       blurb: { vector: "what research found: drag it onto the work", pixel: "what research found: drag it onto the sprite", layout: "what research found: drag it onto a block" } },
-    lesson: { icon: "lesson", label: "Lesson", edge: "right", pos: 0.3, w: 300, h: 400,
+    lesson: { icon: "lesson", label: "Lesson", edge: "right", pos: 0, w: 250, h: 420, fit: true,
       blurb: { vector: "this job's lesson, one step at a time", pixel: "this job's lesson, one step at a time", layout: "this job's lesson, one step at a time" } },
   };
   function drawerDefs(win) {
@@ -479,6 +534,22 @@ const Suite = (() => {
       const cd = e.target.closest("[data-card]");
       const ed = win.eds[win.mode];
       if (cd && ed && ed.drop) ed.drop(cardById(cd.dataset.card), null, e.shiftKey);
+    });
+    // Right-click a card: the ways to use it, or to let it go.
+    body.addEventListener("contextmenu", (e) => {
+      const cd = e.target.closest("[data-card]"), c = cd && cardById(cd.dataset.card);
+      if (!c) return;
+      e.preventDefault();
+      const ed = win.eds[win.mode], use = ed && ed.drop;
+      const colour = c.kind === "colour" && win.mode === "vector";
+      CtxMenu.open(e, [
+        use && colour ? { label: "Fill with it", act: () => ed.drop(c, null, false) } : null,
+        use && colour ? { label: "Outline with it", key: "Shift-click", act: () => ed.drop(c, null, true) } : null,
+        use && !colour ? { label: "Put it on the work", icon: "card", act: () => ed.drop(c, null, false) } : null,
+        c.kind === "object" && typeof RefBoard !== "undefined" ? { label: "Pin to the reference board", act: () => RefBoard.pin({ src: c.value, label: c.label }) } : null,
+        "-",
+        { label: "Take it out of the tray", icon: "l-del", act: () => removeCard(c.id) },
+      ].filter(Boolean), { look: S().look === "classic" ? null : "graphite" });
     });
   }
 
@@ -770,6 +841,8 @@ const Suite = (() => {
     if (ctrl === "ruler") return [".sx__rx", ".sx__ry"];
     if (ctrl === "layers") return [".sx__layers"];
     if (ctrl === "deliver") return ['.sx__top [data-s="deliver"]'];
+    if (ctrl === "size") return ['.sx__top [data-s="preset"]', '.sx__top [data-s="new"]'];
+    if (ctrl === "name") return ['.sx__top [data-s="name"]'];
     if (kind === "tool") return ['.sx__rail [data-tool="' + id + '"]'];
     if (kind === "opt") return ['.sx__opts [data-o="' + id + '"]', '.sx__opts [data-l="' + id + '"]', '.sx__opts [data-s="' + id + '"]'];
     if (kind === "view") return ['.sx__top [data-v="' + id + '"]'];
@@ -787,11 +860,10 @@ const Suite = (() => {
     return out;
   }
 
-  let paintQueued = false;
   function afterPaint(win) {
-    if (!win || !win.lesson || paintQueued) return;
-    paintQueued = true;
-    requestAnimationFrame(() => { paintQueued = false; if (win.root && win.root.isConnected) { spotlight(win); win.drawers.repaint("lesson"); } });
+    if (!win || !win.lesson || win.paintQueued) return;
+    win.paintQueued = true;
+    requestAnimationFrame(() => { win.paintQueued = false; if (win.root && win.root.isConnected) { spotlight(win); win.drawers.repaint("lesson"); } });
   }
 
   function spotlight(win) {
@@ -800,16 +872,38 @@ const Suite = (() => {
     if (!L) return;
     const ctx = lessonCtx(win);
     const p = HustleLessons.progress(L.teach, ctx);
-    // A step ticked since last time: a small sound, and it says so.
+    // A step ticked since last time: a small sound, and its tick bounces in.
     win.ticked = win.ticked || new Set(p.filter((x) => x.done).map((x) => x.id));
     const fresh = p.filter((x) => x.done && !win.ticked.has(x.id));
     fresh.forEach((x) => win.ticked.add(x.id));
+    win.fresh = fresh.length ? new Set(fresh.map((x) => x.id)) : null;
     const step = HustleLessons.current(L.teach, ctx);
     if (fresh.length) { sound(step ? "pick" : "grid"); if (!step) setStatus(win, "Every step done. Deliver it when it looks right."); }
-    const ctrls = step ? step.with : ["deliver"];
+    const ctrls = step ? step.with.slice() : ["deliver"];
     // Somewhere else? The mode tab is the way back.
     if (step && win.mode !== L.mode && !ctrls.some((c) => c.startsWith("mode:"))) ctrls.unshift("mode:" + L.mode);
-    for (const c of ctrls) for (const el of controlsFor(win, c)) el.classList.add("sx-teach");
+    let els = ctrls.flatMap((c) => controlsFor(win, c));
+    // None of the step's own controls showing (an option appears once its
+    // thing is selected): the way there is Select.
+    if (step && win.mode === L.mode && !step.with.some((c) => controlsFor(win, c).length)) els = els.concat(controlsFor(win, "tool:select"));
+    // One clock for every ring, so a control that was just repainted keeps the beat.
+    const phase = -Math.round(performance.now() % 1300) + "ms";
+    for (const el of els) { el.style.setProperty("--teach-phase", phase); el.classList.add("sx-teach"); }
+  }
+
+  // A pointing hand under the control (over it, near the bottom edge), for a moment.
+  function pointAt(win, el) {
+    win.root.querySelectorAll(".sx__finger").forEach((f) => f.remove());
+    const root = win.root.getBoundingClientRect(), r = el.getBoundingClientRect();
+    if (!r.width && !r.height) return;
+    const down = r.bottom + 40 > root.bottom;
+    const f = document.createElement("div");
+    f.className = "sx__finger" + (down ? " sx__finger--down" : "");
+    f.innerHTML = iconSVG("show", 32);
+    f.style.left = Math.max(2, Math.min(root.width - 34, r.left - root.left + r.width / 2 - 10)) + "px";
+    f.style.top = (down ? r.top - root.top - 36 : r.bottom - root.top + 3) + "px";
+    win.root.appendChild(f);
+    setTimeout(() => f.remove(), 2600);
   }
 
   function showMe(win, i) {
@@ -818,10 +912,12 @@ const Suite = (() => {
     const toMode = step.with.find((c) => c.startsWith("mode:")) ? null : L.mode;
     if (toMode && win.mode !== toMode) switchMode(win, toMode);
     requestAnimationFrame(() => {
-      const els = step.with.flatMap((c) => controlsFor(win, c));
+      const own = step.with.flatMap((c) => controlsFor(win, c));
+      const els = own.length ? own : controlsFor(win, "tool:select");
       if (!els.length) { setStatus(win, step.say + " (It shows once the right thing is selected.)"); return; }
       els.forEach((el) => { el.classList.remove("sx-teach--now"); void el.offsetWidth; el.classList.add("sx-teach--now"); setTimeout(() => el.classList.remove("sx-teach--now"), 2600); });
-      setStatus(win, step.say);
+      pointAt(win, els[0]);
+      setStatus(win, own.length ? step.say : "Select what it's for first (V), then: " + step.say);
       sound("menu");
     });
   }
@@ -836,17 +932,33 @@ const Suite = (() => {
     const ctx = lessonCtx(win), p = HustleLessons.progress(L.teach, ctx), now = HustleLessons.current(L.teach, ctx);
     const who = typeof HUSTLE !== "undefined" && HUSTLE.people[L.gig.poster.handle];
     const face = who && typeof Portraits !== "undefined" ? Portraits.head(L.gig.poster.handle, who.look, { px: 36 }) : "";
-    const n = p.filter((x) => !x.tip && x.done).length, of = p.filter((x) => !x.tip).length;
-    body.innerHTML = '<div class="ls__head">' + (face ? '<img class="ls__face" src="' + face + '" alt="">' : "") +
+    const todo = p.filter((x) => !x.tip), n = todo.filter((x) => x.done).length;
+    const fresh = win.fresh || new Set();
+    win.fresh = null;
+    let num = 0;
+    // Open: the step you are on, and any tip you have reached. The rest are
+    // one line each (the whole of it on hover), so the panel stays small.
+    const steps = L.teach.map((s, i) => {
+      const st = p[i];
+      if (!st.tip) num++;
+      const reached = p.slice(0, i).every((x) => x.tip || x.done);
+      const open = s === now || (st.tip && reached);
+      const cls = st.tip ? "tip" : st.done ? "done" : s === now ? "now" : "next";
+      return '<li class="ls__step ls__step--' + cls + (open ? " ls__step--open" : "") + (fresh.has(s.id) ? " ls__step--fresh" : "") + '"' + (open ? "" : ' title="' + esc(s.say) + '"') + ">" +
+        "<i>" + (st.tip ? "★" : st.done ? "✓" : num) + "</i><p>" + esc(s.say) + "</p>" +
+        (open ? '<button class="ls__show" data-show="' + i + '">' + iconSVG("show", 16) + "<span>SHOW ME</span></button>"
+          : '<button class="ls__peek" data-show="' + i + '" title="Show me where" aria-label="Show me where">' + iconSVG("show", 16) + "</button>") + "</li>";
+    });
+    const html = '<div class="ls__head">' + (face ? '<img class="ls__face" src="' + face + '" alt="">' : "") +
         "<div><b>" + esc(L.gig.poster.name) + "'s notes</b><span>Lesson " + L.gig.lesson.n + " of " + L.gig.lesson.of + ": " + esc(L.gig.lesson.title) + "</span></div>" +
-        '<em class="ls__n" title="Steps done">' + n + "/" + of + "</em></div>" +
-      '<ol class="ls__steps">' + L.teach.map((s, i) => {
-        const st = p[i], cls = st.tip ? "tip" : st.done ? "done" : s === now ? "now" : "";
-        return '<li class="ls__step' + (cls ? " ls__step--" + cls : "") + '"><i>' + (st.tip ? "★" : st.done ? "✓" : i + 1) + "</i><p>" + esc(s.say) + "</p>" +
-          '<button class="sx__tb ls__show" data-show="' + i + '" title="Show me where">' + iconSVG("show", 16) + "</button></li>";
-      }).join("") + "</ol>" +
+        '<em class="ls__n" title="Steps done">' + n + "/" + todo.length + "</em></div>" +
+      '<div class="ls__bar" aria-hidden="true">' + todo.map((x) => "<b" + (x.done ? ' class="on"' : "") + "></b>").join("") + "</div>" +
+      '<ol class="ls__steps">' + steps.join("") + "</ol>" +
       (now ? "" : '<p class="ls__done">' + iconSVG("star", 16) + "<span>All done! Deliver it when it looks right.</span></p>");
+    // Repainted after every change: only touch the DOM when something moved.
+    if (body.lsHtml !== html) { body.innerHTML = html; body.lsHtml = html; win.drawers.place(); }
   }
+
 
   /* ── pins, pages, files ────────────────────────────────── */
   // An official pin dropped on the canvas marks where you drew that character:
@@ -990,7 +1102,7 @@ const Suite = (() => {
   }
 
   return {
-    boot, launcher, open, addCards, unlock, docFor,
+    boot, launcher, open, addCards, unlock, docFor, forget, replaceCard,
     cards: () => S().cards.slice(),
     cutoutFrom: (initial, jobId) => {
       const w = launcher(jobId);

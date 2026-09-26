@@ -176,6 +176,29 @@ const SuiteLayoutEd = (() => {
       }
       if (t.closest(".sx__bedit") || t.dataset.l === "tagline") { if (pre) { H.record(ed, pre, { panels: false }); pre = JSON.stringify(ed.doc); paintBlocks(); } }
     });
+    // Double-click a block in the page: its fields, ready to type in.
+    root.addEventListener("dblclick", (e) => {
+      const hit = e.target.closest(".sx__page [data-block]");
+      if (hit) { e.preventDefault(); select(Number(hit.dataset.block), false, true); }
+    });
+    // Right-click a block, in the page or in the list: what can be done to it.
+    root.addEventListener("contextmenu", (e) => {
+      const hit = e.target.closest(".sx__page [data-block], [data-bsel]");
+      if (!hit) return;
+      e.preventDefault();
+      const i = Number(hit.dataset.block != null ? hit.dataset.block : hit.dataset.bsel), n = ed.doc.blocks.length;
+      if (ed.blockSel !== i) select(i, false);
+      const move = (d) => { H.mutate(ed, () => { if (D.moveBlock(ed.doc, i, d)) ed.blockSel = i + d; }); H.sound("layer"); };
+      CtxMenu.open(e, [
+        { label: "Edit it", icon: "t-text", act: () => select(i, false, true) },
+        "-",
+        { label: "Move up", icon: "l-up", disabled: i <= 0, act: () => move(-1) },
+        { label: "Move down", icon: "l-down", disabled: i >= n - 1, act: () => move(1) },
+        { label: "Duplicate", icon: "l-dup", act: () => { H.mutate(ed, () => { if (D.addBlock(ed.doc, JSON.parse(JSON.stringify(ed.doc.blocks[i])), i + 1)) ed.blockSel = i + 1; }); H.sound("drop"); } },
+        "-",
+        { label: "Delete", key: "Del", icon: "l-del", act: () => { H.mutate(ed, () => { D.removeBlock(ed.doc, i); ed.blockSel = Math.min(ed.blockSel, ed.doc.blocks.length - 1); }); H.sound("close"); } },
+      ], { look: H.look() === "classic" ? null : "graphite" });
+    });
     root.addEventListener("click", (e) => {
       if (e.target.closest(".sx__page")) {
         // The preview is not navigable; a click in it picks the block it lands on.

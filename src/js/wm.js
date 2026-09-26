@@ -166,6 +166,21 @@ function createWindow(opts){
   el.querySelector('[data-w="max"]').addEventListener("click", (e) => { e.stopPropagation(); toggleMax(w); });
   el.querySelector('[data-w="cls"]').addEventListener("click", (e) => { e.stopPropagation(); closeWin(w); });
   el.querySelector(".tbar").addEventListener("dblclick", () => toggleMax(w));
+  // Right-click the title bar, or the window's button on the taskbar: the window menu.
+  const winMenu = (e) => {
+    if (e.target.closest(".tbar .tb")) return;
+    e.preventDefault();
+    const max = el.classList.contains("max"), min = el.classList.contains("min");
+    CtxMenu.open(e, [
+      { label: "Restore", disabled: !max && !min, act: () => { if (min) { el.classList.remove("min"); focusWin(w); } else toggleMax(w); } },
+      { label: "Minimize", disabled: min, act: () => minimizeWin(w) },
+      { label: "Maximize", disabled: max, act: () => { if (min) el.classList.remove("min"); toggleMax(w); } },
+      "-",
+      { label: "Close", act: () => closeWin(w) },
+    ]);
+  };
+  el.querySelector(".tbar").addEventListener("contextmenu", winMenu);
+  tb.addEventListener("contextmenu", (e) => { e.stopPropagation(); winMenu(e); });
 
   dragBy(el.querySelector(".tbar"), w, "move");
   dragBy(el.querySelector(".grip"), w, "size", "se");
@@ -374,6 +389,18 @@ startBtn.parentNode.addEventListener("contextmenu", (e) => {
   if (e.target.closest(".tray")) return;
   e.preventDefault();
   toggleArrange(true, e.clientX);
+});
+// Right-click the desk itself: the same ways to arrange the windows.
+document.getElementById("desk").addEventListener("contextmenu", (e) => {
+  // Anything inside a window that has its own menu has handled it already
+  // (and may have redrawn what was clicked, so ask before looking).
+  if (e.defaultPrevented || !e.target.isConnected || e.target.closest(".w98, .sc, input, textarea, [contenteditable]")) return;
+  e.preventDefault();
+  const any = wins.size > 0, shown = shownWins().length > 0;
+  const item = (m, label, icon) => ({ label, icon, act: () => arrangeWins(m),
+    disabled: m === "restore" ? ![...wins.values()].some(isMin) : !any || (m !== "min" && !shown) });
+  CtxMenu.open(e, [item("cascade", "Cascade Windows", "cascade"), item("cols", "Tile Windows Side by Side", "tile-cols"),
+    item("rows", "Tile Windows Stacked", "tile-rows"), "-", item("min", "Minimize All Windows", "min-all"), item("restore", "Restore All Windows", "restore")]);
 });
 arrangeMenu.addEventListener("click", (e) => {
   const b = e.target.closest("[data-arrange]");

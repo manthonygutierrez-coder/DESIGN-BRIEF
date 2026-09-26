@@ -130,6 +130,7 @@ const SuitePixelEd = (() => {
         if (inside) { H.mutate(ed, () => { ed.doc.guides = SuiteGuides.put(ed.doc.guides || { v: [], h: [] }, axis, Math.round(v)); }, { panels: false }); H.sound("pick"); }
         else draw(ed);
       },
+      covered: () => H.covered(ed),
     });
     ed.st.pixel = true;
     ed.st.look = SuiteStage.LOOKS[H.look()] || SuiteStage.LOOKS.graphite;
@@ -214,7 +215,7 @@ const SuitePixelEd = (() => {
     // What a shape, the pen or a stamp would lay down.
     const ghost = previewPts(ed);
     if (ghost.length) {
-      ctx.globalAlpha = 0.85; ctx.fillStyle = ed.tool === "erase" ? "#FFFFFF" : ed.fg;
+      ctx.globalAlpha = 0.85; ctx.fillStyle = inkOf(ed) || "#FFFFFF";
       for (const [x, y] of mirrored(ed, ghost)) ctx.fillRect(b.x + x * z, b.y + y * z, z, z);
       ctx.globalAlpha = 1;
     }
@@ -285,13 +286,39 @@ const SuitePixelEd = (() => {
   }
 
   /* ── pointer ───────────────────────────────────────────── */
+  // The right button paints with the other ink: nothing (it rubs out) with
+  // every tool that paints, and the colour with the eraser, the way pixel
+  // editors have always done it.
+  const RIGHT = ["pencil", "erase", "fill", "line", "rect", "ellipse"];
+  const inkOf = (ed) => ((ed.tool === "erase") !== !!ed.rightInk ? "" : ed.fg);
   function wirePointer(ed, H) {
     const cv = ed.st.cv;
-    cv.addEventListener("pointerdown", (e) => { if (e.button === 0) down(ed, H, e); });
+    cv.addEventListener("pointerdown", (e) => {
+      if (e.button === 0 || (e.button === 2 && RIGHT.includes(ed.tool))) { ed.rightInk = e.button === 2; down(ed, H, e); }
+    });
     cv.addEventListener("pointermove", (e) => move(ed, H, e));
     cv.addEventListener("pointerup", () => up(ed, H));
     cv.addEventListener("pointercancel", () => up(ed, H));
-    cv.addEventListener("dblclick", () => { if (ed.tool === "pen") finishPen(ed, H); });
+    cv.addEventListener("contextmenu", (e) => e.preventDefault());
+    cv.addEventListener("dblclick", () => {
+      if (ed.tool === "pen") finishPen(ed, H);
+      else if (ed.tool === "fill") fillEverywhere(ed, H);
+    });
+  }
+  // Fill, double-clicked: the colour the first click filled over is swapped for
+  // the new one everywhere in the sprite, not just where it touches.
+  function fillEverywhere(ed, H) {
+    const f = ed.lastFill;
+    ed.lastFill = null;
+    if (!f || Date.now() - f.at > 600 || f.was === f.ink) return;
+    const pre = JSON.stringify(ed.doc), b = ed.doc.bitmap;
+    let n = 0;
+    for (let i = 0; i < b.length; i++) if ((b[i] || "") === f.was) { b[i] = f.ink; n++; }
+    if (!n) return;
+    H.record(ed, pre);
+    render(ed, H, {});
+    H.sound("layer");
+    H.status(ed, "Every " + (f.was || "empty") + " pixel is " + (f.ink || "empty") + " now, all over the sprite.");
   }
   const cell = (ed, e) => { const p = ed.st.toDoc(e); return [Math.floor(p.x), Math.floor(p.y)]; };
 
@@ -301,8 +328,16 @@ const SuitePixelEd = (() => {
     const t = ed.tool;
     if (t !== "select") commitFloat(ed, H);
     if (t === "pick") { const c = D.getPx(doc, x, y); if (c) { ed.fg = c; H.status(ed, "Picked " + c); paintOpts(ed, H); } return; }
-    if (t === "fill") { for (const [px, py] of mirrored(ed, [[x, y]])) D.fill(doc, px, py, ed.fg); H.record(ed, pre); render(ed, H, {}); return; }
-    if (t === "pencil" || t === "erase") { paintPts(ed, [[x, y]], t === "erase" ? "" : ed.fg); ed.drag = { mode: "paint", pre, last: [x, y] }; draw(ed); return; }
+    if (t === "fill") {
+      // The second click of a double-click: leave the first one's record (what
+      // it filled over) for the double-click to use.
+      const f = ed.lastFill;
+      if (f && f.x === x && f.y === y && Date.now() - f.at < 500) return;
+      ed.lastFill = { x, y, was: D.getPx(doc, x, y) || "", ink: inkOf(ed), at: Date.now() };
+      for (const [px, py] of mirrored(ed, [[x, y]])) D.fill(doc, px, py, inkOf(ed));
+      H.record(ed, pre); render(ed, H, {}); return;
+    }
+    if (t === "pencil" || t === "erase") { paintPts(ed, [[x, y]], inkOf(ed)); ed.drag = { mode: "paint", pre, last: [x, y] }; draw(ed); return; }
     if (["line", "rect", "ellipse"].includes(t)) { ed.drag = { mode: "shape", pre, from: [x, y], to: [x, y] }; draw(ed); return; }
     if (t === "pen") {
       const p = ed.st.toDoc(e), q = { x: Math.floor(p.x) + 0.5, y: Math.floor(p.y) + 0.5 };
@@ -332,7 +367,7 @@ const SuitePixelEd = (() => {
     const d = ed.drag, [x, y] = cell(ed, e);
     if (ed.tool === "pen" && ed.pen && !d) return;
     if (!d) { ed.st.cv.style.cursor = ed.tool === "hand" ? "grab" : ed.tool === "select" && ed.mask && inMask(ed, x - (ed.float ? ed.float.dx : 0), y - (ed.float ? ed.float.dy : 0)) ? "move" : "crosshair"; return; }
-    if (d.mode === "paint") { paintPts(ed, linePts(d.last[0], d.last[1], x, y), ed.tool === "erase" ? "" : ed.fg); d.last = [x, y]; draw(ed); return; }
+    if (d.mode === "paint") { paintPts(ed, linePts(d.last[0], d.last[1], x, y), inkOf(ed)); d.last = [x, y]; draw(ed); return; }
     if (d.mode === "shape") {
       let [x1, y1] = [x, y];
       if (e.shiftKey && ed.tool !== "line") { const m = Math.max(Math.abs(x1 - d.from[0]), Math.abs(y1 - d.from[1])); x1 = d.from[0] + Math.sign(x1 - d.from[0] || 1) * m; y1 = d.from[1] + Math.sign(y1 - d.from[1] || 1) * m; }
@@ -352,8 +387,8 @@ const SuitePixelEd = (() => {
     const d = ed.drag;
     ed.drag = null;
     if (!d) return;
-    if (d.mode === "paint") { H.record(ed, d.pre); render(ed, H, {}); return; }
-    if (d.mode === "shape") { paintPts(ed, previewPts(Object.assign({}, ed, { drag: d, pen: null, stamp: null })), ed.fg); H.record(ed, d.pre); H.sound("layer"); render(ed, H, {}); return; }
+    if (d.mode === "paint") { ed.rightInk = false; H.record(ed, d.pre); render(ed, H, {}); return; }
+    if (d.mode === "shape") { paintPts(ed, previewPts(Object.assign({}, ed, { drag: d, pen: null, stamp: null })), inkOf(ed)); ed.rightInk = false; H.record(ed, d.pre); H.sound("layer"); render(ed, H, {}); return; }
     if (d.mode === "marquee") {
       const [x0, y0, x1, y1] = d.box, w = ed.doc.w;
       const m = d.add && ed.mask ? ed.mask : new Uint8Array(w * ed.doc.h);

@@ -224,7 +224,16 @@ Object.assign(ICON_ART, {
     ".krrk.kyyk.kttk.",".krrk.kyyk.kttk.",".krrk.kyyk.kttk.",".krrk.kyyk.kttk.",".kkkk.kkkk.kkkk.","................","................","................"]},
   "blk-contact":{p:{k:"currentColor",w:"var(--ico-paper,#FFFFFF)"},g:[
     "................","................","................",".kkkkkkkkkkkkkk.",".kkwwwwwwwwwwkk.",".kwkwwwwwwwwkwk.",".kwwkkwwwwkkwwk.",".kwwwwkwwkwwwwk.",
-    ".kwwwwwkkwwwwwk.",".kwwwwwwwwwwwwk.",".kwwwwwwwwwwwwk.",".kwwwwwwwwwwwwk.",".kkkkkkkkkkkkkk.","................","................","................"]}
+    ".kwwwwwkkwwwwwk.",".kwwwwwwwwwwwwk.",".kwwwwwwwwwwwwk.",".kwwwwwwwwwwwwk.",".kkkkkkkkkkkkkk.","................","................","................"]},
+  "lesson":{p:{g:"#4FC27A",k:"currentColor",m:"var(--ico-mid,#8A8A96)",w:"var(--ico-paper,#FFFFFF)"},g:[
+    "................","...k..k..k..k...","..kkkkkkkkkkkk..","..kwwwwwwwwwwk..","..kwmmmmmmmmwk..","..kwwwwwwwwwwk..","..kwmmmmmmwwwk..","..kwwwwwwwwwwk..",
+    "..kwwwwwwwwwgk..","..kwwwwwwwwggk..","..kwwgwwwwggwk..","..kwwggwwggwwk..","..kwwwggggwwwk..","..kwwwwggwwwwk..","..kkkkkkkkkkkk..","................"]},
+  "show":{p:{k:"currentColor",w:"var(--ico-paper,#FFFFFF)"},g:[
+    ".....kk.........","....kwwk........","....kwwk........","....kwwk........","....kwwkkkkkk...","....kwwkwwkwwkk.",".kk.kwwkwwkwwkwk","kwwkkwwkwwkwwkwk",
+    "kwwwkwwwwwwwwwwk",".kwwwwwwwwwwwwwk","..kwwwwwwwwwwwwk","..kwwwwwwwwwwwk.","...kwwwwwwwwwwk.","....kwwwwwwwwk..",".....kwwwwwwwk..",".....kkkkkkkkk.."]},
+  "star":{p:{k:"currentColor",y:"#F2C94C"},g:[
+    "................",".......kk.......","......kyyk......","......kyyk......",".....kyyyyk.....","kkkkkkyyyykkkkkk","kyyyyyyyyyyyyyyk",".kyyyyyyyyyyyyk.",
+    "..kyyyyyyyyyyk..","...kyyyyyyyyk...","...kyyyyyyyyk...","..kyyyyyyyyyyk..","..kyyyykkyyyyk..",".kyyykk..kkyyyk.",".kykk......kkyk.",".kk..........kk."]}
 });
 
 // The tools the suite always had, re-inked the same way.

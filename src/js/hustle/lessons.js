@@ -36,7 +36,7 @@ const HustleLessons = (() => {
     drawer: ["cards", "swatch", "cutout", "lesson"],
     mode: ["vector", "pixel", "layout"],
     blk: Object.keys(Apps.BLOCKS),
-    whole: ["ruler", "layers", "deliver"],
+    whole: ["ruler", "layers", "size", "name", "deliver"],
   };
   const known = (c) => {
     if (CONTROLS.whole.includes(c)) return true;
@@ -48,11 +48,14 @@ const HustleLessons = (() => {
   const shown = (c) => ((c.doc && c.doc.layers) || []).filter((l) => !l.hidden && l.type !== "subject");
   const texts = (c) => shown(c).filter((l) => l.type === "text");
   const CHECKS = {
+    // The document is the size the client asked for: [w, h].
+    size: ([w, h], c) => c.doc.w === w && c.doc.h === h,
     layer: (t, c) => shown(c).some((l) => l.type === t),
     layers: (n, c) => shown(c).length >= n,
     radius: (v, c) => shown(c).some((l) => l.type === "rect" && l.radius > 0),
     star: (v, c) => shown(c).some((l) => l.type === "polygon" && l.inner != null),
     fill: (tag, c) => shown(c).some((l) => typeof l.fill === "string" && Cards.colourTags(l.fill).includes(tag)),
+    textFill: (tag, c) => texts(c).some((l) => typeof l.fill === "string" && Cards.colourTags(l.fill).includes(tag)),
     text: (s, c) => texts(c).some((l) => String(l.text).toLowerCase().includes(String(s).toLowerCase())),
     texts: (n, c) => texts(c).length >= n,
     font: (f, c) => texts(c).some((l) => (f === "custom" ? l.font !== "Archivo" : l.font === f)),
@@ -71,6 +74,8 @@ const HustleLessons = (() => {
     block: (t, c) => ((c.doc && c.doc.blocks) || []).some((b) => b.t === t),
     blocks: (n, c) => ((c.doc && c.doc.blocks) || []).length >= n,
     brand: (tag, c) => !!(c.doc && c.doc.site && Cards.colourTags(c.doc.site.brand).includes(tag)),
+    // The document's name: a site's masthead.
+    named: (s, c) => String((c.doc.meta && c.doc.meta.name) || "").toLowerCase().includes(String(s).toLowerCase()),
   };
 
   function check(step, ctx) {

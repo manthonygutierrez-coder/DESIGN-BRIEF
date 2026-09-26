@@ -593,6 +593,7 @@ const Hustle = (() => {
     tune({ fullness: repFullness() });
     if (gig.output && doc.mode !== "layout") {
       try { gs.output = SuiteRender.toPNG(doc, doc.mode === "pixel" ? 4 : 1); } catch { gs.output = null; }
+      if (gs.output && Suite.replaceCard) Suite.replaceCard("delivered:" + id, gs.output);
     }
 
     const handle = gig.poster.handle;
@@ -615,6 +616,52 @@ const Hustle = (() => {
     Web.repaint();
     paintTray();
     return { ok: true, result: r };
+  }
+
+  /* ── starting over ──────────────────────────────────────
+   * Any gig you have worked on can be done again from the start: the call (or
+   * the Pager brief), the research and the work. What a delivery earned goes
+   * back first, so doing it again counts once, with the new review; the cards
+   * research found for it leave the tray, so the reading is done again too
+   * (a find another open job shares stays). A follow-up already under way is
+   * left alone, and gets the new picture when this one is delivered again. */
+  const RETRY = ["research", "production", "delivered"];
+  const canRetry = (id) => RETRY.includes(stageOf(id));
+  function foundRefs(id) {
+    const f = (G().gigs[id] || {}).found || Res.emptyFound();
+    return ["gap:" + id].concat(f.facts.map((x) => "fact:" + x), Object.values(f.trends).flat().map((x) => "trend:" + x));
+  }
+  function retry(id) {
+    const gig = gigOf(id), gs = G().gigs[id];
+    if (!gig || !gs || !canRetry(id)) return;
+    const keep = new Set(activeGigs().filter((x) => x !== id).flatMap(foundRefs));
+    const refs = foundRefs(id).filter((r) => !keep.has(r));
+    if (gs.result) G().rep = Math.max(0, G().rep - (gs.result.rep || 0));
+    const call = getWin(callKey(id));
+    if (call) { gs.line = false; closeWin(call); }
+    for (const k of ["ticket:" + id, "compare:" + id]) { const w = getWin(k); if (w) closeWin(w); }
+    Suite.forget(id, refs);
+    delete G().gigs[id];
+    if (focusId === id) focusId = activeGigs()[0] || null;
+    post(gig.poster.handle, "sys", "You started " + gig.short + " over from the start.");
+    tune({ fullness: repFullness() });
+    save();
+    Web.refreshTools();
+    paintTray();
+    // A posting is back on the board, ready to reply to; a follow-up or a
+    // business that came to you gets in touch again.
+    if (gig.kind === "listing") Web.visit(GL("/gig/" + id));
+    else { Web.repaint(); setTimeout(() => { checkChains(); checkInbound(); }, 1200); }
+    sound("tuck");
+  }
+  // Starting over throws work away, so it takes two clicks: the first one asks.
+  function confirmRetry(btn, id) {
+    if (btn.dataset.sure) { retry(id); return; }
+    const was = btn.innerHTML;
+    btn.dataset.sure = "1";
+    btn.classList.add("is-sure");
+    btn.textContent = "Sure? Click again to start over";
+    setTimeout(() => { if (btn.isConnected) { delete btn.dataset.sure; btn.classList.remove("is-sure"); btn.innerHTML = was; } }, 3500);
   }
 
   // A follow-up job from a client who liked the last one.
@@ -755,6 +802,7 @@ const Hustle = (() => {
       if (a === "reply") reply(id);
       if (a === "pitch") pitch(id);
       if (a === "call") openCall(id);
+      if (a === "retry") confirmRetry(el, id);
       if (a === "cut" && extra) {
         const tags = tagsForQuery(extra.q);
         Suite.cutoutFrom({ src: extra.src, label: extra.q, tags }, researchGig() || activeGigs()[0]);
@@ -826,7 +874,8 @@ const Hustle = (() => {
       else if (st === "briefing") act = "<p class=\"gl__note\">You replied, and you're on a call with " + esc(firstName(gig)) + ".</p>" +
         (getWin(callKey(id)) ? "" : '<button class="w98btn" data-hx="call" data-gig="' + id + '">Back to the call</button>');
       else if (st === "passed") act = "<p class=\"gl__note\">This gig went to someone else.</p>";
-      else if (st === "delivered") act = "<p class=\"gl__note\">You delivered this one: " + "★".repeat(G().gigs[id].result.stars) + "</p>";
+      else if (st === "delivered") act = "<p class=\"gl__note\">You delivered this one: " + "★".repeat(G().gigs[id].result.stars) + "</p>" +
+        '<button class="w98btn" data-hx="retry" data-gig="' + id + '">Try it again from the start</button>';
       else act = "<p class=\"gl__note\">You're on this job.</p>" + '<button class="w98btn" data-hx="ticket" data-gig="' + id + '">Open ticket</button>';
       return chrome(gig.title,
         "<h2>" + esc(gig.title) + "</h2>" +
@@ -951,65 +1000,141 @@ const Hustle = (() => {
       w = createWindow({ key: "pager", title: "PAGER", iconId: "pager", w: 620, h: 460, minW: 440, minH: 320, className: "w98--pager" });
       w.client.classList.add("client--flush");
       w.client.addEventListener("click", onPagerClick);
+      pagerMini = false;
+      foldPagerSoon();
     }
     renderPager();
     return revealWin(w);
   }
 
+  /* The Pager is a two-way pager, not another window of boxes: a plastic body
+   * with a status light, a backlit LCD with the inbox and the conversation on
+   * it, and four keys under the screen (◀ ▶ between conversations, ▲ ▼ to
+   * scroll). The light blinks amber while something is unread. */
+  const hhmm = (at) => { const d = new Date(at); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
+  const pagerThreads = () => Object.values(G().threads).sort((a, b) => lastAt(b) - lastAt(a));
+  // Each conversation as the person's initials (the system's as a star), with
+  // the name beside them while the rail is open.
+  const initials = (t) => {
+    if (t.handle === SYSTEM) return "★";
+    const w = String(t.name).match(/[A-Za-z0-9]+/g) || ["?"];
+    return (w.length > 1 ? w[0][0] + w[1][0] : w[0].slice(0, 2)).toUpperCase();
+  };
+  const arrow = (d) => '<svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true"><path fill="currentColor" d="' + d + '"/></svg>';
+  function railHTML(threads, selHandle, attr) {
+    return threads.map((x) => {
+      const n = x.handle === selHandle ? 0 : unread(x);
+      const live = Object.keys(H.gigs).some((id) => H.gigs[id].poster.handle === x.handle && stageOf(id) === "briefing");
+      return '<button class="pg__c' + (x.handle === selHandle ? " on" : "") + '" ' + attr + ' data-h="' + esc(x.handle) + '" title="' + esc(x.name) + '">' +
+        '<i class="pg__ini' + (live ? " live" : "") + '">' + esc(initials(x)) + "</i><span>" + esc(x.name) + "</span>" + (n ? "<b>" + n + "</b>" : "") + "</button>";
+    }).join("");
+  }
+  // The rail opens with the Pager, full names showing, then folds down to
+  // initials so the conversation gets the room. Point at it to peek; the pin
+  // keeps it open.
+  let pagerMini = false, pagerPinned = false, pagerFold = 0;
+  function foldPagerSoon() {
+    clearTimeout(pagerFold);
+    pagerFold = setTimeout(() => { if (pagerPinned) return; pagerMini = true; const el = document.querySelector(".w98--pager .pg"); if (el) el.classList.add("pg--mini"); }, 2400);
+  }
+
   function renderPager() {
     const w = getWin("pager");
     if (!w || !state) return;
-    const threads = Object.values(G().threads).sort((a, b) => lastAt(b) - lastAt(a));
+    const threads = pagerThreads();
     if (!pagerSel || !G().threads[pagerSel]) pagerSel = threads[0] ? threads[0].handle : null;
     const t = pagerSel ? G().threads[pagerSel] : null;
     const logEl = w.client.querySelector(".pg__log");
     const keepScroll = logEl && logEl.scrollTop + logEl.clientHeight < logEl.scrollHeight - 30 ? logEl.scrollTop : null;
+    const soft = (act, gig, label, wide) => '<button class="pg__soft' + (wide ? " pg__soft--wide" : "") + '" data-pg="' + act + '" data-gig="' + gig + '">' + esc(label) + "</button>";
 
-    let chat = '<div class="pg__empty">No conversations yet.</div>';
+    let chat = '<div class="pg__empty">NO MESSAGES</div>';
     if (t) {
       t.read = visibleMsgs(t).filter((m) => m.who !== "you").length;
       const gid = Object.keys(H.gigs).find((id) => H.gigs[id].poster.handle === t.handle && stageOf(id) === "briefing");
       const gs = gid ? G().gigs[gid] : null;
       const isTyping = typing(t);
-      const meter = gs ? '<span class="pg__meter" title="How much attention they have left">ATTENTION ' +
+      const meter = gs ? '<span class="pg__meter" title="How much attention they have left">ATTN ' +
         Array.from({ length: gs.dlg.max }, (_, i) => '<i class="' + (i < gs.dlg.patience ? "on" : "") + '"></i>').join("") + "</span>" : "";
+      let prev = null;
       const msgs = visibleMsgs(t).map((m) => {
+        // Who and when once, until the speaker or the minute changes.
+        const same = prev && prev.who === m.who && hhmm(prev.at) === hhmm(m.at);
+        prev = m;
         if (m.who === "sys") {
-          const btn = m.cta === "ticket" ? '<button class="w98btn" data-pg="ticket" data-gig="' + m.gig + '">Open ticket</button>'
-            : m.cta === "suite" ? '<button class="w98btn" data-pg="suite" data-gig="' + m.gig + '">Open Design Suite</button>'
-            : m.cta === "review" ? '<button class="w98btn" data-pg="ticket" data-gig="' + m.gig + '">Read the review</button>' : "";
-          return '<div class="pg__sys">' + esc(m.text) + (btn ? "<div>" + btn + "</div>" : "") + "</div>";
+          const btn = m.cta === "ticket" ? soft("ticket", m.gig, "Open ticket")
+            : m.cta === "suite" ? soft("suite", m.gig, "Open Design Suite")
+            : m.cta === "review" ? soft("ticket", m.gig, "Read the review") : "";
+          return '<div class="pg__sys"><span>' + esc(m.text) + "</span>" + (btn ? "<div>" + btn + "</div>" : "") + "</div>";
         }
-        return '<div class="pg__m pg__m--' + m.who + '"><b>' + (m.who === "you" ? esc(myName()) : esc(t.name)) + "</b><span>" + esc(m.text) +
-          (m.file ? '<em class="pg__file">📎 ' + esc(m.file) + "</em>" : "") + "</span></div>";
+        return '<div class="pg__m pg__m--' + m.who + (same ? " pg__m--more" : "") + '">' + (same ? "" : "<b>" + (m.who === "you" ? esc(myName()) : esc(t.name)) + "<i>" + hhmm(m.at) + "</i></b>") + "<span>" + esc(m.text) +
+          (m.file ? '<em class="pg__file">ATTACHED ' + esc(m.file) + "</em>" : "") + "</span></div>";
       }).join("");
       // The briefing happens on the call now; the thread keeps the transcript.
-      const opts = gs ? '<button class="w98btn pg__opt pg__opt--end" data-pg="call" data-gig="' + gid + '">Back to the call with ' + esc(t.name) + "</button>" : "";
+      const opts = gs ? soft("call", gid, "Back to the call with " + t.name, true) : "";
       chat = '<div class="pg__who"><b>' + esc(t.name) + '</b><span>' + esc(t.handle === SYSTEM ? "system" : t.site) + "</span>" + meter + "</div>" +
-        '<div class="pg__log">' + msgs + (isTyping ? '<div class="pg__typing">' + esc(t.name) + " is typing…</div>" : "") + "</div>" +
+        '<div class="pg__log">' + msgs + (isTyping ? '<div class="pg__typing">' + esc(t.name) + " is typing</div>" : "") + "</div>" +
         '<div class="pg__opts">' + (gs ? (isTyping ? '<span class="pg__wait">…</span>' : opts) : "") + "</div>";
     }
 
-    w.client.innerHTML = '<div class="pg">' +
-      '<div class="pg__top"><span class="pg__me">● online</span><span class="ml__spacer"></span><span>★ ' + G().rep + " · " + esc(Sc.tier(G().rep)) + "</span></div>" +
-      '<div class="pg__main"><div class="pg__list">' + threads.map((x) => {
-        const n = x === t ? 0 : unread(x);
-        const live = Object.keys(H.gigs).some((id) => H.gigs[id].poster.handle === x.handle && stageOf(id) === "briefing");
-        return '<button class="pg__c' + (x === t ? " on" : "") + '" data-pg="sel" data-h="' + esc(x.handle) + '"><i class="pg__dot' + (live ? " live" : "") + '"></i><span>' + esc(x.name) + "</span>" + (n ? "<b>" + n + "</b>" : "") + "</button>";
-      }).join("") + '</div><div class="pg__chat">' + chat + "</div></div></div>";
+    const waiting = threads.reduce((n, x) => n + (x === t ? 0 : unread(x)), 0);
+    const key = (act, d, title) => '<button class="pg__key" data-pg="' + act + '" title="' + title + '" aria-label="' + title + '">' + arrow(d) + "</button>";
+    w.client.innerHTML = '<div class="pg lcdv' + (pagerMini ? " pg--mini" : "") + (pagerPinned ? " pg--pinned" : "") + '">' +
+      '<div class="pg__brand"><i class="pg__led' + (waiting ? " pg__led--new" : "") + '" title="' + (waiting ? waiting + " unread" : "Online") + '"></i>' +
+        "<b>BEEPLINE</b><span>2X TWO-WAY</span></div>" +
+      '<div class="pg__lcd">' +
+        '<div class="pg__top"><span class="pg__sig" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="pg__me">ONLINE</span>' +
+          '<span class="ml__spacer"></span><span>★ ' + G().rep + " · " + esc(Sc.tier(G().rep)) + "</span></div>" +
+        '<div class="pg__main"><div class="pg__rail"><div class="pg__list">' +
+          '<button class="pg__pin" data-pg="rail" title="' + (pagerPinned ? "Fold the names away" : "Keep the names open") + '" aria-pressed="' + pagerPinned + '">' +
+            arrow(pagerPinned ? "M6 0v8L2 4z" : "M2 0v8l4-4z") + "</button>" +
+          railHTML(threads, t && t.handle, 'data-pg="sel"') + '</div></div><div class="pg__chat">' + chat + "</div></div>" +
+      "</div>" +
+      '<div class="pg__keys">' + key("prev", "M6 0v8L2 4z", "Previous conversation") + key("up", "M0 6h8L4 2z", "Scroll up") +
+        key("down", "M0 2h8L4 6z", "Scroll down") + key("next", "M2 0v8l4-4z", "Next conversation") + "</div>" +
+    "</div>";
 
     const log = w.client.querySelector(".pg__log");
-    if (log) log.scrollTop = keepScroll === null ? log.scrollHeight : keepScroll;
+    if (log) pinLog(log, keepScroll);
     paintTray();
   }
 
   const lastAt = (t) => (t.msgs.length ? t.msgs[t.msgs.length - 1].at : 0);
+
+  // A conversation stays on its newest line: at the bottom now (or at `at`,
+  // where you had scrolled up to), and at the bottom again whenever its box
+  // changes size (the caption above grows, the window docks), unless you have
+  // scrolled up to read.
+  function pinLog(el, at = null) {
+    el.scrollTop = at === null ? el.scrollHeight : at;
+    let pinned = at === null;
+    el.addEventListener("scroll", () => { pinned = el.scrollTop + el.clientHeight >= el.scrollHeight - 8; }, { passive: true });
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => { if (!el.isConnected) { ro.disconnect(); return; } if (pinned) el.scrollTop = el.scrollHeight; });
+    ro.observe(el);
+  }
 
   function onPagerClick(e) {
     const b = e.target.closest("[data-pg]");
     if (!b) return;
     const a = b.dataset.pg;
     if (a === "sel") { pagerSel = b.dataset.h; renderPager(); }
+    if (a === "rail") {
+      pagerPinned = !pagerPinned;
+      pagerMini = !pagerPinned;
+      clearTimeout(pagerFold);
+      renderPager();
+    }
+    // The keys under the screen.
+    if (a === "prev" || a === "next") {
+      const all = pagerThreads(), i = all.findIndex((x) => x.handle === pagerSel);
+      if (all.length) { pagerSel = all[(i + (a === "next" ? 1 : -1) + all.length) % all.length].handle; renderPager(); }
+    }
+    if (a === "up" || a === "down") {
+      const log = e.currentTarget.querySelector(".pg__log");
+      const still = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (log) log.scrollBy({ top: a === "down" ? 64 : -64, behavior: still ? "auto" : "smooth" });
+    }
     if (a === "ask") choose(b.dataset.gig, b.dataset.opt);
     if (a === "call") openCall(b.dataset.gig);
     if (a === "ticket") renderTicket(b.dataset.gig, true);
@@ -1035,8 +1160,9 @@ const Hustle = (() => {
   const callKey = (id) => "call:" + id;
   const personFor = (gig) => (H.people && H.people[gig.poster.handle]) || {};
   const firstName = (gig) => String(personFor(gig).name || gig.poster.name).split(" ")[0];
-  // 240 CSS pixels of picture: the 80x60 call at 3x, or 6x on a Retina screen.
-  const DOCK_W = 262;
+  // 240 CSS pixels of picture (the 80x60 call at 3x, or 6x on a Retina
+  // screen), inside the pager's plastic.
+  const DOCK_W = 278;
   const onLine = (id) => !!(G().gigs[id] && G().gigs[id].line && getWin(callKey(id)));
   const CONNECT_MS = 1100;   // the ring and the static before the picture comes up
 
@@ -1109,6 +1235,7 @@ const Hustle = (() => {
     if (!b) return;
     const id = b.dataset.gig, a = b.dataset.cl;
     if (a === "ask") choose(id, b.dataset.opt);
+    if (a === "thread") focusPager(b.dataset.h);
     if (a === "flip") flipGlass(id);
     if (a === "ticket") renderTicket(id, true);
     if (a === "compare") renderCompare(id, true);
@@ -1153,24 +1280,26 @@ const Hustle = (() => {
     const btn = (act, icon, label, title, off) => '<button class="w98btn w98btn--i cl__sm" data-cl="' + act + '" data-gig="' + id + '"' +
       (title ? ' title="' + esc(title) + '"' : "") + (off ? " disabled" : "") + ">" + icon + "<span>" + esc(label) + "</span></button>";
 
-    // Under the conversation: your questions, or what happens next.
+    // Under the conversation: your questions, or what happens next. While
+    // they speak the questions stay where they are, dimmed, so nothing under
+    // the conversation moves when they finish.
     let actions;
-    if (waiting) actions = '<p class="cl__wait">' + esc(name) + " is speaking…</p>";
-    else if (asking) {
-      actions = Mtg.available(gig.dialogue, st, clippedFacts(gs)).map((o) =>
-        '<button class="w98btn cl__opt' + (o.challenge ? " cl__opt--win" : "") + (o.end ? " cl__opt--end" : "") +
-        '" data-cl="ask" data-gig="' + id + '" data-opt="' + esc(o.id) + '">' +
+    if (asking) {
+      const opts = Mtg.available(gig.dialogue, waiting ? Object.assign({}, st, { speaking: 0 }) : st, clippedFacts(gs));
+      actions = '<div class="cl__oh">' + (waiting ? esc(name) + " is speaking…" : "Ask") + "</div>" + opts.map((o) =>
+        '<button class="cl__opt' + (o.challenge ? " cl__opt--win" : "") + (o.end ? " cl__opt--end" : "") +
+        '" data-cl="ask" data-gig="' + id + '" data-opt="' + esc(o.id) + '"' + (waiting ? " disabled" : "") + ">" +
         (o.challenge ? '<span class="cl__read">YOU READ THIS</span>' : "") + esc(o.ask) +
         (o.cost > 1 ? '<em class="cl__cost">costs ' + o.cost + "</em>" : "") + "</button>").join("");
     } else if (line) {
       actions = '<p class="cl__over">Clip what matters: they see what you find. Research time is how long they can stay.</p>' +
-        '<button class="w98btn cl__go" data-cl="done" data-gig="' + id + '">Hang up and make it →</button>';
+        '<button class="pg__soft pg__soft--wide cl__go" data-cl="done" data-gig="' + id + '">Hang up and make it →</button>';
     } else {
       actions = '<p class="cl__over">' + esc(
         st.reason === "bored" ? "They ran out of patience and hung up."
         : st.reason === "drifted" ? "The silences did it. They wrapped up on their own."
         : "Call ended. Time to make the work.") + "</p>" +
-        '<button class="w98btn cl__go" data-cl="ticket" data-gig="' + id + '">Open the ticket</button>';
+        '<button class="pg__soft pg__soft--wide cl__go" data-cl="ticket" data-gig="' + id + '">Open the ticket</button>';
     }
 
     // The buttons that belong to this part of the call.
@@ -1198,8 +1327,16 @@ const Hustle = (() => {
     }
 
     const pips = Array.from({ length: st.max }, (_, i) => '<i class="' + (i < st.patience ? "on" : "") + '"></i>').join("");
+    // Scrolled up to reread? Stay there, unless something new was said.
+    const was = w.client.querySelector(".cl__log");
+    const keep = was && was.scrollTop + was.clientHeight < was.scrollHeight - 8 ? was.scrollTop : null;
+    // The call is the pager's video mode: the picture on top, the same LCD as
+    // the Pager underneath, and the conversations folded to initials beside it.
     w.client.innerHTML =
-      '<div class="cl' + (line ? " cl--line" : "") + (!asking && !line ? " cl--over" : "") + '">' +
+      '<div class="cl lcdv pg--mini' + (line ? " cl--line" : "") + (!asking && !line ? " cl--over" : "") + '">' +
+        '<div class="pg__brand"><i class="pg__led' + (asking ? " pg__led--live" : line ? "" : " pg__led--off") + '" title="' +
+          (asking ? "On a call" : line ? "Still on the line" : "Call ended") + '"></i><b>BEEPLINE</b><span>2X · VIDEO</span></div>' +
+        '<div class="cl__screen">' +
         '<div class="cl__stage">' +
           '<canvas class="cl__feed" width="320" height="240" data-px="4"></canvas>' +
           (typeof Camera !== "undefined" && Camera.paintSelf ? '<canvas class="cl__me" width="320" height="240" data-px="4" data-max="80x60" title="You"></canvas>' : "") +
@@ -1214,14 +1351,22 @@ const Hustle = (() => {
             : line ? '<span class="cl__clock" data-hx-timer="' + id + '">' + esc(timerText(id)) + "</span>" : "") +
         "</div>" +
         '<div class="cl__said" data-cl-said></div>' +
+        "</div>" +
         (tools ? '<div class="cl__tools">' + tools + "</div>" : "") +
-        '<div class="cl__log">' + rows.slice(-60).join("") + "</div>" +
-        '<div class="cl__opts">' + actions + "</div>" +
+        '<div class="pg__lcd cl__lcd">' +
+          '<div class="pg__rail"><div class="pg__list">' + railHTML(pagerThreads(), gig.poster.handle, 'data-cl="thread"') + "</div></div>" +
+          '<div class="cl__talk">' +
+            '<div class="cl__log">' + rows.slice(-60).join("") + "</div>" +
+            '<div class="cl__opts' + (asking ? " cl__opts--ask" : "") + (waiting ? " cl__opts--wait" : "") + '">' + actions + "</div>" +
+          "</div>" +
+        "</div>" +
       "</div>";
 
+    const a = animOf(id), grew = rows.length !== a.rows;
+    a.rows = rows.length;
     const log = w.client.querySelector(".cl__log");
-    if (log) log.scrollTop = log.scrollHeight;
-    animOf(id).sig = callSig(gig, gs, st);
+    if (log) pinLog(log, keep === null || grew ? null : keep);
+    a.sig = callSig(gig, gs, st);
     paintCall(id);
   }
 
@@ -1396,6 +1541,7 @@ const Hustle = (() => {
           if (!res.ok) { const n = w.client.querySelector(".tk__msg"); if (n) n.textContent = res.reason; }
         }
         if (a === "search") { focusId = id; Web.visit(Sites.searchURL(b.dataset.q), siteForWeb(id, gig.poster.site)); }
+        if (a === "retry") confirmRetry(b, id);
       });
     }
     const revealed = new Set(gs.dlg ? gs.dlg.revealed : []);
@@ -1443,7 +1589,9 @@ const Hustle = (() => {
         '<span class="tk__stage tk__stage--' + (gs.stage || "none") + '">' + esc(gs.stage || "open") + "</span></header>" +
       '<div class="tk__time"><span data-hx-timer="' + id + '">' + timerText(id) + "</span>" + (gs.stage === "production" ? '<span class="tk__dim">Deliver from the suite, or here.</span>' : "") + "</div>" +
       '<div class="tk__body">' + body + "</div>" +
-      '<footer class="tk__foot"><span class="tk__msg"></span><span class="ml__spacer"></span>' + actions + "</footer></div>";
+      '<footer class="tk__foot">' + (canRetry(id) ? '<button class="w98btn tk__retry" data-tk="retry" title="The call, the research and the work, all again. A delivery\'s reputation goes back until you deliver again.">' +
+        (gs.stage === "delivered" ? "Try again from the start" : "Start over") + "</button>" : "") +
+        '<span class="tk__msg"></span><span class="ml__spacer"></span>' + actions + "</footer></div>";
     if (open) revealWin(w);
   }
 

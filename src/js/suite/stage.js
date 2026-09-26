@@ -63,14 +63,32 @@ const SuiteStage = (() => {
       return false;
     };
 
+    // What the open panels leave of the view. Each one is cut off along the
+    // side that leaves the board biggest; a panel that would leave too little
+    // (under 45% of the width or 40% of the height) is drawn over instead.
+    const FIT_M = 36;
+    const fitZoom = (a, doc) => Math.min((a.w - FIT_M * 2) / doc.w, (a.h - FIT_M * 2) / doc.h);
+    st.free = (doc) => {
+      let a = { x: 0, y: 0, w: st.w, h: st.h };
+      for (const c of (hooks.covered ? hooks.covered() : [])) {
+        const x0 = Math.max(a.x, c.x), y0 = Math.max(a.y, c.y), x1 = Math.min(a.x + a.w, c.x + c.w), y1 = Math.min(a.y + a.h, c.y + c.h);
+        if (x1 - x0 < 1 || y1 - y0 < 1) continue;
+        const cuts = [
+          { x: a.x, y: a.y, w: x0 - a.x, h: a.h }, { x: x1, y: a.y, w: a.x + a.w - x1, h: a.h },
+          { x: a.x, y: a.y, w: a.w, h: y0 - a.y }, { x: a.x, y: y1, w: a.w, h: a.y + a.h - y1 },
+        ].filter((k) => k.w >= st.w * 0.45 && k.h >= st.h * 0.4);
+        if (cuts.length) a = cuts.reduce((best, k) => (fitZoom(k, doc) > fitZoom(best, doc) ? k : best));
+      }
+      return a;
+    };
     st.fit = (doc) => {
       st.measure();
-      const m = 36;
-      let z = Math.min((st.w - m * 2) / doc.w, (st.h - m * 2) / doc.h);
+      const a = st.free(doc);
+      let z = fitZoom(a, doc);
       if (st.pixel) z = Math.max(1, Math.floor(z));
       else z = Math.max(Z.min, Math.min(4, Math.floor(z * 100) / 100));
       st.zoom = z;
-      st.x = Math.round((st.w - doc.w * z) / 2); st.y = Math.round((st.h - doc.h * z) / 2);
+      st.x = Math.round(a.x + (a.w - doc.w * z) / 2); st.y = Math.round(a.y + (a.h - doc.h * z) / 2);
       st.auto = true;
       if (hooks.view) hooks.view();
     };

@@ -129,7 +129,10 @@ Every step of a job is a small puzzle, and all of it happens on the desktop.
 4. **Make it** in the design suite with the cards you found, then **Deliver**.
 5. **The review** scores the work line by line — needs (70), limits (20), the gap
    (10), minus lateness — and reputation unlocks bonus suite tools, follow-up jobs
-   from happy clients, and businesses that come to you.
+   from happy clients, and businesses that come to you. **Try again from the start**
+   on the ticket (or the gig's page) replays a gig from the call: the reputation it
+   earned goes back until you deliver again, and the cards its research found leave
+   the tray.
 
 The rules are pure modules with tests: `hustle/dialogue.js`, `hustle/meeting.js`
 (the glass, the windows and the flips, wrapped around a dialogue tree),
@@ -181,31 +184,55 @@ an image scores nothing.
 
 ## The design suite
 
-Start menu → **Design Suite**, or **Open in Design Suite** on any brief. Apps are
-gated by the brief's discipline; scratch work gets all of them.
+Start menu → **Design Suite**, or **Open in Design Suite** on any brief. It is one
+tool with three modes around one canvas, switched in place from the tabs at the top.
+A job opens in the mode its brief is made in, and keeps a document in each.
 
-| App | For |
+| Mode | For |
 |---|---|
-| Banner | Free canvas: shapes, text, images, eyedropper |
-| Type | Wordmarks and specimens |
-| Pixel | True-resolution sprites; zoom and export by whole numbers only |
+| Vector | Marks, wordmarks, monograms, posters: rectangle, ellipse, polygon and star, line, the pen and its points, the shape builder, a mirror layer, and text you edit in place, bent into an arc or set along a path |
+| Pixel | True-resolution sprites: pencil, eraser, fill, shapes, a pen that lays down clean pixels, a marquee and stamps; zoom and export by whole numbers only |
 | Layout | A web page built from the same blocks client sites use, viewable in The Web. Click a block in the page to edit it; drop a card on a block to write it in |
-| Swatch | A six-colour palette with a WCAG contrast grid, sent to the drawing nearest the front |
-| Cutout | Wand and lasso selections that become object and colour cards |
+
+The canvas has rulers and a pasteboard, so work can hang past the edge and still be
+grabbed. Pull guides out of the rulers: where two across and two down cross, their box
+becomes a **focus grid**, split evenly when it is too big and carried on across the
+page. Smart guides and snapping line things up as you drag.
+
+Right-click a layer, the board, a page block or a card for what can be done to it,
+and a title bar or the desk for the window menus. In Pixel the right button rubs out,
+as it does in pixel editors, and double-clicking with Fill swaps that colour
+everywhere in the sprite.
+
+**Drawers** pull out of the canvas's edges and tuck back into tabs: **Cards** (the
+tray), **Swatch** (a palette with a WCAG contrast grid) and **Cutout** (wand and lasso
+selections that become object and colour cards). Each does what makes sense in the
+mode you are in. Slide a tab along its edge to move it, or pull its panel off the edge
+to float it.
 
 **Cards** are anything scavenged — colours, cut-out objects, shapes, typefaces,
 and trend / gap / fact notes. Drag one onto the canvas or a layer to apply it.
 Every application records the card on the document; that provenance is what
-Hustle will score against. Until the research minigames exist, **Client kit**
+Hustle scores against. In Studio, where there is no research, **Client kit**
 fills the tray from a client's theme, refs and site.
 
 **Save** writes a `.pxdoc` to the project's `02-process`; **Export PNG** writes
 to `04-final`, so suite output attaches to a reply like anything else. Bonus
-tools (gradient, pen, snap, align, mirror) are always on in Studio and unlock
+tools (gradient, snap, align, pixel mirror) are always on in Studio and unlock
 over time in Hustle.
 
-`npm test` runs the document model, card and cutout tests (`node:test`, no
-dependencies) — those modules are pure and never touch the DOM.
+**Lessons.** Tori L.'s six jobs (`hustle/tutorial.js`) are a chain that teaches the
+suite: a cart sign (shapes, colour, words), a menu board (guides and the focus grid),
+a mark (shapes, the mirror, the shape builder), a lid sticker (words on a curve, the
+pen), an app icon (Pixel) and her site (Layout). Each is a real brief, scored like any
+other, and each builds on the last: the sign goes on the menu, the mark on the
+sticker, the sticker on the site. The steps sit in a Lesson drawer in her words
+(`hustle/lessons.js`); the controls for the step you are on are ringed, **Show me**
+points at them, and a step ticks itself off when the work meets it.
+
+`npm test` runs the tests (`node:test`, no dependencies) for the pure modules: the
+document model, vector maths, guides, cards, cutout, lessons and the rest never
+touch the DOM.
 
 ## The loop
 

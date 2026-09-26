@@ -1,7 +1,7 @@
 # Bundled fonts
 
-Pixel Crossing bundles four typefaces so the app works with no network.
-All four are licensed under the SIL Open Font License, Version 1.1.
+Pixel Crossing bundles sixteen typefaces so the app works with no network.
+All sixteen are licensed under the SIL Open Font License, Version 1.1.
 The fonts are redistributed unmodified, as woff2 subsets from Google Fonts.
 
 | Family | Copyright | Source |
@@ -10,6 +10,18 @@ The fonts are redistributed unmodified, as woff2 subsets from Google Fonts.
 | Instrument Serif | Copyright 2022 The Instrument Serif Project Authors | https://github.com/Instrument/instrument-serif |
 | Silkscreen | Copyright 2001 Jason Kottke | https://github.com/googlefonts/silkscreen |
 | VT323 | Copyright 2011 The VT323 Project Authors | https://github.com/phoikoi/VT323 |
+| Abril Fatface | Copyright (c) 2011, TypeTogether (www.type-together.com), with Reserved Font Names "Abril" and "Abril Fatface" | https://github.com/librefonts/abrilfatface |
+| Bricolage Grotesque | Copyright 2022 The Bricolage Grotesque Project Authors | https://github.com/ateliertriay/bricolage |
+| Cinzel | Copyright 2020 The Cinzel Project Authors | https://github.com/NDISCOVER/Cinzel |
+| Cormorant | Copyright 2015 the Cormorant Project Authors | https://github.com/CatharsisFonts/Cormorant |
+| Fraunces | Copyright 2018 The Fraunces Project Authors | https://github.com/undercasetype/Fraunces |
+| Italiana | Copyright (c) 2011, Santiago Orozco (hi@typemade.mx), with Reserved Font Name "Italiana" | https://fonts.google.com/specimen/Italiana |
+| Monoton | Copyright (c) 2011 by vernon adams (vern@newtypography.co.uk), with Reserved Font Names "Monoton" | https://fonts.google.com/specimen/Monoton |
+| Pacifico | Copyright 2018 The Pacifico Project Authors | https://github.com/googlefonts/Pacifico |
+| Pinyon Script | Copyright 2024 The Pinyon Project Authors | https://github.com/SorkinType/Pinyon |
+| Shrikhand | Copyright (c) 2015 Jonny Pinhorn (jonpinhorn.typedesign@gmail.com) | https://github.com/jonpinhorn/shrikhand |
+| Syne | Copyright 2017 The Syne Project Authors | https://gitlab.com/bonjour-monde/fonderie/syne-typeface |
+| Unbounded | Copyright 2022 The Unbounded Project Authors | https://github.com/googlefonts/unbounded |
 
 The full licence text follows.
 

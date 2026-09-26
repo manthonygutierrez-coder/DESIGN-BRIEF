@@ -129,6 +129,32 @@ test("tutorial: every lesson points at real controls and knows when each step is
   assert.ok(L.problems([{ id: "x", say: "Hi", with: ["tool:rect"], check: { vibes: true } }]).length, "and a made-up check");
 });
 
+test("tutorial: a lesson with a size asks for it before anything is made", () => {
+  for (const [id, gig] of gigs) {
+    const size = gig.limits.find((l) => l.rule === "size");
+    if (!size) continue;
+    const i = gig.teach.findIndex((s) => s.check && s.check.size);
+    assert.ok(i >= 0, id + " teaches its size");
+    assert.deepEqual(gig.teach[i].check.size, [size.w, size.h], id + ": the size the brief asks for");
+    assert.ok(gig.teach[i].with.includes("size"), id + ": and points at the size menu");
+    assert.equal(gig.teach.findIndex((s) => s.check), i, id + ": first, so New never throws work away");
+  }
+});
+
+test("tutorial: no colour step asks for a colour the suite already starts with", () => {
+  // A new shape, new words and a new site's brand come out in these; a step
+  // they already meet ticks itself and teaches nothing.
+  const starts = [D.layer("rect").fill, D.layer("text").fill, D.site({}).brand, "#E0442B"];
+  for (const [id, gig] of gigs) {
+    for (const s of gig.teach) {
+      for (const k of ["fill", "textFill", "brand"]) {
+        if (!s.check || s.check[k] == null) continue;
+        for (const hex of starts) assert.ok(!C.colourTags(hex).includes(s.check[k]), id + "/" + s.id + ": " + hex + " is already " + s.check[k]);
+      }
+    }
+  }
+});
+
 /* The model answer to each job: what a player following the lesson would
  * make. It has to meet Tori's brief, and tick every step of the lesson. */
 function modelAnswer(id, gig, cards) {
