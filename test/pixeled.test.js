@@ -32,3 +32,39 @@ test("pixel: a curve laid down as pixels is one connected pixel line, with no do
   }
   assert.deepEqual(pts[0], [1, 10]); assert.deepEqual(pts[pts.length - 1], [10, 1]);
 });
+
+test("pixel-perfect: an L-shaped corner in a stroke is taken back, a straight run or a clean diagonal is not", () => {
+  assert.equal(P.perfectDrop([[0, 0], [1, 0], [1, 1]]), 1, "right then down doubles up at (1,0)");
+  assert.equal(P.perfectDrop([[0, 0], [0, 1], [1, 1]]), 1, "down then right too");
+  assert.equal(P.perfectDrop([[0, 0], [1, 0], [2, 0]]), -1, "a straight run keeps every pixel");
+  assert.equal(P.perfectDrop([[0, 0], [1, 1], [2, 2]]), -1, "so does a diagonal");
+  assert.equal(P.perfectDrop([[0, 0], [1, 0], [2, 1]]), -1, "a 2:1 step is not a corner");
+  assert.equal(P.perfectDrop([[5, 5], [6, 5]]), -1, "two pixels are too few to judge");
+});
+
+test("clean lines: Shift snaps to whole runs, the nearest ratio, in every direction", () => {
+  const runs = (pts) => {
+    const out = [];
+    let n = 1;
+    for (let i = 1; i < pts.length; i++) {
+      if (pts[i][1] === pts[i - 1][1]) n++; else { out.push(n); n = 1; }
+    }
+    return out.concat(n);
+  };
+  const two = P.cleanLine(0, 0, 9, 4);
+  assert.equal(two.ratio, "2:1");
+  assert.deepEqual(runs(two.pts), [2, 2, 2, 2, 2], "2-2-2, never Bresenham's 1-2-2-1");
+  assert.equal(P.cleanLine(0, 0, 10, 0).ratio, "flat");
+  assert.equal(P.cleanLine(3, 3, 3, -6).ratio, "upright");
+  assert.equal(P.cleanLine(0, 0, 7, 7).ratio, "1:1");
+  assert.equal(P.cleanLine(0, 0, -11, -4).ratio, "3:1", "up and to the left as well");
+  assert.equal(P.cleanLine(0, 0, 2, 4).ratio, "1:2");
+  assert.equal(P.cleanLine(0, 0, 2, 5).ratio, "1:3", "68 degrees is nearer 1:3 (72) than 1:2 (63)");
+  const l = P.cleanLine(4, 4, 4, 4);
+  assert.deepEqual(l.pts, [[4, 4]], "a click is one pixel");
+  for (const [x, y] of [[9, 4], [-9, 4], [9, -4], [-9, -4]]) {
+    const pts = P.cleanLine(0, 0, x, y).pts;
+    for (let i = 1; i < pts.length; i++) assert.ok(Math.abs(pts[i][0] - pts[i - 1][0]) <= 1 && Math.abs(pts[i][1] - pts[i - 1][1]) <= 1, "no gaps " + x + "," + y);
+  }
+});
+

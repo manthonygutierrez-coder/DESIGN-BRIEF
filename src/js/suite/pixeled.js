@@ -16,11 +16,11 @@ const SuitePixelEd = (() => {
   const Sh = typeof SuiteShapes !== "undefined" ? SuiteShapes : need("SuiteShapes", "./shapes.js");
   const R = typeof SuiteRender !== "undefined" ? SuiteRender : null;
   const TOOLS = [
-    { id: "pencil", icon: "t-pencil", label: "Pencil", key: "b" },
-    { id: "erase", icon: "t-erase", label: "Eraser", key: "e" },
+    { id: "pencil", icon: "t-pencil", label: "Pencil (Shift-click: a line from the last pixel; Alt-click: pick a colour)", key: "b" },
+    { id: "erase", icon: "t-erase", label: "Eraser (Shift-click: a line from the last pixel)", key: "e" },
     { id: "fill", icon: "t-fill", label: "Fill", key: "g" },
     { id: "pick", icon: "t-pick", label: "Pick a colour", key: "i" },
-    { id: "line", icon: "t-line", label: "Line", key: "l" },
+    { id: "line", icon: "t-line", label: "Line (Shift: clean steps, 1:1, 2:1, 3:1)", key: "l" },
     { id: "rect", icon: "t-rect", label: "Rectangle (Shift: square)", key: "r" },
     { id: "ellipse", icon: "t-ellipse", label: "Ellipse (Shift: circle)", key: "o" },
     { id: "pen", icon: "t-pen", label: "Pen: click and drag a curve, Enter lays it down in pixels", key: "p" },
@@ -45,6 +45,36 @@ const SuitePixelEd = (() => {
       if (e2 <= dx) { err += dx; y0 += sy; }
     }
     return out;
+  }
+  // Pixel-perfect: a freehand stroke never doubles up at a corner. Given the
+  // stroke's last pixels, the index of an L-shaped middle one to take back,
+  // or -1.
+  function perfectDrop(trail) {
+    const n = trail.length;
+    if (n < 3) return -1;
+    const a = trail[n - 3], b = trail[n - 2], c = trail[n - 1];
+    return Math.abs(a[0] - c[0]) === 1 && Math.abs(a[1] - c[1]) === 1 && (b[0] === a[0] || b[1] === a[1]) ? n - 2 : -1;
+  }
+  // A line toward (x1, y1) in clean pixel steps: straight, or runs of 1, 2 or 3
+  // along the long way for every step the short way, whichever angle is
+  // nearest the drag. Runs are whole from the first pixel (2-2-2, not
+  // Bresenham's 1-2-2-1), and the line goes as far as the drag along its
+  // long way.
+  const RATIOS = [[1, 0], [0, 1], [1, 1], [2, 1], [1, 2], [3, 1], [1, 3]];
+  function cleanLine(x0, y0, x1, y1) {
+    const dx = x1 - x0, dy = y1 - y0, sx = Math.sign(dx) || 1, sy = Math.sign(dy) || 1;
+    const want = Math.atan2(Math.abs(dy), Math.abs(dx));
+    let a = 1, b = 0, off = Infinity;
+    for (const [ra, rb] of RATIOS) {
+      const d = Math.abs(Math.atan2(rb, ra) - want);
+      if (d < off - 1e-9) { a = ra; b = rb; off = d; }
+    }
+    const across = a >= b, run = Math.max(a, b), len = across ? Math.abs(dx) : Math.abs(dy), pts = [];
+    for (let i = 0; i <= len; i++) {
+      const side = a && b ? Math.floor(i / run) : 0;
+      pts.push(across ? [x0 + sx * i, y0 + sy * side] : [x0 + sx * side, y0 + sy * i]);
+    }
+    return { pts, ratio: !a ? "upright" : !b ? "flat" : a + ":" + b };
   }
   function rectPts(x0, y0, x1, y1, filled) {
     const [a, b] = [Math.min(x0, x1), Math.max(x0, x1)], [c, d] = [Math.min(y0, y1), Math.max(y0, y1)];
@@ -117,7 +147,7 @@ const SuitePixelEd = (() => {
         "</div>" +
       "</div>";
     Object.assign(ed, {
-      tool: ed.tool || "pencil", fg: ed.fg || "#0A0A0A", filled: !!ed.filled, mx: !!ed.mx, my: !!ed.my, face: ed.face || 0,
+      tool: ed.tool || "pencil", fg: ed.fg || "#0A0A0A", filled: !!ed.filled, mx: !!ed.mx, my: !!ed.my, face: ed.face || 0, perfect: ed.perfect !== false,
       drag: null, pen: null, mask: null, float: null, stamp: null, grid: ed.grid !== false,
     });
     ed.opts = ed.body.querySelector(".sx__opts");
@@ -174,6 +204,26 @@ const SuitePixelEd = (() => {
     return out;
   }
   function paintPts(ed, pts, colour) { for (const [x, y] of mirrored(ed, pts)) D.setPx(ed.doc, x, y, colour); }
+  // A freehand stroke, pixel by pixel. It remembers what it painted over, so
+  // with pixel-perfect on, an L-shaped corner can go back to what it was.
+  function strokeTo(ed, d, pts) {
+    const ink = inkOf(ed), w = ed.doc.w;
+    for (const p of pts) {
+      const l = d.trail[d.trail.length - 1];
+      if (l && l[0] === p[0] && l[1] === p[1]) continue;
+      for (const [mx, my] of mirrored(ed, [p])) { const k = my * w + mx; if (!d.orig.has(k)) d.orig.set(k, D.getPx(ed.doc, mx, my) || ""); }
+      paintPts(ed, [p], ink);
+      d.trail.push(p);
+      if (ed.perfect) {
+        const i = perfectDrop(d.trail);
+        if (i >= 0) {
+          for (const [mx, my] of mirrored(ed, [d.trail[i]])) D.setPx(ed.doc, mx, my, d.orig.get(my * w + mx) || "");
+          d.trail.splice(i, 1);
+        }
+      }
+      if (d.trail.length > 3) d.trail.shift();
+    }
+  }
   const mirrorOK = (ed) => ed.bonus.includes("mirror");
 
   /* ── drawing ───────────────────────────────────────────── */
@@ -259,7 +309,7 @@ const SuitePixelEd = (() => {
     const d = ed.drag;
     if (d && d.mode === "shape") {
       const [x0, y0] = d.from, [x1, y1] = d.to;
-      if (ed.tool === "line") return linePts(x0, y0, x1, y1);
+      if (ed.tool === "line") return d.clean ? cleanLine(x0, y0, x1, y1).pts : linePts(x0, y0, x1, y1);
       if (ed.tool === "rect") return rectPts(x0, y0, x1, y1, ed.filled);
       if (ed.tool === "ellipse") return ellipsePts(x0, y0, x1, y1, ed.filled);
     }
@@ -327,7 +377,9 @@ const SuitePixelEd = (() => {
     ed.st.cv.setPointerCapture(e.pointerId);
     const t = ed.tool;
     if (t !== "select") commitFloat(ed, H);
-    if (t === "pick") { const c = D.getPx(doc, x, y); if (c) { ed.fg = c; H.status(ed, "Picked " + c); paintOpts(ed, H); } return; }
+    // Alt with any tool that paints: pick up the colour under it instead.
+    const painting = ["pencil", "erase", "fill", "line", "rect", "ellipse", "pen"].includes(t);
+    if (t === "pick" || (painting && e.altKey)) { const c = D.getPx(doc, x, y); if (c) { ed.fg = c; H.status(ed, "Picked " + c); paintOpts(ed, H); } return; }
     if (t === "fill") {
       // The second click of a double-click: leave the first one's record (what
       // it filled over) for the double-click to use.
@@ -337,7 +389,17 @@ const SuitePixelEd = (() => {
       for (const [px, py] of mirrored(ed, [[x, y]])) D.fill(doc, px, py, inkOf(ed));
       H.record(ed, pre); render(ed, H, {}); return;
     }
-    if (t === "pencil" || t === "erase") { paintPts(ed, [[x, y]], inkOf(ed)); ed.drag = { mode: "paint", pre, last: [x, y] }; draw(ed); return; }
+    if (t === "pencil" || t === "erase") {
+      // Shift-click: a straight line on from where the last stroke ended.
+      if (e.shiftKey && ed.lastPx && inDoc(ed, ed.lastPx[0], ed.lastPx[1])) {
+        paintPts(ed, linePts(ed.lastPx[0], ed.lastPx[1], x, y), inkOf(ed));
+        ed.lastPx = [x, y]; ed.rightInk = false;
+        H.record(ed, pre); render(ed, H, {}); return;
+      }
+      ed.drag = { mode: "paint", pre, last: [x, y], trail: [], orig: new Map() };
+      strokeTo(ed, ed.drag, [[x, y]]);
+      draw(ed); return;
+    }
     if (["line", "rect", "ellipse"].includes(t)) { ed.drag = { mode: "shape", pre, from: [x, y], to: [x, y] }; draw(ed); return; }
     if (t === "pen") {
       const p = ed.st.toDoc(e), q = { x: Math.floor(p.x) + 0.5, y: Math.floor(p.y) + 0.5 };
@@ -367,10 +429,14 @@ const SuitePixelEd = (() => {
     const d = ed.drag, [x, y] = cell(ed, e);
     if (ed.tool === "pen" && ed.pen && !d) return;
     if (!d) { ed.st.cv.style.cursor = ed.tool === "hand" ? "grab" : ed.tool === "select" && ed.mask && inMask(ed, x - (ed.float ? ed.float.dx : 0), y - (ed.float ? ed.float.dy : 0)) ? "move" : "crosshair"; return; }
-    if (d.mode === "paint") { paintPts(ed, linePts(d.last[0], d.last[1], x, y), inkOf(ed)); d.last = [x, y]; draw(ed); return; }
+    if (d.mode === "paint") { strokeTo(ed, d, linePts(d.last[0], d.last[1], x, y).slice(1)); d.last = [x, y]; draw(ed); return; }
     if (d.mode === "shape") {
       let [x1, y1] = [x, y];
       if (e.shiftKey && ed.tool !== "line") { const m = Math.max(Math.abs(x1 - d.from[0]), Math.abs(y1 - d.from[1])); x1 = d.from[0] + Math.sign(x1 - d.from[0] || 1) * m; y1 = d.from[1] + Math.sign(y1 - d.from[1] || 1) * m; }
+      const clean = e.shiftKey && ed.tool === "line";
+      if (clean) H.status(ed, "Clean steps: " + cleanLine(d.from[0], d.from[1], x1, y1).ratio + ". Let go of Shift for any angle.");
+      else if (d.clean) H.status(ed, "");
+      d.clean = clean;
       d.to = [x1, y1]; draw(ed); return;
     }
     if (d.mode === "pull") {
@@ -387,7 +453,7 @@ const SuitePixelEd = (() => {
     const d = ed.drag;
     ed.drag = null;
     if (!d) return;
-    if (d.mode === "paint") { ed.rightInk = false; H.record(ed, d.pre); render(ed, H, {}); return; }
+    if (d.mode === "paint") { ed.lastPx = d.last; ed.rightInk = false; H.record(ed, d.pre); render(ed, H, {}); return; }
     if (d.mode === "shape") { paintPts(ed, previewPts(Object.assign({}, ed, { drag: d, pen: null, stamp: null })), inkOf(ed)); ed.rightInk = false; H.record(ed, d.pre); H.sound("layer"); render(ed, H, {}); return; }
     if (d.mode === "marquee") {
       const [x0, y0, x1, y1] = d.box, w = ed.doc.w;
@@ -582,6 +648,8 @@ const SuitePixelEd = (() => {
         (ed.stamp ? '<button class="sx__tb" data-o="stamp">Stamp it</button>' : '<span class="sx__ohint">Click where the words go</span>') + '<span class="sx__osep"></span>';
     }
     if (ed.tool === "pen") h += '<span class="sx__ohint">Click, or drag for a curve · Enter lays the line down in pixels</span><span class="sx__osep"></span>';
+    if (ed.tool === "pencil" || ed.tool === "erase") h += '<button class="sx__tb' + (ed.perfect ? " on" : "") + '" data-o="perfect" aria-pressed="' + ed.perfect +
+      '" title="Pixel-perfect: a freehand stroke never doubles up at a corner">Pixel-perfect</button><span class="sx__osep"></span>';
     if (ed.mask) h += '<span class="sx__olab">SELECTION</span>' + ib("sel:paint", "t-fill", "Recolour what's drawn in it") + ib("sel:fillsel", "f-rect", "Fill it") + ib("sel:clear", "l-del", "Clear it (Del)") + ib("sel:card", "card", "Make it a card") + ib("sel:none", "none", "Deselect (Esc)") + '<span class="sx__osep"></span>';
     if (mirrorOK(ed)) h += ib("mx", "mirror", "Mirror left to right (X)", ed.mx) + ib("my", "mirror-h", "Mirror top to bottom", ed.my) + '<span class="sx__osep"></span>';
     const f = ed.st.focus();
@@ -604,6 +672,7 @@ const SuitePixelEd = (() => {
       }
       const o = t.dataset.o;
       if (o === "outline" || o === "filled") { ed.filled = o === "filled"; paintOpts(ed, H); }
+      if (o === "perfect") { ed.perfect = !ed.perfect; paintOpts(ed, H); H.sound("tool"); }
       if (o === "mx") { ed.mx = !ed.mx; render(ed, H, {}); }
       if (o === "my") { ed.my = !ed.my; render(ed, H, {}); }
       if (o === "grid") { ed.grid = !ed.grid; render(ed, H, {}); }
@@ -635,7 +704,7 @@ const SuitePixelEd = (() => {
     });
   }
 
-  return { mount, TOOLS, linePts, rectPts, ellipsePts, curvePts };
+  return { mount, TOOLS, linePts, rectPts, ellipsePts, curvePts, perfectDrop, cleanLine };
 })();
 
 if (typeof module !== "undefined") module.exports = SuitePixelEd;

@@ -200,9 +200,11 @@ becomes a **focus grid**, split evenly when it is too big and carried on across 
 page. Smart guides and snapping line things up as you drag.
 
 Right-click a layer, the board, a page block or a card for what can be done to it,
-and a title bar or the desk for the window menus. In Pixel the right button rubs out,
-as it does in pixel editors, and double-clicking with Fill swaps that colour
-everywhere in the sprite.
+and a title bar or the desk for the window menus. Pixel keeps pixel artists' habits:
+the right button rubs out, Alt picks a colour, the pencil is pixel-perfect (a stroke
+never doubles up at a corner), Shift-click draws a line on from the last pixel, Shift
+keeps the Line tool to clean steps (1:1, 2:1, 3:1), and double-clicking with Fill
+swaps that colour everywhere in the sprite.
 
 **Drawers** pull out of the canvas's edges and tuck back into tabs: **Cards** (the
 tray), **Swatch** (a palette with a WCAG contrast grid) and **Cutout** (wand and lasso
