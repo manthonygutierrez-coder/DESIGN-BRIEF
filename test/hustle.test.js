@@ -204,12 +204,31 @@ test("content: every need can be met with what the gig hands you", () => {
         assert.ok(canType, id + ": need " + n.id + " asks for words in an app without text");
         assert.ok(!n.text.every((s) => docName.includes(s.toLowerCase())), id + ": need " + n.id + " is not met by the document's own name");
       }
+      if (n.file) {
+        assert.ok(app.mode !== "layout", id + ": need " + n.id + " names a file, and a site is not a file");
+        assert.ok(!n.file.every((s) => docName.includes(s.toLowerCase())), id + ": need " + n.id + " is not met by the name it starts with");
+      }
       if (n.blocks) assert.equal(app.mode, "layout", id + ": need " + n.id + " asks for blocks outside Layout");
     }
     for (const l of gig.limits.filter((x) => x.rule === "size")) {
       assert.ok(app.presets.some(([, w, h]) => w === l.w && h === l.h), id + ": " + l.w + "×" + l.h + " is a " + gig.app + " preset");
     }
   }
+});
+
+test("score: words count on the work, not in the file's name", () => {
+  const gig = { needs: [{ id: "names", label: "Both names", text: ["toma", "kiyoshi"] }, { id: "file", label: "banner.gif", file: ["banner.gif"] }], limits: [] };
+  const doc = D.create({ w: 728, h: 90, name: "toma kiyoshi banner.gif" });
+  D.add(doc, D.layer("rect", { fill: "#FF7A1A" }));
+  const needs = () => Score.score({ gig, doc, cards: [] }).lines.filter((l) => l.kind === "need").map((l) => l.ok);
+  assert.deepEqual(needs(), [false, true], "typing the words into the file's name meets nothing");
+  D.add(doc, D.layer("text", { text: "Toma × Kiyoshi" }));
+  assert.deepEqual(needs(), [true, true]);
+  // A site's name is its masthead: in Layout it is on the page.
+  const site = D.create({ mode: "layout", name: "The Baton Pass" });
+  D.addBlock(site, { t: "lede", p: "A fan site." });
+  const r = Score.score({ gig: { needs: [{ label: "Name", text: ["the baton pass"] }], limits: [] }, doc: site, cards: [] });
+  assert.equal(r.lines[0].ok, true);
 });
 
 test("score: a rebrand can rule out an old colour, and a franchise a word", () => {

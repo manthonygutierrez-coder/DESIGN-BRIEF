@@ -58,7 +58,7 @@ test("normalize rejects hostile or malformed content", () => {
     layers: [
       { type: "image", src: "https://evil.example/x.png" },
       { type: "script", src: "x" },
-      { type: "text", text: "hi", font: "x;}</style><script>", weight: 900 },
+      { type: "text", text: "hi", font: "x;}</style><script>", weight: 950 },
       { type: "path", d: "M0 0 javascript:alert(1)" },
       { type: "rect", fill: { a: "#000000", b: "#ffffff", dir: "v" } },
     ],
@@ -84,4 +84,23 @@ test("round trip through serialize", () => {
   const back = D.parse(D.serialize(doc));
   assert.deepEqual(back.blocks.map((b) => b.t), ["lede", "prose"]);
   assert.deepEqual(D.cardsUsed(back), ["k1"]);
+});
+
+test("resizing keeps the work where it was, around the centre", () => {
+  const doc = D.create({ w: 600, h: 400 });
+  const l = D.add(doc, D.layer("rect", { x: 250, y: 150, w: 100, h: 100 }));
+  assert.ok(D.resize(doc, 800, 600));
+  assert.deepEqual([doc.w, doc.h, l.x, l.y], [800, 600, 350, 250], "still centred");
+  assert.equal(D.resize(doc, 800, 600), false, "same size, nothing to do");
+
+  const px = D.create({ mode: "pixel", w: 4, h: 4 });
+  D.setPx(px, 1, 1, "#FF0000"); D.setPx(px, 2, 2, "#00FF00");
+  D.resize(px, 8, 8);
+  assert.equal(D.getPx(px, 3, 3), "#FF0000");
+  assert.equal(D.getPx(px, 4, 4), "#00FF00");
+  D.resize(px, 2, 2);
+  assert.deepEqual([D.getPx(px, 0, 0), D.getPx(px, 1, 1)], ["#FF0000", "#00FF00"], "cropped around the centre");
+
+  const site = D.create({ mode: "layout" });
+  assert.equal(D.resize(site, 10, 10), false, "a page has no canvas size to change");
 });

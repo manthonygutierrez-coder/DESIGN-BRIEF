@@ -12,6 +12,8 @@
  *   snap     a title bar dragged to the left or right edge takes that half of
  *            the desk; to the top edge, all of it
  *   pair     two windows sharing the desk, the first at its own width
+ *   dock     a narrow window down one side at full height, the rest of the
+ *            desk left for another: a call beside the page it is about
  *   resize   dragging any edge or corner, within minimum sizes and the desk
  */
 
@@ -111,6 +113,16 @@ const WinGeom = (() => {
     ];
   }
 
+  // Unlike a pair, a docked window keeps its own width however narrow it is
+  // (up to 45% of the desk), so a slim panel stays slim. Returns [docked, rest].
+  function dock(desk, w, side) {
+    const w1 = Math.round(clamp(w, 120, desk.w * 0.45));
+    const h = desk.h - GAP * 2;
+    const docked = { x: side === "left" ? GAP : desk.w - GAP - w1, y: GAP, w: w1, h };
+    const rest = { x: side === "left" ? GAP * 2 + w1 : GAP, y: GAP, w: desk.w - w1 - GAP * 3, h };
+    return [docked, rest];
+  }
+
   /* start: the rect when the drag began; dir: some of n, s, e, w;
    * dx, dy: how far the pointer has moved; min: { w, h }. */
   function resize(start, dir, dx, dy, min, desk) {
@@ -129,7 +141,7 @@ const WinGeom = (() => {
     return { x, y, w, h };
   }
 
-  return { overlap, place, cascade, tile, snapZone, snapRect, pair, resize, GAP };
+  return { overlap, place, cascade, tile, snapZone, snapRect, pair, dock, resize, GAP };
 })();
 
 if (typeof module !== "undefined") module.exports = WinGeom;

@@ -61,15 +61,47 @@ const Web = (() => {
       typedHistory.unshift(page.url);
       typedHistory = typedHistory.slice(0, 12);
     }
-    paint(page);
+    arrive(page);
+  }
+
+  /* A page takes a moment to arrive: the address changes at once, the
+   * throbber turns, the status bar fills, and then it draws in. A short beat
+   * (a little longer for a heavy page), never long enough to cost a research
+   * clock anything, and none at all when less motion is asked for. A repaint
+   * of the page you are on is not a visit, and stays instant. */
+  let loading = 0, loadTimer = 0;
+  const loadMs = (page) => (reduced ? 0 : Math.min(600, 220 + Math.round(String(page.html || "").length / 240)));
+  function arrive(page){
+    const w = getWin(key());
+    if (!w) return;
+    const ms = loadMs(page), ie = w.client.querySelector(".ie"), token = ++loading;
+    clearTimeout(loadTimer);
+    if (!ms){ paint(page); return; }
+    ie.classList.add("ie--loading");
+    ie.style.setProperty("--load-ms", ms + "ms");
+    w.client.querySelector(".ie__url").value = page.url;
+    w.client.querySelector(".ie__msg").textContent = "Opening page " + page.url + "\u2026";
+    loadTimer = setTimeout(() => {
+      if (token !== loading) return;
+      ie.classList.remove("ie--loading");
+      paint(page, true);
+      uiSound("loaded");
+    }, ms);
+  }
+  function stopLoading(){
+    if (!loadTimer) return false;
+    clearTimeout(loadTimer); loadTimer = 0; loading++;
+    const ie = el(".ie");
+    if (ie) ie.classList.remove("ie--loading");
+    return true;
   }
 
   function home(){ return homeURL || Sites.home(); }
   function currentURL(){ return cursor >= 0 ? hist[cursor] : null; }
 
-  function back(){ if (cursor > 0){ cursor--; paint(Sites.resolve(hist[cursor], ctx)); } }
-  function forward(){ if (cursor < hist.length - 1){ cursor++; paint(Sites.resolve(hist[cursor], ctx)); } }
-  function reload(){ if (cursor >= 0) paint(Sites.resolve(hist[cursor], ctx)); }
+  function back(){ if (cursor > 0){ cursor--; arrive(Sites.resolve(hist[cursor], ctx)); } }
+  function forward(){ if (cursor < hist.length - 1){ cursor++; arrive(Sites.resolve(hist[cursor], ctx)); } }
+  function reload(){ if (cursor >= 0) arrive(Sites.resolve(hist[cursor], ctx)); }
 
   /* ── window ──────────────────────────────────────────── */
   function open(){
@@ -84,11 +116,12 @@ const Web = (() => {
     w.client.innerHTML =
       '<div class="ie">' +
         '<div class="ie__bar">' +
-          '<button class="iebtn" data-b="back" title="Back">&#9664;</button>' +
-          '<button class="iebtn" data-b="fwd" title="Forward">&#9654;</button>' +
-          '<button class="iebtn" data-b="stop" title="Stop">&#10005;</button>' +
-          '<button class="iebtn" data-b="reload" title="Refresh">&#8635;</button>' +
-          '<button class="iebtn" data-b="home" title="Home">&#8962;</button>' +
+          '<button class="iebtn" data-b="back" title="Back">' + iconSVG("nav-back", 16) + '</button>' +
+          '<button class="iebtn" data-b="fwd" title="Forward">' + iconSVG("nav-fwd", 16) + '</button>' +
+          '<button class="iebtn" data-b="stop" title="Stop">' + iconSVG("nav-stop", 16) + '</button>' +
+          '<button class="iebtn" data-b="reload" title="Refresh">' + iconSVG("nav-reload", 16) + '</button>' +
+          '<button class="iebtn" data-b="home" title="Home">' + iconSVG("nav-home", 16) + '</button>' +
+          '<span class="ie__throb" aria-hidden="true"><i></i></span>' +
         '</div>' +
         '<div class="ie__addr">' +
           '<label>Address</label>' +
@@ -102,7 +135,7 @@ const Web = (() => {
         '<div class="ie__favs"><span class="ie__favlbl">Resources</span><span class="ie__favlist"></span></div>' +
         '<div class="ie__tools" hidden></div>' +
         '<div class="ie__view" tabindex="0"></div>' +
-        '<div class="ie__status"><span class="ie__msg">Done</span><span class="ie__zone">Internet zone</span></div>' +
+        '<div class="ie__status"><span class="ie__msg">Done</span><span class="ie__prog" aria-hidden="true"><i></i></span><span class="ie__zone">Internet zone</span></div>' +
       '</div>';
 
     w.client.addEventListener("click", onClick);
@@ -126,13 +159,14 @@ const Web = (() => {
     return w ? w.client.querySelector(sel) : null;
   }
 
-  function paint(page){
+  function paint(page, arrived){
     const w = getWin(key());
     if (!w) return;
     w.client.querySelector(".ie__url").value = page.url;
     const view = w.client.querySelector(".ie__view");
     view.innerHTML = page.html;
     view.scrollTop = 0;
+    if (arrived){ view.classList.remove("ie__view--in"); void view.offsetWidth; view.classList.add("ie__view--in"); }
     w.setTitle(page.title + " — The Web");
     w.client.querySelector(".ie__msg").textContent = "Done";
     w.client.querySelector('[data-b="back"]').disabled = cursor <= 0;
@@ -210,7 +244,7 @@ const Web = (() => {
       else if (a === "fwd") forward();
       else if (a === "reload") reload();
       else if (a === "home") go(home());
-      else if (a === "stop") { const m = el(".ie__msg"); if (m) m.textContent = "Stopped"; }
+      else if (a === "stop") { stopLoading(); const m = el(".ie__msg"); if (m) m.textContent = "Stopped"; }
       else if (a === "go") go(el(".ie__url").value);
       else if (a === "drop"){
         const ul = el(".ie__hist");

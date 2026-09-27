@@ -214,7 +214,7 @@ const Camera = (() => {
     { id: "call", say: ["The sand only runs when nobody's talking. I ask before it empties.",
         "What it's for, what it has to say, what they'd hate. Money can wait. Money costs patience."],
       lit: ".cl__glass", until: (p) => past(p, ...LATER) },
-    { id: "read", say: ["Call's done, and research is on the clock.",
+    { id: "read", say: ["That's the brief, and research is on the clock. If I closed it well, they stay on while I look.",
         "Their site first. Clipping's on, so I click the passage that answers what they asked."],
       act: "site", lit: '[data-hx="clip"]', until: (p) => p.facts > 0 || past(p, "production", "delivered") },
     { id: "rivals", say: ["That's a card. It's waiting for me in the Design Suite.",

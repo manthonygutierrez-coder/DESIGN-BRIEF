@@ -14,12 +14,16 @@ const MusicTracks = {
     { id: "hub", file: "1-hub", title: "Hub", where: "the desktop, mail and the gig board",
       adds: ["electric piano, a lazy bass and vinyl crackle", "soft drums, swung", "the tune, played lazily", "a warm pad: the whole band"],
       coda: { chord: "ep", bass: "sub", kick: "kickSoft", up: 0, bassUp: 0 } },
-    { id: "hunt", file: "2-hunt", title: "Hunt", where: "the browser, the gig ticket and comparing rivals",
+    { id: "hunt", file: "2-hunt", title: "Hunt", where: "the browser, while you look for work",
       adds: ["plucked bass and a curious marimba", "shaker, kick and rim", "chord stabs on the off-beats", "the tune on a pulse lead"],
       coda: { chord: "mallet", bass: "pluck", kick: "kick", up: 12, bassUp: 12 } },
     { id: "studio", file: "3-studio", title: "Studio", where: "the Design Suite",
       adds: ["a pulse arpeggio and a triangle bass", "four-on-the-floor chip drums", "the tune on a square lead", "an echo of it a third below"],
       coda: { chord: "pulse25", bass: "tri", kick: "kickChip", up: 12, bassUp: 0 } },
+    // Numbered last so the three older files keep their names.
+    { id: "case", file: "4-case", title: "Case", where: "the browser, the ticket and comparing rivals, while you research a job",
+      adds: ["a walking upright bass and brushes in half time", "a soft kick and vibes quoting the tune", "the key's minor chords held over its major ones", "the tune's long notes, an octave down"],
+      coda: { chord: "vibes", bass: "upright", kick: "kickSoft", up: 0, bassUp: 0 } },
   ],
 };
 

@@ -279,8 +279,8 @@ src/
       camera.js    your camera: the wardrobe, room pieces and palettes (pure, tested)
       camview.js   the camera builder, the setup guide, and you in the corner of a call
     music/
-      theme.js     the score: one theme in D, arranged for the hub, the hunt and the
-                   studio, with the mix rules for reputation and deadlines (pure, tested)
+      theme.js     the score: one theme in D, arranged for the hub, the hunt, the case
+                   and the studio, with the mix rules for reputation and deadlines (pure, tested)
       synth.js     the instruments and the mixing desk, for the game and for files alike
       music.js     plays it live through Web Audio on the audio clock; the tray speaker
 ```
@@ -289,10 +289,12 @@ src/
 
 The desk has music, synthesized as it plays (no audio files, so it stays inside the
 page's security policy). Which window is in front picks the arrangement: the desktop,
-mail and the board get the mellow **hub**, the browser, ticket and rival comparison get
-the curious **hunt**, and the Design Suite gets the driving chiptune **studio**. All
-three share a key, tempo and sixteen-bar form, so switches wait for the next bar line
-and crossfade on the beat. On top of that:
+mail and the board get the mellow **hub**, the browser gets the curious **hunt** while
+you look for work, and the browser, ticket and rival comparison get the pensive
+**case** while a job is being researched: a walking upright bass, brushes in half time,
+vibes, and the key's minor chords laid over its major ones. The Design Suite gets the
+driving chiptune **studio**. All four share a key, tempo and sixteen-bar form, so
+switches wait for the next bar line and crossfade on the beat. On top of that:
 
 - **A call** muffles the music and turns it down, the moment they pick up.
 - **A deadline** brings in a ticking clock and a floor tom as the research or

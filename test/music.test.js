@@ -49,7 +49,35 @@ test("the front window picks the arrangement; your camera is not a place", () =>
     "w98 w98--call": "hub", "w98 w98--cam": "hub", "w98": "hub", "": "hub", "w98 w98--camguide on": null };
   for (const [cls, zone] of Object.entries(cases)) assert.equal(M.zoneOf(cls), zone, JSON.stringify(cls));
   const m = M.mix({ zone: "hunt" });
-  assert.deepEqual([m.tiers.hub, m.tiers.hunt, m.tiers.studio], [0, 1, 0], "one arrangement at a time");
+  assert.deepEqual([m.tiers.hub, m.tiers.hunt, m.tiers.case, m.tiers.studio], [0, 1, 0, 0], "one arrangement at a time");
+});
+
+test("the web is the hunt for work, until a job is being researched: then it is the case", () => {
+  const research = { research: true };
+  for (const cls of ["w98 w98--web on", "w98 w98--ticket", "w98 w98--compare"]) {
+    assert.equal(M.zoneOf(cls), "hunt", cls + " while looking for work");
+    assert.equal(M.zoneOf(cls, research), "case", cls + " while researching");
+  }
+  assert.equal(M.zoneOf("w98 w98--suite", research), "studio", "making the work is still the studio");
+  assert.equal(M.zoneOf("w98 w98--call", research), "hub");
+  assert.equal(M.zoneOf("w98 w98--camguide", research), null);
+  const m = M.mix({ zone: "case" });
+  assert.deepEqual([m.tiers.hub, m.tiers.hunt, m.tiers.case, m.tiers.studio], [0, 0, 1, 0]);
+});
+
+test("the case leans minor over the same chords, and walks", () => {
+  for (const [name, tri] of Object.entries(M.SHADE)) {
+    assert.ok(M.CHORDS[name], name + " is a chord of the form");
+    assert.ok(tri.every(M.inKey), name + "'s shade is in the key");
+    const [a, b, c] = tri;
+    assert.equal(b - a, 3, name + ": a minor third at the bottom (minor or diminished)");
+    assert.ok(c - b === 4 || c - b === 3, name + ": then a major or minor third");
+  }
+  for (let bar = 0; bar < M.BARS; bar++) {
+    assert.deepEqual(M.notes("case", "upright", bar).map(([s]) => s), [0, 4, 8, 12], "the bass walks in quarters, bar " + bar);
+    assert.equal(M.notes("case", "upright", bar)[0][2], M.chordAt(bar).root, "and starts on the root");
+    assert.ok(M.notes("case", "brush", bar).some(([s, , , v]) => s === 8 && v > 0.8), "the swish lands on three, bar " + bar);
+  }
 });
 
 test("a deadline brings the clock in, and a job left late settles down", () => {
@@ -110,4 +138,17 @@ test("every sound the score asks for is one the player can make", () => {
   for (const tier of ALL_TIERS) for (const p of M.partsOf(tier)) assert.ok(patches.has(p.patch), tier + "." + p.id + " wants " + p.patch);
   for (const name of ["clip-hit", "clip-dupe", "clip-miss", "chime", "deliver"])
     for (const [, , , , patch] of M.sfxNotes(name, 0, { stars: 5 })) assert.ok(patches.has(patch), name + " wants " + patch);
+});
+
+test("every interface sound, the suite's included, is in key and playable", () => {
+  const patches = new Set(Synth.NAMES);
+  assert.ok(["tool", "layer", "drop", "drawer", "tuck", "grid"].every((n) => M.UI_SOUNDS.has(n)), "the suite's sounds can be switched off with the rest");
+  for (const name of M.UI_SOUNDS) {
+    assert.ok(M.sfxNotes(name, 0).length, name + " makes a sound");
+    for (let bar = 0; bar < M.BARS; bar++) for (const [, , m, v, patch] of M.sfxNotes(name, bar)) {
+      assert.ok(M.inKey(m), name + " " + m + " in bar " + bar);
+      assert.ok(v <= 0.3, name + " is quiet");
+      assert.ok(patches.has(patch), name + " wants " + patch);
+    }
+  }
 });

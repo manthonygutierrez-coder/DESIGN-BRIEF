@@ -20,6 +20,10 @@ function esc(s){ return String(s).replace(/[&<>]/g, (m) => ({"&":"&amp;","<":"&l
 // label shown in the pixel face takes a slash instead.
 function pixelLabel(s){ return String(s).replace(" & ", " / "); }
 
+// The interface's own small sounds: music.js plays them in the key of the bar,
+// if the music is up and the player has not switched them off.
+function uiSound(name){ if (typeof Music !== "undefined" && Music.ui) Music.ui(name); }
+
 /* ── shortcuts ─────────────────────────────────────────── */
 function addShortcut(key, label, iconId, onOpen){
   if (shortcuts.has(key)) return shortcuts.get(key);
@@ -88,6 +92,7 @@ const shownWins = () => [...wins.values()].filter((w) => !isMin(w))
   .sort((a, b) => (Number(a.el.style.zIndex) || 0) - (Number(b.el.style.zIndex) || 0));
 
 function minimizeWin(w){
+  uiSound("min");
   w.el.classList.add("min");
   w.tb.classList.remove("on");
   if (w === activeWin) announceFocus();
@@ -171,6 +176,7 @@ function createWindow(opts){
   wins.set(key, w);
   w.setTitle(title);
   focusWin(w);
+  uiSound("open");
   return w;
 }
 
@@ -189,7 +195,16 @@ function toggleMax(w){
 
 function closeWin(w){
   clearWinTimers(w);
+  if (!w.quietClose) uiSound("close");            // a window with its own goodbye (a call) sets quietClose
   if (typeof w.onClose === "function") { try { w.onClose(w); } catch (e) { console.error(e); } }
+  // A docked window's neighbour gets the whole width back, if it is still
+  // exactly where the dock put it (moved or resized since, it stays put).
+  const d = w.dock;
+  if (d && wins.get(d.other.key) === d.other && !isMin(d.other)){
+    const r = rectOf(d.other);
+    if (r.x === d.rect.x && r.y === d.rect.y && r.w === d.rect.w && r.h === d.rect.h)
+      setRect(d.other, { x: WinGeom.GAP, y: d.rect.y, w: deskSize().w - WinGeom.GAP * 2, h: d.rect.h });
+  }
   w.el.remove(); w.tb.remove();
   wins.delete(w.key);
   if (activeWin === w){
@@ -303,13 +318,29 @@ function pairWins(first, second){
   focusWin(second);
 }
 
+// A slim window down one side of the desk at full height, at the width it
+// already has; `other`, if given, takes the rest. A call docks like this so
+// the page it is about gets most of the screen. `other` ends up in front.
+function dockWins(docked, other, side = "right"){
+  if (!docked) return;
+  const [a, b] = WinGeom.dock(deskSize(), docked.el.offsetWidth, side);
+  const pairs = [[docked, a]];
+  if (other && other !== docked) pairs.push([other, b]);
+  pairs.forEach(([w, r]) => { w.el.classList.remove("min"); unsnap(w); setRect(w, r); });
+  docked.dock = other && other !== docked ? { other, rect: b } : null;   // closeWin gives the space back
+  focusWin(docked);
+  if (other && other !== docked) focusWin(other);
+}
+
 const arrangeMenu = document.createElement("div");
 arrangeMenu.className = "ctxm";
 arrangeMenu.setAttribute("role", "menu");
 arrangeMenu.innerHTML = [
   ["cascade", "Cascade Windows"], ["cols", "Tile Windows Side by Side"], ["rows", "Tile Windows Stacked"], null,
   ["min", "Minimize All Windows"], ["restore", "Restore All Windows"],
-].map((it) => it ? '<button class="si" type="button" role="menuitem" data-arrange="' + it[0] + '"><span>' + it[1] + "</span></button>" : '<div class="ssep"></div>').join("");
+].map((it) => it ? '<button class="si" type="button" role="menuitem" data-arrange="' + it[0] + '"><i>' +
+  iconSVG({ cascade: "cascade", cols: "tile-cols", rows: "tile-rows", min: "min-all", restore: "restore" }[it[0]], 16) +
+  "</i><span>" + it[1] + "</span></button>" : '<div class="ssep"></div>').join("");
 smenu.parentNode.appendChild(arrangeMenu);
 
 const arrangeBtn = document.createElement("button");
@@ -326,6 +357,7 @@ function toggleArrange(open, x){
   arrangeMenu.classList.toggle("on", next);
   arrangeBtn.classList.toggle("on", next);
   if (!next) return;
+  uiSound("menu");
   const any = wins.size > 0;
   arrangeMenu.querySelectorAll("[data-arrange]").forEach((b) => {
     const m = b.dataset.arrange;
@@ -346,6 +378,7 @@ startBtn.parentNode.addEventListener("contextmenu", (e) => {
 arrangeMenu.addEventListener("click", (e) => {
   const b = e.target.closest("[data-arrange]");
   if (!b || b.disabled) return;
+  uiSound("pick");
   toggleArrange(false);
   arrangeWins(b.dataset.arrange);
 });

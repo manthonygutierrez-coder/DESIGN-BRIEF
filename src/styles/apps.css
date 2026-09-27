@@ -122,6 +122,8 @@
 .iebtn:hover:not(:disabled){border-color:var(--w-hi) var(--w-dk) var(--w-dk) var(--w-hi)}
 .iebtn:active:not(:disabled){border-color:var(--w-dk) var(--w-hi) var(--w-hi) var(--w-dk)}
 .iebtn:disabled{color:var(--w-sh);text-shadow:1px 1px 0 var(--w-hi)}
+.iebtn svg{display:block}
+.iebtn:disabled svg{opacity:.35;filter:grayscale(1)}
 .ie__addr{flex:0 0 auto;display:flex;align-items:center;gap:7px;padding:4px 5px}
 .ie__addr>label{font-size:8px;letter-spacing:.1em;color:var(--w-nav)}
 .ie__urlwrap{position:relative;flex:1;min-width:0;display:flex}
@@ -153,7 +155,35 @@
 .ie__status{flex:0 0 auto;display:flex;gap:4px;padding:3px}
 .ie__status span{font-size:8px;letter-spacing:.05em;padding:4px 8px;color:#3A3A3A;
   border:1px solid;border-color:var(--w-sh) var(--w-hi) var(--w-hi) var(--w-sh)}
-.ie__msg{flex:1}
+.ie__msg{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* a page on its way (browser.js arrive): the throbber turns, the bar fills in
+   blocks, the old page waits dimmed, and the new one draws in from the top */
+.ie__throb{margin-left:auto;flex:0 0 26px;height:24px;display:grid;place-items:center;
+  border:1px solid;border-color:var(--w-sh) var(--w-hi) var(--w-hi) var(--w-sh);background:var(--w-cli)}
+.ie__throb i{display:block;width:12px;height:12px;
+  background:linear-gradient(var(--w-nav),var(--w-nav)) 0 0/5px 5px no-repeat,
+             linear-gradient(#B8C4D8,#B8C4D8) 7px 0/5px 5px no-repeat,
+             linear-gradient(#B8C4D8,#B8C4D8) 7px 7px/5px 5px no-repeat,
+             linear-gradient(#B8C4D8,#B8C4D8) 0 7px/5px 5px no-repeat}
+.ie--loading .ie__throb i{animation:ieThrob .6s steps(4) infinite}
+@keyframes ieThrob{to{transform:rotate(360deg)}}
+.ie__status .ie__prog{flex:0 0 96px;padding:2px;display:flex}
+.ie__prog i{display:block;width:0;height:100%;
+  background:repeating-linear-gradient(90deg,var(--w-nav) 0 6px,transparent 6px 8px)}
+.ie--loading .ie__prog i{animation:ieProg var(--load-ms,400ms) steps(12) forwards}
+@keyframes ieProg{to{width:100%}}
+.ie--loading,.ie--loading .ie__view{cursor:progress}
+.ie--loading .ie__view{opacity:.6}
+.ie__view--in{animation:iePaint .22s steps(6) both}
+@keyframes iePaint{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0)}}
+/* image search: the pictures develop, interlaced, one after another */
+.ifind--res .ifr img{animation:ifDevelop .5s steps(5) both;animation-delay:calc(var(--i,0) * 45ms)}
+@keyframes ifDevelop{from{clip-path:inset(0 0 100% 0);filter:saturate(0) brightness(1.4)}
+  60%{filter:saturate(.5) brightness(1.15)}to{clip-path:inset(0);filter:none}}
+@media (prefers-reduced-motion:reduce){
+  .ie--loading .ie__throb i,.ie--loading .ie__prog i,.ie__view--in,.ifind--res .ifr img{animation:none}
+}
 
 /* ── rendered pages ──────────────────────────────────────
  * Everything below is written against the custom properties that sites.js

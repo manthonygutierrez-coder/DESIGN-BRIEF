@@ -4,7 +4,10 @@
  * suite and are applied to the work; every application records provenance on
  * the document, which is what Hustle scoring reads later.
  *
- *   { id, kind, label, value, tags: [..], source: { url, ref } }
+ *   { id, kind, label, value, tags: [..], source: { url, ref }, gig? }
+ *
+ * `gig` is the Hustle job a card was found for, so the tray can show that
+ * job's finds first. It is never used for scoring.
  *
  *   colour  value "#RRGGBB"
  *   object  value data:image/... (a cutout)
@@ -55,6 +58,7 @@ const SuiteCards = (() => {
       tags,
       source: raw.source && typeof raw.source === "object"
         ? { url: clip(raw.source.url, 200), ref: clip(raw.source.ref, 80) } : { url: "", ref: "" },
+      ...(typeof raw.gig === "string" && raw.gig ? { gig: clip(raw.gig, 80) } : {}),
     };
   }
 
@@ -97,6 +101,11 @@ const SuiteCards = (() => {
     if (l >= 0.72) tags.push("pastel");
     return tags;
   }
+
+  // Every word colourTags can say. A need asking only for these is met by the
+  // colours in the work, which the player can check by looking.
+  const COLOUR_WORDS = ["dark", "light", "neutral", "black", "white", "grey", "red", "orange", "yellow", "green",
+    "teal", "blue", "purple", "pink", "navy", "brown", "warm", "cool", "vivid", "pastel"];
 
   /* ── applying a card ───────────────────────────────────── */
   // Dropped on the canvas (no layer under the pointer). `at` is doc space.
@@ -208,7 +217,7 @@ const SuiteCards = (() => {
     return out;
   }
 
-  return { KINDS, INTENT, normalize, card, colourTags, applyToCanvas, applyToLayer, applyToBlock, debugPack };
+  return { KINDS, INTENT, COLOUR_WORDS, normalize, card, colourTags, applyToCanvas, applyToLayer, applyToBlock, debugPack };
 })();
 
 if (typeof module !== "undefined") module.exports = SuiteCards;

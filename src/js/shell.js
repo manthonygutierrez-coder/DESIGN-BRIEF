@@ -21,13 +21,16 @@ backItem.addEventListener("click", () => { toggleStart(false); cross(-1); });
 slist.appendChild(backItem);
 
 function toggleStart(open){
-  const next = open === undefined ? !smenu.classList.contains("on") : open;
+  const was = smenu.classList.contains("on");
+  const next = open === undefined ? !was : open;
+  if (next && !was) uiSound("menu");
   smenu.classList.toggle("on", next);
   startBtn.classList.toggle("on", next);
   startBtn.setAttribute("aria-expanded", String(next));
   if (next){ const first = slist.querySelector(".si:not([hidden])"); if (first) first.focus(); }
 }
 startBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleStart(); });
+slist.addEventListener("click", (e) => { if (e.target.closest(".si")) uiSound("pick"); }, true);
 sideScreen.addEventListener("pointerdown", (e) => {
   if (!smenu.contains(e.target) && !startBtn.contains(e.target)) toggleStart(false);
 });

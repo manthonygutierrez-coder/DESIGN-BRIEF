@@ -13,8 +13,11 @@
  * (setTargetAtTime), told once per change rather than stepped every frame.
  *
  * The game only sets parameters and fires sounds by name:
- *   Music.set({ zone, fullness, pressure, call, far })
- *   Music.sfx("clip-hit" | "clip-dupe" | "clip-miss" | "chime" | "deliver", opts)
+ *   Music.set({ zone, fullness, pressure, call, far, research })
+ *   Music.sfx("clip-hit" | "clip-dupe" | "clip-miss" | "chime" | "deliver" | "gap"
+ *             | "ring" | "pickup" | "hangup", opts)
+ *   Music.ui("open" | "close" | "min" | "menu" | "pick" | "press" | "loaded")
+ *     the interface's own sounds, which the tray's volume box can switch off
  * Which window is in front comes from the window manager ("wm:focus"), so
  * no app has to know the music exists.
  */
@@ -24,8 +27,9 @@ const Music = (() => {
   const PREFS_KEY = "pixel-crossing:sound";
   const AHEAD = 0.5, EVERY_MS = 50, SFX_VOICES = 6;
 
-  const params = { zone: "hub", fullness: 0, pressure: 0, call: false, far: false };
-  let prefs = typeof window !== "undefined" ? readPrefs() : { volume: 0.6, muted: false, music: true };
+  const params = { zone: "hub", fullness: 0, pressure: 0, call: false, far: false, research: false };
+  let front = "";                  // the front window's class, for picking its arrangement again
+  let prefs = typeof window !== "undefined" ? readPrefs() : { volume: 0.6, muted: false, music: true, ui: true };
   let ctx = null, bus = null, voices = null;
   let playing = false, wanted = false, away = false, timer = 0, stopTimer = 0;
   let t0 = 0, nextBar = 0, booked = -1;
@@ -35,7 +39,7 @@ const Music = (() => {
   let trayBtn = null, panel = null;
 
   function readPrefs() {
-    const d = { volume: 0.6, muted: false, music: true };
+    const d = { volume: 0.6, muted: false, music: true, ui: true };
     try { return Object.assign(d, JSON.parse(localStorage.getItem(PREFS_KEY) || "{}")); } catch { return d; }
   }
   function writePrefs() {
@@ -157,6 +161,13 @@ const Music = (() => {
 
   function set(p) {
     let mix = false;
+    // Research starting or ending changes what the browser plays, even if
+    // the browser stays in front.
+    if ("research" in p && !!p.research !== params.research) {
+      params.research = !!p.research;
+      const z = T && T.zoneOf(front, params);
+      if (z && !("zone" in p)) p = Object.assign({}, p, { zone: z });
+    }
     for (const k of ["zone", "fullness", "pressure"]) {
       if (!(k in p)) continue;
       const v = k === "pressure" ? Math.round((Number(p[k]) || 0) * 20) / 20 : p[k];   // steps of 5%, not every tick
@@ -173,6 +184,7 @@ const Music = (() => {
    * twice, and never more than a handful at once. */
   function sfx(name, o = {}) {
     if (!ctx || !playing || ctx.state !== "running") return;
+    if (!prefs.ui && T.UI_SOUNDS && T.UI_SOUNDS.has(name)) return;   // the interface's own sounds are optional
     const now = ctx.currentTime;
     sfxEnds = sfxEnds.filter((e) => e > now);
     if (sfxEnds.length >= SFX_VOICES) return;
@@ -217,11 +229,13 @@ const Music = (() => {
       '<b class="vol__t">Volume</b>' +
       '<input class="vol__r" type="range" min="0" max="100" step="1" aria-label="Volume" value="' + Math.round(prefs.volume * 100) + '">' +
       '<label class="vol__c"><input type="checkbox" data-v="music"' + (prefs.music ? " checked" : "") + "> Music</label>" +
+      '<label class="vol__c"><input type="checkbox" data-v="ui"' + (prefs.ui ? " checked" : "") + "> Interface sounds</label>" +
       '<label class="vol__c"><input type="checkbox" data-v="mute"' + (prefs.muted ? " checked" : "") + "> Mute</label>";
     panel.querySelector(".vol__r").addEventListener("input", (e) => { prefs.volume = Number(e.target.value) / 100; applyPrefs(); });
     panel.addEventListener("change", (e) => {
       const v = e.target.dataset && e.target.dataset.v;
       if (v === "music") prefs.music = e.target.checked;
+      if (v === "ui") prefs.ui = e.target.checked;
       if (v === "mute") prefs.muted = e.target.checked;
       applyPrefs();
     });
@@ -250,8 +264,9 @@ const Music = (() => {
   /* ── listening to the desktop ──────────────────────────── */
   if (typeof document !== "undefined") {
     document.addEventListener("wm:focus", (e) => {
-      const zone = T && T.zoneOf(e.detail && e.detail.className);
-      if (zone) set({ zone });
+      const cls = (e.detail && e.detail.className) || "";
+      const zone = T && T.zoneOf(cls, params);
+      if (zone) { front = cls; set({ zone }); }       // your camera is not a place: keep the last one
     });
     // Hidden, the game stops its clocks; the music waits with it.
     document.addEventListener("visibilitychange", () => {
@@ -289,7 +304,11 @@ const Music = (() => {
     return dest.stream;
   }
 
-  return { start, stop, screen, set, sfx, mountTray, state, level, tap };
+  // The interface's sounds go through here, so a caller never needs to check
+  // whether the music is up or the player has turned them off.
+  const ui = (name) => sfx(name);
+
+  return { start, stop, screen, set, sfx, ui, mountTray, state, level, tap };
 })();
 
 if (typeof module !== "undefined") module.exports = Music;

@@ -17,10 +17,12 @@
  */
 
 const SuiteDoc = (() => {
+  const Vec = typeof SuiteVector !== "undefined" ? SuiteVector : typeof require === "function" ? require("./vector.js") : null;
   const MODES = ["free", "pixel", "layout"];
   // "subject" marks where a character was drawn, for the on-model score. It is
   // editor-only: never exported, never a colour, never part of the picture.
-  const TYPES = ["rect", "ellipse", "text", "image", "path", "subject"];
+  const TYPES = ["rect", "ellipse", "text", "image", "path", "subject", "polygon"];
+  const WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900];
   const MAX = { layers: 200, blocks: 40, text: 400, src: 6 * 1024 * 1024, dim: 4096, pixelDim: 128, palette: 32, name: 80 };
   const HEX = /^#[0-9A-Fa-f]{6}$/;
 
@@ -61,6 +63,7 @@ const SuiteDoc = (() => {
       bitmap: mode === "pixel" ? new Array(w * h).fill("") : [],
       blocks: [],
       palette: [],
+      guides: { v: [], h: [] },
       meta: { name: str(opts.name, MAX.name, "Untitled"), briefId: opts.briefId || null, gigId: opts.gigId || null, intent: [] },
       site: mode === "layout" ? site(opts.site) : null,
     };
@@ -83,9 +86,11 @@ const SuiteDoc = (() => {
       id: uid("L"), type, name: str(props.name, 40, type),
       x: 0, y: 0, w: 100, h: 60, rot: 0, opacity: 1,
       fill: type === "text" ? "#0A0A0A" : "#E0442B", stroke: null, strokeW: 0,
-      hidden: false, locked: false, card: null,
+      hidden: false, locked: false, card: null, mirror: null,
     };
-    if (type === "text") Object.assign(base, { text: "Text", font: "Archivo", size: 32, weight: 700, track: 0, align: "left" });
+    if (type === "rect") base.radius = 0;
+    if (type === "polygon") Object.assign(base, { sides: 5, inner: null });
+    if (type === "text") Object.assign(base, { text: "Text", font: "Archivo", size: 32, weight: 700, style: "normal", track: 0, align: "left", bend: 0, on: null, offset: 0 });
     if (type === "image") Object.assign(base, { src: "", fill: null });
     if (type === "path") Object.assign(base, { d: "M0 0H64V64H0Z", box: 64, fillRule: "nonzero" });
     if (type === "subject") Object.assign(base, { fill: null, ref: { id: "", pose: "front" }, label: "Subject" });
@@ -148,7 +153,17 @@ const SuiteDoc = (() => {
     return { x: dx * Math.cos(a) - dy * Math.sin(a) + l.w / 2, y: dx * Math.sin(a) + dy * Math.cos(a) + l.h / 2 };
   }
 
+  // A mirrored layer is also where its reflection is.
   function contains(l, px, py, tol = 4) {
+    if (containsOwn(l, px, py, tol)) return true;
+    const m = l.mirror;
+    if (!m || l.type === "subject") return false;
+    const mx = m.v != null ? 2 * m.v - px : px, my = m.h != null ? 2 * m.h - py : py;
+    return (m.v != null && containsOwn(l, mx, py, tol)) || (m.h != null && containsOwn(l, px, my, tol)) ||
+      (m.v != null && m.h != null && containsOwn(l, mx, my, tol));
+  }
+
+  function containsOwn(l, px, py, tol) {
     const p = toLocal(l, px, py);
     if (p.x < 0 || p.y < 0 || p.x > l.w || p.y > l.h) return false;
     // A subject box only takes clicks on its edge and its label, so the
@@ -158,7 +173,30 @@ const SuiteDoc = (() => {
       const rx = l.w / 2, ry = l.h / 2;
       return ((p.x - rx) ** 2) / (rx * rx || 1) + ((p.y - ry) ** 2) / (ry * ry || 1) <= 1;
     }
+    // Shapes you can see through take clicks only where they are painted, so
+    // the letter behind the hole in an O stays reachable.
+    if (Vec && (l.type === "polygon" || l.type === "path")) {
+      const path = l.type === "polygon" ? Vec.polygon(0, 0, l.w, l.h, l.sides, l.inner) : pathOf(l);
+      if (!path) return true;
+      const sw = l.strokeW > 0 && l.stroke ? l.strokeW / 2 : 0;
+      if (l.fill && Vec.contains(path, p.x, p.y, l.fillRule)) return true;
+      return Vec.near(path, p.x, p.y, Math.max(tol, sw));
+    }
     return true;
+  }
+
+  // Path layers parsed out into their own box, cached by their data.
+  const parsed = new Map();
+  function pathOf(l) {
+    if (!l.d) return null;
+    const key = l.d + "|" + l.box + "|" + l.w + "|" + l.h;
+    let p = parsed.get(key);
+    if (!p) {
+      p = Vec.place(l.d, l.box, 0, 0, l.w, l.h);
+      parsed.set(key, p);
+      if (parsed.size > 200) parsed.delete(parsed.keys().next().value);
+    }
+    return p;
   }
 
   // Topmost visible, unlocked layer under the point.
@@ -258,6 +296,30 @@ const SuiteDoc = (() => {
     return true;
   }
 
+  /* ── resizing ──────────────────────────────────────────── */
+  // A new size that loses nothing: layers keep their place relative to the
+  // centre, and a pixel drawing is cropped or padded around it. For work
+  // started at the wrong size, so fixing it never means starting over.
+  function resize(doc, w, h) {
+    if (doc.mode === "layout") return false;
+    const lim = doc.mode === "pixel" ? MAX.pixelDim : MAX.dim;
+    w = Math.round(num(w, doc.w, 1, lim)); h = Math.round(num(h, doc.h, 1, lim));
+    if (w === doc.w && h === doc.h) return false;
+    const dx = Math.round((w - doc.w) / 2), dy = Math.round((h - doc.h) / 2);
+    if (doc.mode === "pixel") {
+      const next = new Array(w * h).fill("");
+      for (let y = 0; y < doc.h; y++) for (let x = 0; x < doc.w; x++) {
+        const nx = x + dx, ny = y + dy;
+        if (nx >= 0 && ny >= 0 && nx < w && ny < h) next[ny * w + nx] = doc.bitmap[y * doc.w + x];
+      }
+      doc.bitmap = next;
+    } else {
+      for (const l of doc.layers) { l.x += dx; l.y += dy; }
+    }
+    doc.w = w; doc.h = h;
+    return true;
+  }
+
   /* ── facts the scorer (and the Swatch app) need ────────── */
   function colours(doc) {
     const out = new Set();
@@ -325,12 +387,21 @@ const SuiteDoc = (() => {
       rot: num(l.rot, 0, -360, 360), opacity: num(l.opacity, 1, 0, 1),
       fill: paint(l.fill, null), stroke: hex(l.stroke), strokeW: num(l.strokeW, 0, 0, 200),
       hidden: !!l.hidden, locked: !!l.locked, card: l.card ? str(l.card, 80) : null, cards: slots(l.cards),
+      mirror: mirrorOf(l.mirror),
     };
+    if (l.type === "rect") out.radius = num(l.radius, 0, 0, MAX.dim);
+    if (l.type === "polygon") {
+      out.sides = Math.round(num(l.sides, 5, 3, 24));
+      out.inner = l.inner === null || l.inner === undefined ? null : num(l.inner, 0.5, 0.05, 0.98);
+    }
     if (l.type === "text") {
       Object.assign(out, {
         text: str(l.text, MAX.text, "Text"), font: str(l.font, 80, "Archivo").replace(/[;{}<>]/g, ""),
-        size: num(l.size, 32, 4, 800), weight: [400, 500, 600, 700].includes(l.weight) ? l.weight : 400,
+        size: num(l.size, 32, 4, 800), weight: WEIGHTS.includes(l.weight) ? l.weight : 400,
+        style: l.style === "italic" ? "italic" : "normal",
         track: num(l.track, 0, -20, 100), align: ["left", "center", "right"].includes(l.align) ? l.align : "left",
+        // Bent (-100 … 100), or set along a path layer, `offset` percent of the way in.
+        bend: num(l.bend, 0, -100, 100), on: l.on ? str(l.on, 40) : null, offset: num(l.offset, 0, 0, 100),
       });
     }
     if (l.type === "image") {
@@ -352,6 +423,20 @@ const SuiteDoc = (() => {
     return out;
   }
 
+  // A mirror is a vertical axis at x = v, a horizontal one at y = h, or both.
+  function mirrorOf(m) {
+    if (!m || typeof m !== "object") return null;
+    const v = m.v === null || m.v === undefined ? null : num(m.v, null);
+    const h = m.h === null || m.h === undefined ? null : num(m.h, null);
+    return v === null && h === null ? null : { v, h };
+  }
+
+  function guidesOf(g, w, h) {
+    const clean = (list, lim) => (Array.isArray(list) ? list : []).map(Number)
+      .filter((n) => Number.isFinite(n) && n >= -lim && n <= lim * 2).slice(-40).map((n) => Math.round(n * 100) / 100);
+    return { v: clean(g && g.v, w), h: clean(g && g.h, h) };
+  }
+
   function normalize(raw) {
     if (!raw || typeof raw !== "object") return null;
     const doc = create({ mode: raw.mode, w: raw.w, h: raw.h, bg: raw.bg, name: raw.meta && raw.meta.name, site: raw.site });
@@ -361,6 +446,7 @@ const SuiteDoc = (() => {
       doc.meta.intent = Array.isArray(raw.meta.intent) ? raw.meta.intent.filter((x) => typeof x === "string").slice(0, 40).map((x) => x.slice(0, 80)) : [];
     }
     doc.palette = Array.isArray(raw.palette) ? raw.palette.map((c) => hex(c)).filter(Boolean).slice(0, MAX.palette) : [];
+    doc.guides = guidesOf(raw.guides, doc.w, doc.h);
     if (Array.isArray(raw.layers)) {
       for (const l of raw.layers.slice(0, MAX.layers)) {
         if (l && TYPES.includes(l.type)) doc.layers.push(sanitizeLayer(l));
@@ -390,7 +476,7 @@ const SuiteDoc = (() => {
     toLocal, contains, hitTest, align, snap,
     getPx, setPx, fill, line,
     subjects: (doc) => doc.layers.filter((l) => l.type === "subject" && !l.hidden),
-    addBlock, moveBlock, removeBlock,
+    addBlock, moveBlock, removeBlock, resize,
     colours, usesGradient, cardsUsed,
     history, normalize, serialize, parse, sanitizeLayer, site,
   };
