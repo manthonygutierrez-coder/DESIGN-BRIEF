@@ -288,6 +288,9 @@ src/
     wmgeom.js      window geometry: open where it covers least, tile, cascade, snap
     wm.js          generic Win98 window manager (drag, resize from any edge, snap to
                    a half, min/max/close, Arrange menu on the taskbar)
+    ctxmenu.js     the right-click menu, in Win98 or the suite's own look
+    scheme.js      light or dark windows, from the moon in the tray; the dark
+                   colours are styles/dark.css, and web pages keep their own
     brief-doc.js   the brief document and its typewriter reveal
     shell.js       Start menu, taskbar, clock
     mail.js        the inbox and its state machine

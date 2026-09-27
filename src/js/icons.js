@@ -228,6 +228,15 @@ Object.assign(ICON_ART, {
     "......kkkkkk....","................","..pp..pp..pp....","...........pp...",
     "............pp..",".............p..","................","................"]},
 });
+// The tray's switch between light and dark windows.
+Object.assign(ICON_ART, {
+  moon:{p:{k:"#0A0A0A",y:"#FFD24A"},g:[
+    "................","................",".....kk.........","...kkk..........","..kyyk..........","..kyyk..........",".kyyyk..........",".kyyyk..........",
+    ".kyyyyk.........",".kyyyyyk........","..kyyyyykk..kk..","..kyyyyyyykkk...","...kyyyyyyyk....","....kkyyykk.....","......kkk.......","................"]},
+  sun:{p:{k:"#0A0A0A",y:"#FFD24A",o:"#FF9A2E"},g:[
+    "................",".......oo.......","..o....oo....o..","...o........o...",".....kkkkkk.....","....kyyyyyyk....","....kyyyyyyk....",".oo.kyyyyyyk.oo.",
+    ".oo.kyyyyyyk.oo.","....kyyyyyyk....","....kyyyyyyk....",".....kkkkkk.....","...o........o...","..o....oo....o..",".......oo.......","................"]},
+});
 // The taskbar's Arrange button: two windows side by side.
 ICON_ART.arrange = {p:{k:"#0A0A0A",b:"#000080",c:"#1084D0",w:"#FFFFFF",s:"#808080"},g:[
   "................","kkkkkkk..kkkkkkk","kbbbbck..kbbbbck","kkkkkkk..kkkkkkk",

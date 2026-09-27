@@ -1290,7 +1290,7 @@ const Hustle = (() => {
         '<button class="cl__opt' + (o.challenge ? " cl__opt--win" : "") + (o.end ? " cl__opt--end" : "") +
         '" data-cl="ask" data-gig="' + id + '" data-opt="' + esc(o.id) + '"' + (waiting ? " disabled" : "") + ">" +
         (o.challenge ? '<span class="cl__read">YOU READ THIS</span>' : "") + esc(o.ask) +
-        (o.cost > 1 ? '<em class="cl__cost">costs ' + o.cost + "</em>" : "") + "</button>").join("");
+        (o.cost > 1 ? '<em class="cl__cost" title="Asking this costs ' + o.cost + ' of their attention">−' + o.cost + "</em>" : "") + "</button>").join("");
     } else if (line) {
       actions = '<p class="cl__over">Clip what matters: they see what you find. Research time is how long they can stay.</p>' +
         '<button class="pg__soft pg__soft--wide cl__go" data-cl="done" data-gig="' + id + '">Hang up and make it →</button>';
@@ -1312,24 +1312,29 @@ const Hustle = (() => {
         (gig.features ? btn("compare", iconSVG("compare", 16), "Compare", "Compare rivals: the row nobody does is the gap") : "")
       : "";
 
-    // The conversation, with what happened around it put back in its place.
+    // The conversation so far, under your questions: one block per exchange
+    // (what you asked, then everything they said to it, with what happened
+    // around it put back in its place), newest first, so the last answer sits
+    // right under the choices and the face is never far away.
     const evs = gs.callEvents || [];
-    const rows = [];
-    let last = null;
+    const exchanges = [[]];
     for (let i = 0; i <= st.log.length; i++) {
-      for (const e of evs) if (e.pos === i) { rows.push('<div class="cl__ev cl__ev--' + esc(e.kind) + '">' + esc(e.text) + "</div>"); last = null; }
+      for (const e of evs) if (e.pos === i) exchanges[exchanges.length - 1].push('<div class="cl__ev cl__ev--' + esc(e.kind) + '">' + esc(e.text) + "</div>");
       if (i === st.log.length) break;
       const m = st.log[i], you = m.who === "you";
-      rows.push('<div class="cl__l cl__l--' + (you ? "you" : "them") + (m.filler ? " cl__l--fill" : "") +
+      if (you && exchanges[exchanges.length - 1].length) exchanges.push([]);
+      const ex = exchanges[exchanges.length - 1], prev = i > 0 && ex.length ? st.log[i - 1] : null;
+      ex.push('<div class="cl__l cl__l--' + (you ? "you" : "them") + (m.filler ? " cl__l--fill" : "") +
         (m.challenge ? " cl__l--win" : "") + (m.aside ? " cl__l--aside" : "") + '">' +
-        (m.who !== last ? "<b>" + esc(you ? myName() : name) + "</b>" : "") + "<span>" + esc(m.text) + "</span></div>");
-      last = m.who;
+        (!prev || prev.who !== m.who ? "<b>" + esc(you ? myName() : name) + "</b>" : "") + "<span>" + esc(m.text) + "</span></div>");
     }
+    const said = exchanges.filter((x) => x.length).slice(-30).reverse();
+    const rows = said.map((x, k) => '<div class="cl__ex' + (k === 0 ? " cl__ex--now" : "") + '">' + x.join("") + "</div>");
 
     const pips = Array.from({ length: st.max }, (_, i) => '<i class="' + (i < st.patience ? "on" : "") + '"></i>').join("");
-    // Scrolled up to reread? Stay there, unless something new was said.
+    // Scrolled down to reread? Stay there, unless something new was said.
     const was = w.client.querySelector(".cl__log");
-    const keep = was && was.scrollTop + was.clientHeight < was.scrollHeight - 8 ? was.scrollTop : null;
+    const keep = was && was.scrollTop > 8 ? was.scrollTop : null;
     // The call is the pager's video mode: the picture on top, the same LCD as
     // the Pager underneath, and the conversations folded to initials beside it.
     w.client.innerHTML =
@@ -1356,16 +1361,16 @@ const Hustle = (() => {
         '<div class="pg__lcd cl__lcd">' +
           '<div class="pg__rail"><div class="pg__list">' + railHTML(pagerThreads(), gig.poster.handle, 'data-cl="thread"') + "</div></div>" +
           '<div class="cl__talk">' +
-            '<div class="cl__log">' + rows.slice(-60).join("") + "</div>" +
             '<div class="cl__opts' + (asking ? " cl__opts--ask" : "") + (waiting ? " cl__opts--wait" : "") + '">' + actions + "</div>" +
+            '<div class="cl__log"><div class="cl__lh">So far</div>' + rows.join("") + "</div>" +
           "</div>" +
         "</div>" +
       "</div>";
 
-    const a = animOf(id), grew = rows.length !== a.rows;
-    a.rows = rows.length;
+    const a = animOf(id), n = st.log.length + evs.length, grew = n !== a.rows;
+    a.rows = n;
     const log = w.client.querySelector(".cl__log");
-    if (log) pinLog(log, keep === null || grew ? null : keep);
+    if (log) log.scrollTop = keep !== null && !grew ? keep : 0;
     a.sig = callSig(gig, gs, st);
     paintCall(id);
   }

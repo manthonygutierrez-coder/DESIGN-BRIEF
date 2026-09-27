@@ -1,0 +1,116 @@
+/* ── the dark scheme ────────────────────────────────────
+   Display: Dark. The same windows in dark plastic, like the Pager's: every
+   window, menu and bar follows the --w-* colours, so most of it is these
+   few lines; the handful of colours written into other sheets follow below.
+   A web page keeps its own design: the browser's page is a lit screen inside
+   a dark window. Switched from the tray (js/scheme.js). */
+.side--screen.theme-dark{
+  --w-face:#2C2F34;--w-hi:#50545B;--w-lt:#3A3E44;--w-sh:#141619;--w-dk:#050607;
+  --w-nav:#1C3563;--w-nav2:#3A6AA3;--w-in1:#3C3F45;--w-in2:#51555C;
+  --w-cli:#1C1E22;--w-txt:#E3E5E9;
+  color-scheme:dark;
+}
+/* the web keeps its own look, lit, inside the dark window */
+.theme-dark .ie__view{
+  --w-face:#C0C0C0;--w-hi:#FFFFFF;--w-lt:#DFDFDF;--w-sh:#808080;--w-dk:#0A0A0A;
+  --w-nav:#000080;--w-nav2:#1084D0;--w-in1:#7B7B7B;--w-in2:#ADADAD;
+  --w-cli:#FFFFFF;--w-txt:#0A0A0A;
+  color-scheme:light;border-color:#141619 #50545B #50545B #141619;
+}
+
+/* the tray's switch */
+.tray__scheme{display:grid;place-items:center;width:22px;height:20px;line-height:0;border:1px solid transparent}
+.tray__scheme:hover{border-color:var(--w-hi) var(--w-sh) var(--w-sh) var(--w-hi)}
+
+/* tooltips and balloons: dark cards, not yellow notes */
+.theme-dark .tip{background:#30343A;color:#ECEEF1;border-color:#050607}
+.theme-dark .tip__k{background:#3D4148;border-color:#666B73;color:#D8DBE0}
+.theme-dark .tip__s{color:#A9ADB4}
+.theme-dark .balloon{background:#30343A;color:#ECEEF1}
+.theme-dark .ie__status span{color:#B8BCC3}
+.theme-dark .tray__n{color:#FF8A7A}
+
+/* mail */
+.theme-dark .ml-sig,.theme-dark .ml__hdr,.theme-dark .ml__att,.theme-dark .ml-brief-cta{border-color:#3A3D44}
+.theme-dark .mlf:hover:not(.on),.theme-dark .mli:hover:not(.on){background:#2A2D33}
+.theme-dark .mli{border-bottom-color:#2A2D33}
+.theme-dark .mli.un{background:#262A31}
+.theme-dark .ml__reply{background:#24272C}
+
+/* ink that was navy or purple on light grey reads as light blue and lilac */
+.theme-dark :is(.ml-lbl,.cmp__row label,.ie__addr>label,.ie__favlbl,.tk h3,.bk98,.logon__opt b){color:#93B6F2}
+.theme-dark :is(.ml-ul,.bul) li::before{color:#93B6F2}
+
+/* the browser around the page */
+.theme-dark .ie__url,.theme-dark .ie__hist button,.theme-dark .cmp__body{color:var(--w-txt)}
+/* Hustle's research bar in it */
+.theme-dark .ie__tools{background:#2B2635}
+.theme-dark .hx-tb.on{background:#5A2E48;color:#FFE3F1}
+.theme-dark .hx-tb--pitch{background:#4A4020}
+.theme-dark .hx-tb__t{color:#C7A2FF}
+.theme-dark .hx-tb__here{color:#C7A2FF;border-color:#8E6AD0;background:#221E2A}
+.theme-dark .hx-tb__here.done{color:#8FE0A8;border-color:#4FA56A;background:#1C2B21}
+
+/* the ticket */
+.theme-dark .tk__head span,.theme-dark .tk__dim{color:#9EA3AB}
+.theme-dark .tk__stage{color:#15181A}
+.theme-dark .tk__time{color:#C7A2FF}
+.theme-dark .tk__cols section,.theme-dark .tk__review{background:var(--w-cli)}
+.theme-dark .tk__unknown{color:#6E737B}
+.theme-dark .tk__gap{background:#1E3326;color:#BFF0CC}
+.theme-dark .tk__review li{border-bottom-color:#33363C}
+.theme-dark .tk__review li.ok span{color:#8FE0A8}
+.theme-dark .tk__review li.no span,.theme-dark .tk__msg{color:#FF9A8A}
+.theme-dark .tk__retry{color:#E7A9A0}
+.theme-dark .w98btn.is-sure{background:#5A2E28;color:#FFE3C4}
+.theme-dark .su__deliver{background:#1E3326;color:#BFF0CC}
+
+/* comparing rivals */
+.theme-dark .cmp{background:var(--w-cli)}
+.theme-dark .cmp__how,.theme-dark .cmp__foot{color:#A6AAB2}
+.theme-dark .cmp__t :is(th,td){border-color:#3A3D44}
+.theme-dark .cmp__t th{background:#2A2D33}
+.theme-dark .cmp__c--yes{color:#8FE0A8;background:#1E3326}
+.theme-dark .cmp__c--no{color:#6E737B}
+.theme-dark .cmp__c--q{color:#C7A2FF}
+.theme-dark .cmp__hit td{background:#1E3326}
+.theme-dark .cmp__wrong td{color:#FF9A8A}
+
+/* your camera: the builder and the guide */
+.theme-dark :is(.cam,.camg){background:var(--w-face);color:var(--w-txt)}
+.theme-dark .cam__left{border-right-color:var(--w-sh)}
+.theme-dark .cam__stage{border-color:var(--w-sh) var(--w-hi) var(--w-hi) var(--w-sh)}
+.theme-dark :is(.cam__hint,.cam__row h4,.cam__foot){color:var(--w-txt)}
+.theme-dark .cam__tabs button{background:var(--w-face);color:var(--w-txt);border-color:var(--w-hi) var(--w-sh) transparent var(--w-hi)}
+.theme-dark .cam__tabs button.on{background:var(--w-lt)}
+.theme-dark .cam__rows{background:var(--w-lt);border-color:var(--w-hi) var(--w-sh) var(--w-sh) var(--w-hi)}
+.theme-dark :is(.cam__th,.cam__sw,.cam__word,.cam__pal,.cam__shot){background:var(--w-face);color:var(--w-txt);border-color:var(--w-hi) var(--w-sh) var(--w-sh) var(--w-hi)}
+.theme-dark :is(.cam__th,.cam__sw,.cam__word,.cam__pal,.cam__shot).on{border-color:var(--w-sh) var(--w-hi) var(--w-hi) var(--w-sh);outline-color:#5C8DFF}
+.theme-dark .cam__have{background:var(--w-cli);border-color:var(--w-sh)}
+.theme-dark .cam__have button{color:var(--w-txt)}
+.theme-dark .cam__have.on{outline-color:#5C8DFF}
+.theme-dark :is(.cam__haves em,.camg__step){color:#A6AAB2}
+.theme-dark .camg__said{background:#26292E;color:var(--w-txt);border-color:var(--w-sh)}
+.theme-dark .camg__name{border-color:var(--w-sh) var(--w-hi) var(--w-hi) var(--w-sh)}
+
+/* the room editor */
+.theme-dark .w98--re .client{background:#26292E}
+.theme-dark :is(.re__who,.re__hint){background:var(--w-face);border-color:var(--w-sh);color:#A6AAB2}
+.theme-dark .re__who .w98btn.on{background:var(--w-lt);border-color:var(--w-sh) var(--w-hi) var(--w-hi) var(--w-sh)}
+.theme-dark :is(.re__dom,.re__nums,.re__note,.re__h,.re__th span,.re__shot span){color:#A6AAB2}
+.theme-dark .re__stage{border-color:var(--w-sh) var(--w-hi) var(--w-hi) var(--w-sh)}
+.theme-dark .re__grp{background:var(--w-cli);border-color:var(--w-sh) var(--w-hi) var(--w-hi) var(--w-sh)}
+.theme-dark .re__h{border-bottom-color:#3A3D44}
+.theme-dark .re__it{color:var(--w-txt)}
+.theme-dark .re__it.on{background:#2C4A80}
+.theme-dark :is(.re__it i,.re__tint input){border-color:#6E737B}
+.theme-dark :is(.re__th,.re__shot){background:var(--w-face);border-color:var(--w-hi) var(--w-sh) var(--w-sh) var(--w-hi)}
+.theme-dark .re__th:hover{background:var(--w-lt)}
+.theme-dark .re__th:active{border-color:var(--w-sh) var(--w-hi) var(--w-hi) var(--w-sh)}
+.theme-dark :is(.re__shot b,.re__zn){color:var(--w-txt)}
+.theme-dark :is(.re__band--wall,.re__shot--receded).on{background:#2C4260;border-color:var(--w-sh) var(--w-hi) var(--w-hi) var(--w-sh)}
+.theme-dark .re__band--room.on{background:#4A463A;border-color:var(--w-sh) var(--w-hi) var(--w-hi) var(--w-sh)}
+.theme-dark :is(.re__band--fore,.re__shot--against).on{background:#5C3A2C;border-color:var(--w-sh) var(--w-hi) var(--w-hi) var(--w-sh)}
+.theme-dark .re__out{background:var(--w-cli);color:var(--w-txt);border-color:var(--w-sh) var(--w-hi) var(--w-hi) var(--w-sh)}
+.theme-dark .re__none{color:#6E737B}
+

@@ -355,11 +355,17 @@
 .cl__lcd{flex-direction:row}
 .cl__talk{flex:1;min-width:0;display:flex;flex-direction:column}
 
-/* the conversation, on the LCD: them in ink off a rule, you reversed, and the
-   newest line always at the foot, next to your questions */
-.cl__log{flex:1;min-height:40px;overflow:auto;padding:4px 8px 6px;display:flex;flex-direction:column;
+/* the conversation so far, on the LCD under your questions: one block per
+   exchange, newest first, so the last answer is right under the choices.
+   Them in ink off a rule, you reversed; older exchanges step back. */
+.cl__log{flex:1;min-height:40px;overflow:auto;padding:0 8px 6px;display:flex;flex-direction:column;
   font-family:"VT323",monospace;font-size:15px;line-height:1.05;letter-spacing:0;color:var(--ink);scrollbar-color:var(--ink-dim) transparent}
-.cl__log>:first-child{margin-top:auto}
+.cl__lh{position:sticky;top:0;z-index:2;flex:none;margin:0 -8px 2px;padding:4px 8px 3px;font-family:"Silkscreen",monospace;font-size:6.5px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);background:var(--lcd);border-bottom:1px solid var(--rule)}
+.cl__ex{flex:none;display:flex;flex-direction:column;padding:2px 0 6px;transition:opacity .15s}
+.cl__ex+.cl__ex{border-top:1px dashed var(--rule)}
+.cl__ex:not(.cl__ex--now){opacity:.58}
+.cl__ex:not(.cl__ex--now):hover{opacity:1}
 .cl__l{flex:none;display:flex;flex-direction:column;align-items:flex-start;margin-top:2px;padding-left:6px;border-left:2px solid var(--ink)}
 .cl__l b{margin:5px 0 1px;font-family:"Silkscreen",monospace;font-size:6.5px;font-weight:400;letter-spacing:.08em;color:var(--ink-dim);text-transform:uppercase}
 .cl__l span{max-width:100%}
@@ -374,8 +380,8 @@
 .cl__ev--clip::before{content:"+ "}
 .cl__ev--gone{text-decoration:line-through;text-decoration-thickness:1px}
 
-/* under the conversation: what happens next */
-.cl__opts{flex:none;display:flex;flex-direction:column;gap:4px;padding:5px 8px 7px;max-height:48%;overflow:auto;border-top:1px dashed var(--rule)}
+/* straight under the picture: what you can say, or what happens next */
+.cl__opts{flex:none;display:flex;flex-direction:column;gap:4px;padding:5px 8px 7px;max-height:62%;overflow:auto;border-bottom:1px solid var(--ink)}
 /* your questions: a list on the LCD, a line each */
 .cl__opts--ask{gap:0;padding:0 0 2px;scrollbar-color:var(--ink-dim) transparent}
 .cl__oh{position:sticky;top:0;z-index:2;flex:none;padding:4px 8px 3px;font-family:"Silkscreen",monospace;font-size:6.5px;
