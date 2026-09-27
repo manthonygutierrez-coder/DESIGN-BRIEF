@@ -29,6 +29,13 @@ const SuitePixelEd = (() => {
     { id: "hand", icon: "t-hand", label: "Hand (or hold Space)", key: "h" },
   ];
   const FACES = [["Silkscreen", 8, 400], ["Silkscreen", 16, 400], ["VT323", 16, 400], ["Silkscreen", 8, 700]];
+  // Ways to look at the sprite in the preview, the checks pixel artists make:
+  // it has to read as a shape, hold its values, and (for a tile) repeat.
+  const VIEWS = [
+    ["sil", "v-sil", "Silhouette: does it read as a shape?"],
+    ["grey", "v-grey", "Greyscale: are the lights and darks right?"],
+    ["tile", "v-tile", "Tiled three by three: does it repeat without seams?"],
+  ];
   const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
 
   /* ── pixels a shape covers ─────────────────────────────── */
@@ -75,6 +82,36 @@ const SuitePixelEd = (() => {
       pts.push(across ? [x0 + sx * i, y0 + sy * side] : [x0 + sx * side, y0 + sy * i]);
     }
     return { pts, ratio: !a ? "upright" : !b ? "flat" : a + ":" + b };
+  }
+  // A selection's pixels flipped or turned a quarter clockwise about its own
+  // box (turned from the box's top-left corner, so every pixel lands on a
+  // pixel), and the selection with them. Empty pixels in it carry nothing.
+  function selTransform(bitmap, mask, w, h, how) {
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let i = 0; i < mask.length; i++) if (mask[i]) { const x = i % w, y = (i / w) | 0; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    if (x1 < 0) return null;
+    const out = bitmap.slice(), m = new Uint8Array(w * h), px = [];
+    for (let i = 0; i < mask.length; i++) if (mask[i]) { px.push([i % w, (i / w) | 0, bitmap[i]]); out[i] = ""; }
+    for (const [x, y, c] of px) {
+      const [nx, ny] = how === "fliph" ? [x0 + x1 - x, y] : how === "flipv" ? [x, y0 + y1 - y] : [x0 + (y1 - y), y0 + (x - x0)];
+      if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+      m[ny * w + nx] = 1;
+      if (c) out[ny * w + nx] = c;
+    }
+    return { bitmap: out, mask: m };
+  }
+  // A one-pixel outline round what is drawn in a selection, in `ink`: every
+  // empty pixel beside it, inside the selection or just outside, and the
+  // selection grows to take the outline in.
+  function selOutline(bitmap, mask, w, h, ink) {
+    const out = bitmap.slice(), m = Uint8Array.from(mask);
+    const shape = (x, y) => x >= 0 && y >= 0 && x < w && y < h && mask[y * w + x] && bitmap[y * w + x];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (bitmap[i]) continue;
+      if (shape(x - 1, y) || shape(x + 1, y) || shape(x, y - 1) || shape(x, y + 1)) { out[i] = ink; m[i] = 1; }
+    }
+    return { bitmap: out, mask: m };
   }
   function rectPts(x0, y0, x1, y1, filled) {
     const [a, b] = [Math.min(x0, x1), Math.max(x0, x1)], [c, d] = [Math.min(y0, y1), Math.max(y0, y1)];
@@ -142,7 +179,9 @@ const SuitePixelEd = (() => {
         '<div class="sx__rail" role="toolbar" aria-label="Tools"></div>' +
         '<div class="sx__stage sx__stage--pixel"></div>' +
         '<div class="sx__side sx__side--pixel">' +
-          '<section class="sx__panel"><header class="sx__ph"><span>PREVIEW</span></header><div class="sx__pv"><canvas class="sx__pvc"></canvas></div></section>' +
+          '<section class="sx__panel"><header class="sx__ph"><span>PREVIEW</span><span class="sx__pvv" role="group" aria-label="Ways to look">' +
+            VIEWS.map(([id, icon, t]) => '<button class="sx__ib sx__ib--sm" data-pv="' + id + '" title="' + t + '" aria-pressed="false">' + iconSVG(icon, 16) + "</button>").join("") +
+          '</span></header><div class="sx__pv"><canvas class="sx__pvc"></canvas></div></section>' +
           '<section class="sx__panel sx__panel--grow"><header class="sx__ph"><span>COLOURS IN USE</span></header><div class="sx__used"></div></section>' +
         "</div>" +
       "</div>";
@@ -321,11 +360,22 @@ const SuitePixelEd = (() => {
   function paintPreview(ed) {
     const c = ed.body.querySelector(".sx__pvc");
     if (!c) return;
-    const k = Math.max(1, Math.floor(Math.min(112 / ed.doc.w, 112 / ed.doc.h)));
-    c.width = ed.doc.w * k; c.height = ed.doc.h * k;
+    const v = ed.looks || {}, n = v.tile ? 3 : 1;
+    const k = Math.max(1, Math.floor(Math.min(112 / (ed.doc.w * n), 112 / (ed.doc.h * n))));
+    const one = document.createElement("canvas");
+    one.width = ed.doc.w * k; one.height = ed.doc.h * k;
+    const g = one.getContext("2d");
+    g.imageSmoothingEnabled = false;
+    // Every drawn pixel in one dark ink, on plain ground: the shape alone.
+    R.draw(g, v.sil ? Object.assign({}, ed.doc, { bg: null }) : ed.doc, { scale: k, checker: !v.sil });
+    if (v.sil) { g.globalCompositeOperation = "source-in"; g.fillStyle = "#0A0A0A"; g.fillRect(0, 0, one.width, one.height); }
+    c.width = one.width * n; c.height = one.height * n;
     const ctx = c.getContext("2d");
     ctx.imageSmoothingEnabled = false;
-    R.draw(ctx, ed.doc, { scale: k });
+    if (v.sil) { ctx.fillStyle = "#E9E9E4"; ctx.fillRect(0, 0, c.width, c.height); }
+    ctx.filter = v.grey ? "grayscale(1)" : "none";
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) ctx.drawImage(one, i * one.width, j * one.height);
+    ed.body.querySelectorAll("[data-pv]").forEach((b) => { const on = !!v[b.dataset.pv]; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); });
   }
   function paintSide(ed) {
     const used = [...new Set(ed.doc.bitmap.filter(Boolean))];
@@ -505,6 +555,15 @@ const SuitePixelEd = (() => {
       const n = H.addCards([{ kind: "object", label: "Sprite cut: " + doc.meta.name, value: c.toDataURL("image/png"), tags: ["sprite", "cutout"] }]);
       H.status(ed, n ? "The selection is a card in the tray now." : "That's already a card.");
     }
+    if (what === "fliph" || what === "flipv" || what === "rotate" || what === "outline") {
+      H.mutate(ed, () => {
+        const r = what === "outline" ? selOutline(doc.bitmap, ed.mask, doc.w, doc.h, ed.fg) : selTransform(doc.bitmap, ed.mask, doc.w, doc.h, what);
+        if (!r) return;
+        doc.bitmap = r.bitmap;
+        ed.mask = X.count(r.mask) ? r.mask : null;
+      });
+      H.sound("layer");
+    }
     if (what === "none") { ed.mask = null; draw(ed); }
     render(ed, H, {});
   }
@@ -617,6 +676,7 @@ const SuitePixelEd = (() => {
       return true;
     }
     if (mod && k === "a") { ed.mask = new Uint8Array(ed.doc.w * ed.doc.h).fill(1); ed.tool = "select"; render(ed, H, {}); return true; }
+    if (e.shiftKey && !mod && ed.mask && ["h", "v", "r"].includes(k)) { selectionAct(ed, H, { h: "fliph", v: "flipv", r: "rotate" }[k]); return true; }
     if (mod || e.altKey) return false;
     if (k === "x" && mirrorOK(ed)) { ed.mx = !ed.mx; render(ed, H, {}); return true; }
     const t = TOOLS.find((x) => x.key === k);
@@ -650,7 +710,10 @@ const SuitePixelEd = (() => {
     if (ed.tool === "pen") h += '<span class="sx__ohint">Click, or drag for a curve · Enter lays the line down in pixels</span><span class="sx__osep"></span>';
     if (ed.tool === "pencil" || ed.tool === "erase") h += '<button class="sx__tb' + (ed.perfect ? " on" : "") + '" data-o="perfect" aria-pressed="' + ed.perfect +
       '" title="Pixel-perfect: a freehand stroke never doubles up at a corner">Pixel-perfect</button><span class="sx__osep"></span>';
-    if (ed.mask) h += '<span class="sx__olab">SELECTION</span>' + ib("sel:paint", "t-fill", "Recolour what's drawn in it") + ib("sel:fillsel", "f-rect", "Fill it") + ib("sel:clear", "l-del", "Clear it (Del)") + ib("sel:card", "card", "Make it a card") + ib("sel:none", "none", "Deselect (Esc)") + '<span class="sx__osep"></span>';
+    if (ed.mask) h += '<span class="sx__olab">SELECTION</span>' + ib("sel:paint", "t-fill", "Recolour what's drawn in it") + ib("sel:fillsel", "f-rect", "Fill it") +
+      ib("sel:fliph", "flip-h", "Flip it left to right (Shift+H)") + ib("sel:flipv", "flip-v", "Flip it top to bottom (Shift+V)") + ib("sel:rotate", "rot90", "Turn it a quarter clockwise (Shift+R)") +
+      ib("sel:outline", "s-outline", "Outline what's in it, one pixel, in the drawing colour") +
+      ib("sel:clear", "l-del", "Clear it (Del)") + ib("sel:card", "card", "Make it a card") + ib("sel:none", "none", "Deselect (Esc)") + '<span class="sx__osep"></span>';
     if (mirrorOK(ed)) h += ib("mx", "mirror", "Mirror left to right (X)", ed.mx) + ib("my", "mirror-h", "Mirror top to bottom", ed.my) + '<span class="sx__osep"></span>';
     const f = ed.st.focus();
     H.viewBar(ed, ib("grid", "grid", f ? "Tile grid " + Math.round(f.px) + " × " + Math.round(f.py) + " px" : "Tile grid: pull two guides down and two across", ed.grid && !!f, !f).replace('data-o="', 'data-v="') +
@@ -662,6 +725,8 @@ const SuitePixelEd = (() => {
   }
   function wirePanels(ed, H) {
     ed.body.addEventListener("click", (e) => {
+      const pv = e.target.closest("[data-pv]");
+      if (pv) { ed.looks = Object.assign({}, ed.looks, { [pv.dataset.pv]: !(ed.looks || {})[pv.dataset.pv] }); paintPreview(ed); H.sound("tool"); return; }
       const t = e.target.closest("[data-tool],[data-o],[data-pal],[data-drawer]");
       if (!t) return;
       if (t.dataset.drawer) { H.toggleDrawer(ed, t.dataset.drawer); return; }
@@ -704,7 +769,7 @@ const SuitePixelEd = (() => {
     });
   }
 
-  return { mount, TOOLS, linePts, rectPts, ellipsePts, curvePts, perfectDrop, cleanLine };
+  return { mount, TOOLS, linePts, rectPts, ellipsePts, curvePts, perfectDrop, cleanLine, selTransform, selOutline };
 })();
 
 if (typeof module !== "undefined") module.exports = SuitePixelEd;

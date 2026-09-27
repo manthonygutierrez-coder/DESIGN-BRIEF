@@ -68,3 +68,39 @@ test("clean lines: Shift snaps to whole runs, the nearest ratio, in every direct
   }
 });
 
+test("selections: flip and turn about their own box, and carry the selection with them", () => {
+  const w = 5, h = 5, bmp = new Array(w * h).fill(""), mask = new Uint8Array(w * h);
+  const set = (x, y, c) => { bmp[y * w + x] = c; mask[y * w + x] = 1; };
+  set(1, 1, "#A"); set(2, 1, "#B"); set(3, 1, ""); set(1, 2, "#C");
+  mask[2 * w + 2] = 1; mask[2 * w + 3] = 1;                     // the box is 1..3 x 1..2
+  const f = P.selTransform(bmp, mask, w, h, "fliph");
+  assert.equal(f.bitmap[1 * w + 3], "#A"); assert.equal(f.bitmap[1 * w + 2], "#B"); assert.equal(f.bitmap[2 * w + 3], "#C");
+  assert.equal(f.bitmap[1 * w + 1], "", "where A was is empty now");
+  const v = P.selTransform(bmp, mask, w, h, "flipv");
+  assert.equal(v.bitmap[2 * w + 1], "#A"); assert.equal(v.bitmap[1 * w + 1], "#C");
+  // a row of two turns into a column of two, from the box's top-left
+  const b2 = new Array(w * h).fill(""), m2 = new Uint8Array(w * h);
+  b2[1 * w + 1] = "#A"; b2[1 * w + 2] = "#B"; m2[1 * w + 1] = 1; m2[1 * w + 2] = 1;
+  const r = P.selTransform(b2, m2, w, h, "rotate");
+  assert.equal(r.bitmap[1 * w + 1], "#A"); assert.equal(r.bitmap[2 * w + 1], "#B");
+  assert.equal(r.mask[2 * w + 1], 1); assert.equal(r.mask[1 * w + 2], 0);
+  // four quarter turns of a square selection are no turn at all
+  let q = { bitmap: bmp.slice(), mask: Uint8Array.from(mask) };
+  const sq = new Uint8Array(w * h); for (let y = 1; y <= 3; y++) for (let x = 1; x <= 3; x++) sq[y * w + x] = 1;
+  q.mask = sq;
+  for (let i = 0; i < 4; i++) q = P.selTransform(q.bitmap, q.mask, w, h, "rotate");
+  assert.deepEqual(q.bitmap, bmp);
+});
+
+test("selections: an outline rings what is drawn, one pixel, and never paints over other drawing", () => {
+  const w = 5, h = 5, bmp = new Array(w * h).fill(""), mask = new Uint8Array(w * h);
+  bmp[2 * w + 2] = "#C"; mask[2 * w + 2] = 1;
+  bmp[0] = "#Z";                                                // someone else's pixel in the corner
+  const o = P.selOutline(bmp, mask, w, h, "#K");
+  const ring = [[2, 1], [1, 2], [3, 2], [2, 3]];
+  for (const [x, y] of ring) { assert.equal(o.bitmap[y * w + x], "#K", x + "," + y); assert.equal(o.mask[y * w + x], 1); }
+  assert.equal(o.bitmap[1 * w + 1], "", "not the diagonals");
+  assert.equal(o.bitmap[0], "#Z");
+  assert.equal(o.bitmap.filter(Boolean).length, 6);
+});
+

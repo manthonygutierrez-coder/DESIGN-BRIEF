@@ -204,7 +204,9 @@ and a title bar or the desk for the window menus. Pixel keeps pixel artists' hab
 the right button rubs out, Alt picks a colour, the pencil is pixel-perfect (a stroke
 never doubles up at a corner), Shift-click draws a line on from the last pixel, Shift
 keeps the Line tool to clean steps (1:1, 2:1, 3:1), and double-clicking with Fill
-swaps that colour everywhere in the sprite.
+swaps that colour everywhere in the sprite. A selection can be flipped, turned a
+quarter, or outlined a pixel wide, and the preview checks a sprite the way pixel
+artists do: as a silhouette, in greyscale, or tiled three by three.
 
 **Drawers** pull out of the canvas's edges and tuck back into tabs: **Cards** (the
 tray), **Swatch** (a palette with a WCAG contrast grid) and **Cutout** (wand and lasso

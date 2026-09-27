@@ -233,7 +233,22 @@ Object.assign(ICON_ART, {
     "kwwwkwwwwwwwwwwk",".kwwwwwwwwwwwwwk","..kwwwwwwwwwwwwk","..kwwwwwwwwwwwk.","...kwwwwwwwwwwk.","....kwwwwwwwwk..",".....kwwwwwwwk..",".....kkkkkkkkk.."]},
   "star":{p:{k:"currentColor",y:"#F2C94C"},g:[
     "................",".......kk.......","......kyyk......","......kyyk......",".....kyyyyk.....","kkkkkkyyyykkkkkk","kyyyyyyyyyyyyyyk",".kyyyyyyyyyyyyk.",
-    "..kyyyyyyyyyyk..","...kyyyyyyyyk...","...kyyyyyyyyk...","..kyyyyyyyyyyk..","..kyyyykkyyyyk..",".kyyykk..kkyyyk.",".kykk......kkyk.",".kk..........kk."]}
+    "..kyyyyyyyyyyk..","...kyyyyyyyyk...","...kyyyyyyyyk...","..kyyyyyyyyyyk..","..kyyyykkyyyyk..",".kyyykk..kkyyyk.",".kykk......kkyk.",".kk..........kk."]},
+  "rot90":{p:{a:"#3FA7E8",k:"currentColor"},g:[
+    "................","................",".....kkkkkk.....","....kk....kk....","....k....kkkkk..","..........kkkk..","..kkkkkkkk.kk...","..kaaaaaak......",
+    "..kaaaaaak......","..kaaaaaak......","..kaaaaaak......","..kaaaaaak......","..kaaaaaak......","..kkkkkkkk......","................","................"]},
+  "s-outline":{p:{k:"currentColor",r:"#E8563B",y:"#F2C94C"},g:[
+    "................","................","......kkkk......","....kkyyyykk....","...kyyrrrryyk...","...kyrrrrrryk...","..kyrrrrrrrryk..","..kyrrrrrrrryk..",
+    "..kyrrrrrrrryk..","..kyrrrrrrrryk..","...kyrrrrrryk...","...kyyrrrryyk...","....kkyyyykk....","......kkkk......","................","................"]},
+  "v-sil":{p:{k:"currentColor"},g:[
+    "................",".......kk.......","......kkkk......","......kkkk......",".......kk.......",".....kkkkkk.....","....kkkkkkkk....","....k.kkkk.k....",
+    "....k.kkkk.k....","......kkkk......","......k..k......","......k..k......","......k..k......",".....kk..kk.....","................","................"]},
+  "v-grey":{p:{k:"currentColor",m:"var(--ico-mid,#8A8A96)",r:"#E8563B",w:"var(--ico-paper,#FFFFFF)",y:"#F2C94C"},g:[
+    "................","................",".kkkkkkkkkkkkkk.",".kyyyyyywwwwwwk.",".kyyyyyywwwwwwk.",".kyyyyyywwwwwwk.",".krrrrrrmmmmmmk.",".krrrrrrmmmmmmk.",
+    ".krrrrrrmmmmmmk.",".krrrrrrmmmmmmk.",".krrrrrrmmmmmmk.",".krrrrrrmmmmmmk.",".krrrrrrmmmmmmk.",".kkkkkkkkkkkkkk.","................","................"]},
+  "v-tile":{p:{a:"#3FA7E8",g:"#4FC27A",k:"currentColor"},g:[
+    "................",".kkkkkkkkkkkkkkk",".kaaakkgggkkaaak",".kaaakkgggkkaaak",".kaaakkgggkkaaak",".kkkkkkkkkkkkkkk",".kkkkkkkkkkkkkkk",".kgggkkaaakkgggk",
+    ".kgggkkaaakkgggk",".kgggkkaaakkgggk",".kkkkkkkkkkkkkkk",".kkkkkkkkkkkkkkk",".kaaakkgggkkaaak",".kaaakkgggkkaaak",".kaaakkgggkkaaak",".kkkkkkkkkkkkkkk"]}
 });
 
 // The tools the suite always had, re-inked the same way.
