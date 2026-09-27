@@ -49,7 +49,7 @@ const CtxMenu = (() => {
     el.innerHTML = list.map((it, i) => (it === "-" ? '<div class="ctx__sep" role="separator"></div>'
       : '<button type="button" class="ctx__i" role="menuitem" data-i="' + i + '"' + (it.disabled ? " disabled" : "") + ">" +
         '<i class="ctx__ic" aria-hidden="true">' + (it.checked ? "✓" : it.icon && typeof iconSVG === "function" ? iconSVG(it.icon, 16) : "") + "</i>" +
-        "<span>" + esc(it.label) + "</span>" + (it.key ? "<em>" + esc(it.key) + "</em>" : "") + "</button>")).join("");
+        "<span>" + esc(it.label) + "</span>" + (it.key ? "<em>" + esc(typeof Tips !== "undefined" ? Tips.keys(it.key) : it.key) + "</em>" : "") + "</button>")).join("");
     host.appendChild(el);
     // In the host's own pixels, which are not the screen's when the desk is
     // scaled onto the monitor in the room.

@@ -3,12 +3,15 @@
   "productName": "Pixel Crossing",
   "version": "0.1.0",
   "description": "A freelance design studio on the other side of the screen: briefs arrive by mail, references live in a 1998 browser, and the work lands in real folders.",
+  "author": "manthonygutierrez-coder",
   "main": "electron/main.js",
   "private": true,
   "scripts": {
     "dev": "electron .",
     "start": "electron .",
     "build": "electron-builder",
+    "build:win": "electron-builder --win --x64",
+    "build:mac": "electron-builder --mac",
     "test": "node --test"
   },
   "devDependencies": {
@@ -33,7 +36,27 @@
         "dir"
       ],
       "category": "public.app-category.graphics-design",
-      "icon": "build-resources/icon.icns"
+      "icon": "build-resources/icon.icns",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "artifactName": "Pixel-Crossing-Mac-${arch}.${ext}"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "icon": "build-resources/icon.ico",
+      "artifactName": "Pixel-Crossing-Windows-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Pixel Crossing",
+      "artifactName": "Pixel-Crossing-Setup.${ext}"
     }
   },
   "lavamoat": {

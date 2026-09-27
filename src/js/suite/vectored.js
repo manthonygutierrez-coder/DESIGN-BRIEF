@@ -1336,7 +1336,7 @@ const SuiteVectorEd = (() => {
     if (tool === "pen") h += '<span class="sx__ohint">Click: corner · drag: curve · Alt: break the handle · click the first point to close · Enter: an open line</span>';
     if (tool === "build") h += '<span class="sx__ohint">Drag across shapes to merge them · Alt-drag to cut the top one out</span>';
     if (tool === "eyedrop") h += '<span class="sx__ohint">Click the work to take a colour · Shift: into the stroke</span>';
-    if (tool === "hand") h += '<span class="sx__ohint">Drag to move around · ⌘-scroll or pinch to zoom</span>';
+    if (tool === "hand") h += '<span class="sx__ohint">Drag to move around · ' + (typeof Tips !== "undefined" ? Tips.keys("⌘") : "⌘") + '-scroll or pinch to zoom</span>';
     if (!ls.length && tool === "select") {
       const doc = ed.doc;
       h += '<span class="sx__olab">BOARD</span>' + well("bg", doc.bg || "#FFFFFF", "Background") + ib("nobg", "none", "No background (transparent)", !doc.bg) + sep;

@@ -38,7 +38,17 @@ const Tips = (() => {
     return { x: Math.round(x), y: Math.round(Math.max(bounds.y + 2, y)) };
   }
 
-  const api = { delayFor, split, place, DELAY, HANDOFF };
+  // Shortcuts are written the Mac way. Everywhere else they read as the keys
+  // that work there: "⇧⌘Z" → "Ctrl+Shift+Z", "Cmd+D" → "Ctrl+D".
+  const MAC = typeof navigator === "undefined" || /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "");
+  function keys(text, mac = MAC) {
+    const s = String(text == null ? "" : text);
+    if (mac) return s;
+    return s.replace(/⇧⌘|⌘⇧/g, "Ctrl+Shift+").replace(/⌘-/g, "Ctrl-").replace(/⌥-/g, "Alt-").replace(/⇧-/g, "Shift-")
+      .replace(/⌘/g, "Ctrl+").replace(/⇧/g, "Shift+").replace(/⌥/g, "Alt+").replace(/\bCmd\b/g, "Ctrl");
+  }
+
+  const api = { delayFor, split, place, keys, DELAY, HANDOFF };
   if (typeof document === "undefined") return api;
 
   /* ── the one tip on screen ─────────────────────────────── */
@@ -59,8 +69,8 @@ const Tips = (() => {
     if (title.trim()) {
       t.dataset.tip = title;
       const named = t.getAttribute("aria-label") || (t.textContent || "").trim();
-      if (!named) t.setAttribute("aria-label", split(title).text);
-      else if (!t.getAttribute("aria-description") && named !== title) t.setAttribute("aria-description", split(title).text);
+      if (!named) t.setAttribute("aria-label", keys(split(title).text));
+      else if (!t.getAttribute("aria-description") && named !== title) t.setAttribute("aria-description", keys(split(title).text));
     }
   }
 
@@ -91,11 +101,11 @@ const Tips = (() => {
     e.innerHTML = "";
     const line = document.createElement("span");
     line.className = "tip__t";
-    line.textContent = text;
+    line.textContent = keys(text);
     e.appendChild(line);
     const k = t.dataset.tipKey || key;
-    if (k) { const b = document.createElement("kbd"); b.className = "tip__k"; b.textContent = k; e.appendChild(b); }
-    if (t.dataset.tipSub) { const s = document.createElement("span"); s.className = "tip__s"; s.textContent = t.dataset.tipSub; e.appendChild(s); }
+    if (k) { const b = document.createElement("kbd"); b.className = "tip__k"; b.textContent = keys(k); e.appendChild(b); }
+    if (t.dataset.tipSub) { const s = document.createElement("span"); s.className = "tip__s"; s.textContent = keys(t.dataset.tipSub); e.appendChild(s); }
     e.hidden = false;
     const L = local(0, 0);
     let anchor;

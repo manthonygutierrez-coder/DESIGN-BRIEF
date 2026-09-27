@@ -24,6 +24,8 @@ const Suite = (() => {
   // wm.js's esc() leaves quotes alone; card labels land inside attributes here,
   // and cards will come from outside the app, so this one escapes quotes too.
   const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+  // Shortcuts as this machine's keyboard has them (⌘ reads Ctrl off a Mac).
+  const kb = (s) => (typeof Tips !== "undefined" ? Tips.keys(s) : String(s));
 
   let state = null;
   const wins = new Map();            // window key -> suite window
@@ -914,10 +916,10 @@ const Suite = (() => {
     requestAnimationFrame(() => {
       const own = step.with.flatMap((c) => controlsFor(win, c));
       const els = own.length ? own : controlsFor(win, "tool:select");
-      if (!els.length) { setStatus(win, step.say + " (It shows once the right thing is selected.)"); return; }
+      if (!els.length) { setStatus(win, kb(step.say) + " (It shows once the right thing is selected.)"); return; }
       els.forEach((el) => { el.classList.remove("sx-teach--now"); void el.offsetWidth; el.classList.add("sx-teach--now"); setTimeout(() => el.classList.remove("sx-teach--now"), 2600); });
       pointAt(win, els[0]);
-      setStatus(win, own.length ? step.say : "Select what it's for first (V), then: " + step.say);
+      setStatus(win, kb(own.length ? step.say : "Select what it's for first (V), then: " + step.say));
       sound("menu");
     });
   }
@@ -945,7 +947,7 @@ const Suite = (() => {
       const open = s === now || (st.tip && reached);
       const cls = st.tip ? "tip" : st.done ? "done" : s === now ? "now" : "next";
       return '<li class="ls__step ls__step--' + cls + (open ? " ls__step--open" : "") + (fresh.has(s.id) ? " ls__step--fresh" : "") + '"' + (open ? "" : ' title="' + esc(s.say) + '"') + ">" +
-        "<i>" + (st.tip ? "★" : st.done ? "✓" : num) + "</i><p>" + esc(s.say) + "</p>" +
+        "<i>" + (st.tip ? "★" : st.done ? "✓" : num) + "</i><p>" + esc(kb(s.say)) + "</p>" +
         (open ? '<button class="ls__show" data-show="' + i + '">' + iconSVG("show", 16) + "<span>SHOW ME</span></button>"
           : '<button class="ls__peek" data-show="' + i + '" title="Show me where" aria-label="Show me where">' + iconSVG("show", 16) + "</button>") + "</li>";
     });

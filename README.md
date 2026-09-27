@@ -11,10 +11,29 @@ client emails you a brief, their link unlocks a browser where you can read their
 and search reference, and when you're done you reply with the files. Start → Shut Down
 switches the computer off and leaves you in the room.
 
-macOS desktop app (Electron, arm64). Works entirely offline — fonts are bundled and
-every image in the app is generated on a canvas, nothing is fetched.
+A desktop app for Windows and macOS (Electron). Works entirely offline — fonts are
+bundled and every image in the app is generated on a canvas, nothing is fetched.
 
-## Running it
+## Playing it
+
+Download it from the [latest release](https://github.com/manthonygutierrez-coder/DESIGN-BRIEF/releases/latest).
+These links always fetch the newest build:
+
+- **Windows:** [Pixel-Crossing-Setup.exe](https://github.com/manthonygutierrez-coder/DESIGN-BRIEF/releases/latest/download/Pixel-Crossing-Setup.exe).
+  Run it and the game installs and opens, with a shortcut on the desktop. It needs no
+  administrator rights. It isn't code-signed, so the first time, Windows shows
+  "Windows protected your PC": click **More info**, then **Run anyway**. Your browser
+  may also ask whether to keep the download; keep it. To play without installing, take
+  [the .zip](https://github.com/manthonygutierrez-coder/DESIGN-BRIEF/releases/latest/download/Pixel-Crossing-Windows-x64.zip)
+  instead, unzip it, and run `Pixel Crossing.exe` inside.
+- **Mac** (Apple silicon): [Pixel-Crossing-Mac-arm64.dmg](https://github.com/manthonygutierrez-coder/DESIGN-BRIEF/releases/latest/download/Pixel-Crossing-Mac-arm64.dmg).
+  Drag it into Applications. It isn't notarised, so the first time, macOS won't open
+  it: go to System Settings → Privacy & Security and click **Open Anyway**.
+
+On Windows, F11 goes full screen. Uninstalling (Settings → Apps) leaves your projects
+in `Documents\Pixel Crossing` where they are.
+
+## Running it from the source
 
 ```bash
 npm install && node node_modules/electron/install.js && npm run dev
@@ -23,14 +42,34 @@ npm install && node node_modules/electron/install.js && npm run dev
 The second command is only needed because npm's install-script gating skips Electron's
 binary download.
 
-To build a `.dmg`:
+On Windows, install Git and Node.js once, from PowerShell:
 
-```bash
-npm run build
+```powershell
+winget install --id Git.Git -e
+winget install --id OpenJS.NodeJS.LTS -e
 ```
 
-Output lands in `build/`. It is **unsigned**, so the first launch needs
-right-click → Open rather than a double-click.
+Then, in a new PowerShell window (a new one finds them):
+
+```powershell
+git clone https://github.com/manthonygutierrez-coder/DESIGN-BRIEF.git pixel-crossing-app
+cd pixel-crossing-app
+npm install
+node node_modules/electron/install.js
+npm run dev
+```
+
+`npm install` is the only step that needs the internet; after it, the game runs
+offline. In a copy you already have, `git pull` and then `npm install` bring it up to date.
+
+To build the apps:
+
+```bash
+npm run build:win   # build/Pixel-Crossing-Setup.exe and a .zip, on a Mac or a PC
+npm run build:mac   # build/Pixel-Crossing-Mac-arm64.dmg, on a Mac
+```
+
+Neither is signed; see above for what that means the first time one is opened.
 
 ## The room
 
@@ -378,7 +417,7 @@ Briefs can arrive on a schedule instead of only when you ask for one. The app
 polls two sources and treats both identically:
 
 - a JSON feed at an HTTPS URL — a routine commits briefs to a public repo
-- `~/Documents/Pixel Crossing/_inbox/*.json` — anything running on this Mac
+- `~/Documents/Pixel Crossing/_inbox/*.json` — anything running on this computer
 
 Both are deduped by record id, so polling never duplicates a message. A
 scheduled brief arrives as ordinary unread mail, and if it carries a client
@@ -390,9 +429,9 @@ can never reach the network itself.
 
 ## Where things live
 
-| What | Where |
-|---|---|
-| App state | `~/Library/Application Support/Pixel Crossing/state.json` |
-| Your projects | `~/Documents/Pixel Crossing/` (changeable in-app) |
-| Build output | `build/` |
-| Brief drop folder | `~/Documents/Pixel Crossing/_inbox/` |
+| What | Mac | Windows |
+|---|---|---|
+| Saves (Studio and Hustle) | `~/Library/Application Support/Pixel Crossing/slots/` | `%APPDATA%\Pixel Crossing\slots\` |
+| Your projects | `~/Documents/Pixel Crossing/` (changeable in-app) | `Documents\Pixel Crossing\` |
+| Brief drop folder | `~/Documents/Pixel Crossing/_inbox/` | `Documents\Pixel Crossing\_inbox\` |
+| Build output | `build/` | `build\` |

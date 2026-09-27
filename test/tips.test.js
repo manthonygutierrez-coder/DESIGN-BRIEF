@@ -29,3 +29,15 @@ test("tips: below the pointer if it fits, above if not, never off an edge", () =
   const left = T.place({ x: -30, y: 100, w: 1, h: 18 }, tip, desk);
   assert.equal(left.x, 2, "and from the left");
 });
+
+test("tips: shortcuts read as Ctrl, Shift and Alt off a Mac", () => {
+  assert.equal(T.keys("⌘Z", false), "Ctrl+Z");
+  assert.equal(T.keys("⇧⌘Z", false), "Ctrl+Shift+Z");
+  assert.equal(T.keys("Cmd+D", false), "Ctrl+D");
+  assert.equal(T.keys("Drag · ⌘-scroll to zoom", false), "Drag · Ctrl-scroll to zoom");
+  assert.equal(T.keys("Copy it five times: Alt-drag it, or ⌘D.", false), "Copy it five times: Alt-drag it, or Ctrl+D.");
+  assert.equal(T.keys("⌥-click", false), "Alt-click");
+  assert.equal(T.keys("Shift+H", false), "Shift+H", "already spelled out: untouched");
+  assert.equal(T.keys("⇧⌘Z", true), "⇧⌘Z", "on a Mac they stay as written");
+  assert.equal(T.keys(null, false), "");
+});

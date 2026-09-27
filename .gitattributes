@@ -1,0 +1,9 @@
+# Text stays LF on every machine. Git for Windows would otherwise check it out
+# as CRLF, and the whole tree would read as changed the first time it's opened.
+* text=auto eol=lf
+
+*.png binary
+*.ico binary
+*.icns binary
+*.woff2 binary
+*.af binary

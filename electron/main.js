@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, nativeImage, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const fsp = require('fs/promises');
@@ -414,12 +414,16 @@ ipcMain.handle('feed:dropDir', async () => {
 const ICON_PNG = path.join(__dirname, '..', 'build-resources', 'icon-1024.png');
 
 function createWindow() {
+  // A Windows laptop at 150% scaling has about 1280×670 to give, less than the
+  // 1440×900 asked for: there the window fills the screen instead, whole.
+  const area = screen.getPrimaryDisplay().workAreaSize;
+  const small = area.width < 1440 || area.height < 900;
   mainWindow = new BrowserWindow({
     icon: ICON_PNG,
-    width: 1440,
-    height: 900,
-    minWidth: 1024,
-    minHeight: 700,
+    width: Math.min(1440, area.width),
+    height: Math.min(900, area.height),
+    minWidth: Math.min(1024, area.width),
+    minHeight: Math.min(700, area.height),
     backgroundColor: '#010404',
     show: false,
     webPreferences: {
@@ -429,7 +433,23 @@ function createWindow() {
       sandbox: true,
     },
   });
-  mainWindow.once('ready-to-show', () => mainWindow.show());
+  mainWindow.once('ready-to-show', () => {
+    if (small) mainWindow.maximize();
+    mainWindow.show();
+  });
+  // Windows and Linux hang a File/Edit/View menu bar across the top of the
+  // window, which the game has no use for: the built game goes without it,
+  // and `npm start` keeps it for the developer tools. F11 goes full screen
+  // either way, as it does in a browser.
+  if (process.platform !== 'darwin') {
+    if (app.isPackaged) mainWindow.removeMenu();
+    mainWindow.webContents.on('before-input-event', (e, input) => {
+      if (input.type === 'keyDown' && input.key === 'F11' && !input.alt && !input.control && !input.shift) {
+        e.preventDefault();
+        mainWindow.setFullScreen(!mainWindow.isFullScreen());
+      }
+    });
+  }
   mainWindow.loadFile(path.join(__dirname, '..', 'src', 'index.html'));
   mainWindow.on('closed', () => { mainWindow = null; });
 }

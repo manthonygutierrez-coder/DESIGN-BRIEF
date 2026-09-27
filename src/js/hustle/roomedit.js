@@ -421,7 +421,7 @@ const RoomEdit = (() => {
     } else {
       const el = getWin(KEY).client.querySelector(".re__out");
       el.select();
-      note("Selected — press Cmd+C.");
+      note(typeof Tips !== "undefined" ? Tips.keys("Selected — press Cmd+C.") : "Selected — press Cmd+C.");
     }
   }
 
