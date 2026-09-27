@@ -1,7 +1,276 @@
 {
   "version": 1,
-  "updated": "2026-09-15T04:51:21Z",
+  "updated": "2026-09-21T13:10:38Z",
   "briefs": [
+    {
+      "id": "2026-09-21-slow-fill",
+      "cadence": "weekly",
+      "received": "2026-09-21T13:10:38Z",
+      "discipline": "Motion Design",
+      "brief": {
+        "project": "SLOW FILL",
+        "client": "A canal trust replacing the gear on eleven locks, most of whose traffic has never worked one",
+        "ask": "Every lock on the Nettlebed flight comes out over the winter and goes back with a hydraulic power pack on both ends, which changes the order of operations at all eleven and removes the one thing that used to slow a crew down, namely how heavy the paddle was to wind. Six boats in ten through the flight are hire crews on their second day. Each lock head gets a 178 mm weatherproof panel with no sound, no buttons and no network behind it, and the twelve players are imaged and sealed in the third week of January because nobody is walking back up the towpath to change them, so the sequence has to be cut, tested and frozen before the flight reopens on 27 March.",
+        "deliver": [
+          "The working sequence, eleven steps, 800 × 480, twelve frames a second, looping under forty seconds",
+          "A second cut for locks six and seven, the staircase pair, where the chambers empty in the opposite order",
+          "An idle state for an empty chamber, ten seconds, that cannot be mistaken for a dead screen",
+          "Twelve H.264 files named to the player's scheme, plus a contact sheet of every step as a still for the safety officer to sign",
+          "Two sides of motion rules — timing, easing, and what is never permitted to move — so the signage contractor can cut a twelfth lock in 2028 without ringing you"
+        ],
+        "limits": [
+          "No sound of any kind. The nearest cottage is twelve metres from lock four and the noise consent was won on a promise of silence.",
+          "The panel is transflective and refreshes at twelve frames a second at four degrees. Anything smoother than that is a promise the screen cannot keep.",
+          "It loops and nobody arrives at the beginning of it. Any four seconds of it has to be the four seconds somebody needed.",
+          "Six words on screen at once, set in the flight's signage face, read at three metres, in rain, by someone who has left their glasses on the boat.",
+          "The panel has no red in it. Anything that has to read as danger has to read as danger by how it moves."
+        ],
+        "tone": "Unhurried · legible · never cheerful"
+      },
+      "clientProfile": {
+        "who": "Rosalind Tyrer",
+        "role": "Navigation Manager",
+        "co": "Thurlby Navigation Trust",
+        "dom": "thurlbynavigation.org.uk",
+        "frame": "board",
+        "voice": "Nobody at that lock has chosen to look at the screen, and most of them are holding a rope.",
+        "refs": [
+          "lock gate balance beam",
+          "paddle gear windlass",
+          "lock chamber filling",
+          "lockside instruction panel",
+          "towpath notice board"
+        ],
+        "site": {
+          "tagline": "Nineteen miles, eleven locks, and the water to work them.",
+          "nav": [
+            [
+              "Home",
+              "/"
+            ],
+            [
+              "The Nettlebed Flight",
+              "/flight"
+            ]
+          ],
+          "pages": {
+            "/": [
+              {
+                "t": "lede",
+                "p": "Nineteen miles of navigation from Thurlby Basin to the junction at Wardlow End, eleven locks of it in the last two and a half. The Trust owns the water, the gates and the towpath, and is answerable for all three still being where you left them."
+              },
+              {
+                "t": "notice",
+                "h": "The Nettlebed flight is closed from 2 November to 26 March",
+                "p": "All eleven locks come out for hydraulic gear. There is no passage through the flight in that time and no way round it — the nearest alternative is forty-one miles by way of the Ouse. Winter moorings above lock one are free to anyone caught on the wrong side of the closure, and we would rather you took one than tried the Ouse in February.",
+                "stamp": "Notice to navigators"
+              },
+              {
+                "t": "table",
+                "h": "Passage, Thurlby to Wardlow End",
+                "cols": [
+                  "Section",
+                  "Locks",
+                  "Allow"
+                ],
+                "rows": [
+                  [
+                    "Thurlby Basin to Marlpit Bridge",
+                    "None",
+                    "2 h 10"
+                  ],
+                  [
+                    "Marlpit Bridge to the foot of the flight",
+                    "None",
+                    "1 h 25"
+                  ],
+                  [
+                    "The Nettlebed flight",
+                    "Eleven",
+                    "3 h 40"
+                  ],
+                  [
+                    "Flight head to Wardlow End",
+                    "One",
+                    "0 h 35"
+                  ]
+                ],
+                "note": "Timed at four miles an hour, two crew, no queue. A single-handed boat should add an hour to the flight and start it before noon."
+              },
+              {
+                "t": "spec",
+                "h": "Navigation",
+                "rows": [
+                  [
+                    "Maximum length",
+                    "21.9 m. The short chambers are six and seven"
+                  ],
+                  [
+                    "Maximum beam",
+                    "2.13 m"
+                  ],
+                  [
+                    "Draught",
+                    "1.06 m, and less than that by late August"
+                  ],
+                  [
+                    "Headroom",
+                    "2.44 m at Marlpit Bridge, which is the low one"
+                  ],
+                  [
+                    "Licence",
+                    "Required. Day licences from the lock cottage, cash or cheque"
+                  ],
+                  [
+                    "Flight hours",
+                    "06:00 to dusk. Last boat into lock one two hours before"
+                  ]
+                ],
+                "note": "Levels are read at the gauge board at Marlpit Bridge and posted here on a Monday."
+              }
+            ],
+            "/flight": [
+              {
+                "t": "lede",
+                "p": "A hundred and nine feet of rise in two and a half miles, taken in eleven chambers, two of which are a staircase. It is the reason the navigation was cut and the reason it has twice nearly been abandoned."
+              },
+              {
+                "t": "spec",
+                "h": "The flight",
+                "rows": [
+                  [
+                    "Locks",
+                    "Eleven, numbered from the foot"
+                  ],
+                  [
+                    "Total rise",
+                    "33.2 m"
+                  ],
+                  [
+                    "Chamber, typical",
+                    "22.4 m × 2.29 m"
+                  ],
+                  [
+                    "Gear",
+                    "Hand-wound until 2 November 2026. Hydraulic power pack thereafter, both ends"
+                  ],
+                  [
+                    "Water per passage",
+                    "About 227,000 litres, all of it down the hill"
+                  ],
+                  [
+                    "Keeper",
+                    "One, resident at lock four, on the flight from 06:00"
+                  ]
+                ]
+              },
+              {
+                "t": "table",
+                "h": "The eleven",
+                "cols": [
+                  "No.",
+                  "Name",
+                  "Rise",
+                  "Note"
+                ],
+                "rows": [
+                  [
+                    "1",
+                    "Nettlebed Foot",
+                    "2.9 m",
+                    "Water point, and the only tap on the flight"
+                  ],
+                  [
+                    "2",
+                    "Bakers",
+                    "3.1 m",
+                    "—"
+                  ],
+                  [
+                    "3",
+                    "Long Pound",
+                    "2.7 m",
+                    "Half a mile of pound above it. Do not hurry that half mile"
+                  ],
+                  [
+                    "4",
+                    "Keeper's",
+                    "3.4 m",
+                    "Cottage on the offside. Knock if the level looks wrong"
+                  ],
+                  [
+                    "5",
+                    "Tannery",
+                    "3.0 m",
+                    "—"
+                  ],
+                  [
+                    "6",
+                    "Staircase, lower",
+                    "3.6 m",
+                    "Empty the upper chamber first. Always"
+                  ],
+                  [
+                    "7",
+                    "Staircase, upper",
+                    "3.6 m",
+                    "No pound between six and seven"
+                  ],
+                  [
+                    "8",
+                    "Hollins",
+                    "2.8 m",
+                    "—"
+                  ],
+                  [
+                    "9",
+                    "Side Pond",
+                    "3.2 m",
+                    "Pond out of use since 1971 and not coming back"
+                  ],
+                  [
+                    "10",
+                    "Nine Elms",
+                    "2.9 m",
+                    "Two elms"
+                  ],
+                  [
+                    "11",
+                    "Nettlebed Head",
+                    "1.9 m",
+                    "Top gates run heavy in a frost"
+                  ]
+                ],
+                "note": "Rises are to the nearest tenth and move with the level in the summit. Add ten minutes a lock in either direction if you are following a hire boat."
+              },
+              {
+                "t": "notice",
+                "h": "Locks six and seven are a staircase",
+                "p": "There is no pound between them. Water leaving the upper chamber goes into the lower one and nowhere else, so the order is fixed, and taking it in the wrong order floods the towpath and empties the pound below. The new gear will not stop you doing it. It only makes it quicker.",
+                "stamp": "Read before you work the flight"
+              }
+            ]
+          }
+        }
+      },
+      "assets": {
+        "markSVG": "<rect x=\"5\" y=\"16\" width=\"25\" height=\"42\" fill=\"%B%\"/><rect x=\"34\" y=\"38\" width=\"25\" height=\"20\" fill=\"%B%\"/><rect x=\"27\" y=\"6\" width=\"9\" height=\"52\" fill=\"%C%\"/>",
+        "images": [
+          {
+            "ref": "lockside instruction panel",
+            "path": "briefs/assets/thurlbynavigation/panel.png"
+          },
+          {
+            "ref": "lock gate balance beam",
+            "path": "briefs/assets/thurlbynavigation/beam.png"
+          },
+          {
+            "ref": "towpath notice board",
+            "path": "briefs/assets/thurlbynavigation/board.png"
+          }
+        ]
+      }
+    },
     {
       "id": "2026-09-15-hold-still",
       "cadence": "weekly",

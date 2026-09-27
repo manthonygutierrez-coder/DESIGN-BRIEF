@@ -1,0 +1,168 @@
+<!doctype html><html lang="en-GB"><meta charset="utf-8">
+<link rel="stylesheet" href="base.css">
+<style>
+  body{width:1200px}
+  .wrap{width:1200px;min-height:900px;display:flex;flex-direction:column}
+
+  /* masthead */
+  header{background:var(--brand);color:var(--on-brand);padding:26px 56px 22px;
+         display:flex;align-items:center;gap:22px}
+  header .id h1{margin:0;font-size:31px;letter-spacing:.055em;text-transform:uppercase;font-weight:700}
+  header .id p{margin:6px 0 0;font-size:15.5px;color:#BCCFC5;letter-spacing:.015em}
+  header .est{margin-left:auto;text-align:right;font-size:12px;line-height:1.7;
+               color:#9FB8AC;letter-spacing:.09em;text-transform:uppercase}
+
+  nav{background:#163B2F;color:#CFE0D7;display:flex;gap:0;padding:0 56px;
+      font-size:13.5px;letter-spacing:.11em;text-transform:uppercase}
+  nav span{padding:13px 0;margin-right:38px;border-bottom:4px solid transparent}
+  nav span.on{border-bottom-color:var(--brand2);color:#fff;font-weight:700}
+
+  main{padding:18px 56px 0;display:grid;grid-template-columns:1fr 372px;
+       gap:0 46px;align-content:start}
+
+  .lede{grid-column:1;font-family:var(--serif);font-size:18.5px;line-height:1.45;
+        margin:0 0 20px;max-width:none}
+  .lede b{font-weight:400;box-shadow:inset 0 -.42em 0 rgba(200,126,36,.22)}
+
+  /* notice */
+  .notice{grid-column:1;border:2px solid var(--brand);border-left-width:11px;
+          background:var(--panel);padding:15px 24px 16px;margin:0 0 20px;position:relative}
+  .notice b{display:block;font-size:19px;letter-spacing:.005em;margin:0 0 9px}
+  .notice p{margin:0;font-size:14.5px;line-height:1.62;color:#33382F;max-width:62ch}
+  .notice .stamp{position:absolute;top:-11px;right:16px;background:var(--brand2);
+      color:#1A1206;font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;
+      font-weight:700;padding:4px 10px}
+
+  /* table */
+  .tbl{grid-column:1}
+  .tbl h2,.spec h2{margin:0 0 12px;font-size:12.5px;letter-spacing:.17em;
+       text-transform:uppercase;color:var(--dim);font-weight:700}
+  table{width:100%;border-collapse:collapse;font-size:14.5px}
+  th{text-align:left;font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+     color:var(--dim);padding:0 12px 7px 0;border-bottom:2px solid var(--brand)}
+  th:last-child,td:last-child{text-align:right;padding-right:0}
+  td{padding:9px 12px 9px 0;border-bottom:1px solid var(--line)}
+  td:first-child{font-weight:700}
+  tr:last-child td{border-bottom:2px solid var(--brand)}
+  td.n{font-variant-numeric:tabular-nums}
+  .tblnote{margin:10px 0 0;font-size:12.5px;line-height:1.5;color:var(--dim);max-width:none}
+
+  /* bottom band */
+  .band{grid-column:1 / -1;margin-top:16px;border-top:2px solid var(--brand);
+        padding-top:13px;display:grid;grid-template-columns:repeat(3,1fr);gap:0 40px}
+  .band h2{grid-column:1 / -1;margin:0 0 10px;font-size:12.5px;letter-spacing:.17em;
+           text-transform:uppercase;color:var(--dim);font-weight:700}
+  .band article{border-left:3px solid var(--brand2);padding-left:14px}
+  .band time{display:block;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+             color:var(--brand2);font-weight:700;margin-bottom:5px}
+  .band b{display:block;font-size:14.5px;margin-bottom:4px}
+  .band p{margin:0;font-size:12.5px;line-height:1.52;color:var(--dim)}
+
+  /* aside: spec */
+  aside{grid-column:2;grid-row:1 / span 4}
+  .spec{background:var(--panel);border-top:5px solid var(--brand2);padding:20px 22px 6px}
+  .spec dl{margin:0}
+  .spec dt{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+  .spec dd{margin:3px 0 0;font-size:14px;line-height:1.45;padding-bottom:10px;
+           border-bottom:1px solid var(--line)}
+  .spec div:last-child dd{border-bottom:0}
+  .gauge{margin-top:18px;border:1px solid var(--line);padding:14px 16px 15px}
+  .gauge b{display:block;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+           color:var(--dim);margin-bottom:9px}
+  .gauge .val{font-size:29px;font-weight:700;color:var(--brand);line-height:1}
+  .gauge .val span{font-size:14px;font-weight:400;color:var(--ink);margin-left:6px}
+  .gauge p{margin:9px 0 0;font-size:12px;line-height:1.5;color:var(--dim)}
+
+  footer{border-top:1px solid var(--line);margin:24px 56px 0;padding:10px 0 12px;
+         display:flex;font-size:11.5px;color:var(--dim);letter-spacing:.04em}
+  footer span{margin-left:auto}
+</style>
+<div class="wrap">
+  <header>
+    <svg class="mark" width="56" height="56" viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="5" y="16" width="25" height="42" fill="#EFEAE0"/>
+      <rect x="34" y="38" width="25" height="20" fill="#EFEAE0"/>
+      <rect x="27" y="6" width="9" height="52" fill="#C87E24"/>
+    </svg>
+    <div class="id">
+      <h1>Thurlby Navigation Trust</h1>
+      <p>Nineteen miles, eleven locks, and the water to work them.</p>
+    </div>
+    <div class="est">Cut 1794<br>Trust since 1963</div>
+  </header>
+
+  <nav><span class="on">Home</span><span>The Nettlebed Flight</span></nav>
+
+  <main>
+    <p class="lede">Nineteen miles of navigation from Thurlby Basin to the junction at
+      Wardlow End, eleven locks of it in the last two and a half. The Trust owns the water,
+      the gates and the towpath, and is <b>answerable for all three still being where you
+      left them</b>.</p>
+
+    <section class="notice">
+      <span class="stamp">Notice to navigators</span>
+      <b>The Nettlebed flight is closed from 2 November to 26 March</b>
+      <p>All eleven locks come out for hydraulic gear. There is no passage through the flight
+      in that time and no way round it — the nearest alternative is forty-one miles by way of
+      the Ouse. Winter moorings above lock one are free to anyone caught on the wrong side of
+      the closure, and we would rather you took one than tried the Ouse in February.</p>
+    </section>
+
+    <section class="tbl">
+      <h2>Passage, Thurlby to Wardlow End</h2>
+      <table>
+        <thead><tr><th>Section</th><th>Locks</th><th>Allow</th></tr></thead>
+        <tbody>
+          <tr><td>Thurlby Basin to Marlpit Bridge</td><td>None</td><td class="n">2 h 10</td></tr>
+          <tr><td>Marlpit Bridge to the foot of the flight</td><td>None</td><td class="n">1 h 25</td></tr>
+          <tr><td>The Nettlebed flight</td><td>Eleven</td><td class="n">3 h 40</td></tr>
+          <tr><td>Flight head to Wardlow End</td><td>One</td><td class="n">0 h 35</td></tr>
+        </tbody>
+      </table>
+      <p class="tblnote">Timed at four miles an hour, two crew, no queue. A single-handed boat
+      should add an hour to the flight and start it before noon.</p>
+    </section>
+
+    <aside>
+      <div class="spec">
+        <h2>Navigation</h2>
+        <dl>
+          <div><dt>Maximum length</dt><dd>21.9 m. The short chambers are six and seven</dd></div>
+          <div><dt>Maximum beam</dt><dd>2.13 m</dd></div>
+          <div><dt>Draught</dt><dd>1.06 m, and less than that by late August</dd></div>
+          <div><dt>Headroom</dt><dd>2.44 m at Marlpit Bridge, which is the low one</dd></div>
+          <div><dt>Licence</dt><dd>Required. Day licences from the lock cottage, cash or cheque</dd></div>
+          <div><dt>Flight hours</dt><dd>06:00 to dusk. Last boat into lock one two hours before</dd></div>
+        </dl>
+      </div>
+      <div class="gauge">
+        <b>Summit level, Monday</b>
+        <div class="val">−40<span>mm on normal</span></div>
+        <p>Read at the gauge board at Marlpit Bridge and posted here on a Monday. Below
+        −150 mm the flight goes to set times.</p>
+      </div>
+    </aside>
+
+    <section class="band">
+      <h2>Stoppage and works notices</h2>
+      <article>
+        <time>18 September</time>
+        <b>Gauge boards renewed, locks 3 and 9</b>
+        <p>Both read 30 mm high against the old ones. The figures painted on the chamber wall are wrong and are being ground off.</p>
+      </article>
+      <article>
+        <time>11 September</time>
+        <b>Hydraulic gear: contractor appointed</b>
+        <p>Work starts at the foot on 3 November and moves up the flight one lock a fortnight.</p>
+      </article>
+      <article>
+        <time>2 September</time>
+        <b>Side pond at lock 9 to be filled</b>
+        <p>Out of use since 1971 and holding water it should not. Filling begins once the flight is drained.</p>
+      </article>
+    </section>
+  </main>
+
+  <footer>Thurlby Navigation Trust · Lock Cottage, Nettlebed, by Thurlby
+    <span>Registered charity 249 118</span></footer>
+</div>
