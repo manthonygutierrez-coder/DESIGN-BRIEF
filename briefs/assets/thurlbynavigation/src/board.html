@@ -1,0 +1,56 @@
+<!doctype html><html lang="en-GB"><meta charset="utf-8">
+<link rel="stylesheet" href="base.css">
+<style>
+  body{width:800px}
+  .frame{width:800px;height:600px;background:#DCD6C8;position:relative;overflow:hidden}
+  .frame:after{content:"";position:absolute;left:0;bottom:0;width:800px;height:74px;
+               background:#B3A98F}
+  .post{position:absolute;top:54px;width:22px;height:512px;background:#7E7564}
+  .post.l{left:118px} .post.r{right:118px}
+  .board{position:absolute;left:78px;top:40px;width:644px;height:452px;background:var(--brand);
+         border:9px solid #163B2F;box-shadow:0 6px 0 rgba(0,0,0,.14)}
+  .inner{padding:24px 30px 0}
+  .top{display:flex;align-items:center;gap:16px;border-bottom:3px solid #C87E24;padding-bottom:16px}
+  .top h1{margin:0;font-size:24px;letter-spacing:.08em;text-transform:uppercase;
+          color:#F0EADC;font-weight:700;line-height:1.15}
+  .top p{margin:5px 0 0;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#9FBBAD}
+  .hd{margin:20px 0 4px;font-size:29px;color:#F0EADC;letter-spacing:.005em;font-weight:700}
+  .sub{margin:0 0 18px;font-size:13.5px;letter-spacing:.055em;color:#C87E24;
+       text-transform:uppercase;font-weight:700}
+  ol{margin:0;padding:0;list-style:none;counter-reset:s}
+  ol li{counter-increment:s;position:relative;padding:0 0 13px 44px;font-size:15.5px;
+        line-height:1.42;color:#DDE8E1}
+  ol li:before{content:counter(s);position:absolute;left:0;top:-1px;width:29px;height:29px;
+    background:#C87E24;color:#16191A;font-weight:700;font-size:16px;text-align:center;
+    line-height:29px}
+  .rule{border-top:1px solid #35614F;margin-top:6px;padding-top:13px;display:flex;
+        font-size:11.5px;letter-spacing:.11em;text-transform:uppercase;color:#8DAB9C}
+  .rule span{margin-left:auto}
+</style>
+<div class="frame">
+  <div class="post l"></div><div class="post r"></div>
+  <div class="board"><div class="inner">
+    <div class="top">
+      <svg width="52" height="52" viewBox="0 0 64 64">
+        <rect x="5" y="16" width="25" height="42" fill="#F0EADC"/>
+        <rect x="34" y="38" width="25" height="20" fill="#F0EADC"/>
+        <rect x="27" y="6" width="9" height="52" fill="#C87E24"/>
+      </svg>
+      <div>
+        <h1>Thurlby Navigation Trust</h1>
+        <p>Nettlebed flight · Locks 6 and 7</p>
+      </div>
+    </div>
+
+    <p class="hd">These two locks are a staircase</p>
+    <p class="sub">There is no pound between them</p>
+
+    <ol>
+      <li>Water leaving the upper chamber goes into the lower one and nowhere else.</li>
+      <li>Empty the upper chamber first. The order is fixed and does not change with the level.</li>
+      <li>Taking it in the wrong order floods the towpath and empties the pound below.</li>
+    </ol>
+
+    <div class="rule">Keeper resident at lock four<span>Flight 06:00 to dusk</span></div>
+  </div></div>
+</div>
