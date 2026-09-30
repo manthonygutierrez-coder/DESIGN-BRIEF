@@ -44,6 +44,8 @@ const Suite = (() => {
       touched: s.touched && typeof s.touched === "object" ? s.touched : {},
       drawers: s.drawers && typeof s.drawers === "object" ? s.drawers : {},
       look: s.look === "classic" ? "classic" : "graphite",
+      // The tool each mode was last left on, so a new window picks up where you were.
+      tools: s.tools && typeof s.tools === "object" ? s.tools : {},
     };
     document.addEventListener("keydown", onKey);
     S().cards.forEach(registerPicture);
@@ -293,6 +295,7 @@ const Suite = (() => {
         site: mode === "layout" ? { tagline: job ? job.client && job.client.site && job.client.site.tagline : "" } : undefined });
     }
     const ed = { win, mode, appId, docKey, job, doc, hist: D.history(), bonus: A.bonusForMode(mode, slot(), S().unlocks) };
+    Object.assign(ed, T.restore(mode, S().tools[mode], sheetTools(mode)));
     win.eds[mode] = ed;
     return ed;
   }
@@ -428,7 +431,7 @@ const Suite = (() => {
   }
 
   /* ── the plumbing every mode borrows ───────────────────── */
-  let autosaveTimer = 0;
+  let autosaveTimer = 0, rememberTimer = 0;
   function changed(ed, opts = {}) {
     ed.dirty = true;
     clearTimeout(autosaveTimer);
@@ -482,6 +485,7 @@ const Suite = (() => {
   const H = {
     status: setStatus, sound, look: () => S().look, reduced,
     mutate, record, changed,
+    remember: (ed) => { S().tools[ed.mode] = T.remember(ed.mode, ed); clearTimeout(rememberTimer); rememberTimer = setTimeout(save, 800); },
     card: cardById, addCards, fonts,
     drawerButtons: (ed) => ["cutout", "swatch", "cards"].concat(ed.win.lesson ? ["lesson"] : []).map((id) => {
       const d = DRAWERS[id];

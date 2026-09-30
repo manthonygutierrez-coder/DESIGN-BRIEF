@@ -1178,6 +1178,7 @@ const SuiteVectorEd = (() => {
     ed.st.handTool = t === "hand";
     if (t !== "node") ed.node = null;
     H.sound("tool");
+    H.remember(ed);
     render(ed, H, {});
     H.status(ed, T.hint("vector", t === "shape" ? ed.shape : t));
   }

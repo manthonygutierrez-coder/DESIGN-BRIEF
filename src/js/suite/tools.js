@@ -114,7 +114,30 @@ const SuiteTools = (() => {
     return groups.filter((g) => g.rows.length);
   }
 
-  return { MODE_KEYS, HINTS, home, hint, cursor, keyMap, conflicts, sheet, SHARED };
+  // What a mode remembers about how it was left, and how a new window takes
+  // it back: only tools that exist, and only plain values.
+  function remember(mode, ed) {
+    if (mode === "pixel") return { tool: ed.tool, size: ed.size, fillAll: !!ed.fillAll, perfect: ed.perfect !== false };
+    if (mode === "vector") return { tool: ed.tool, shape: ed.shape };
+    return { tool: ed.tool };
+  }
+  function restore(mode, saved, tools) {
+    const out = {};
+    if (!saved || typeof saved !== "object") return out;
+    const ids = tools.map((t) => t.id);
+    // A tool that needs something in hand (a pen half-drawn, words half-typed) is not one to start on.
+    const calm = (id) => ids.includes(id) && !["pen", "text", "hand"].includes(id);
+    if (mode === "vector" && saved.tool === "shape") { if (ids.includes(saved.shape)) { out.tool = "shape"; out.shape = saved.shape; } }
+    else if (calm(saved.tool)) out.tool = saved.tool;
+    if (mode === "pixel") {
+      if (Number.isFinite(saved.size)) out.size = Math.max(1, Math.min(16, Math.round(saved.size)));
+      if (typeof saved.fillAll === "boolean") out.fillAll = saved.fillAll;
+      if (typeof saved.perfect === "boolean") out.perfect = saved.perfect;
+    }
+    return out;
+  }
+
+  return { MODE_KEYS, HINTS, home, hint, cursor, keyMap, conflicts, sheet, remember, restore, SHARED };
 })();
 
 if (typeof module !== "undefined") module.exports = SuiteTools;

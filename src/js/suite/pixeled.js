@@ -748,6 +748,7 @@ const SuitePixelEd = (() => {
     ed.tool = t;
     ed.st.handTool = t === "hand";
     ed.st.cv.style.cursor = T.cursor(t);
+    H.remember(ed);
     H.sound("tool");
     render(ed, H, {});
     H.status(ed, T.hint("pixel", t));
@@ -859,8 +860,8 @@ const SuitePixelEd = (() => {
       }
       const o = t.dataset.o;
       if (o === "outline" || o === "filled") { ed.filled = o === "filled"; paintOpts(ed, H); }
-      if (o === "perfect") { ed.perfect = !ed.perfect; paintOpts(ed, H); H.sound("tool"); }
-      if (o === "fill:joined" || o === "fill:all") { ed.fillAll = o === "fill:all"; paintOpts(ed, H); H.sound("tool"); }
+      if (o === "perfect") { ed.perfect = !ed.perfect; H.remember(ed); paintOpts(ed, H); H.sound("tool"); }
+      if (o === "fill:joined" || o === "fill:all") { ed.fillAll = o === "fill:all"; H.remember(ed); paintOpts(ed, H); H.sound("tool"); }
       if (o === "mx") { ed.mx = !ed.mx; render(ed, H, {}); }
       if (o === "my") { ed.my = !ed.my; render(ed, H, {}); }
       if (o === "grid") { ed.grid = !ed.grid; render(ed, H, {}); }
@@ -877,7 +878,7 @@ const SuitePixelEd = (() => {
       }
     });
     ed.body.addEventListener("change", (e) => {
-      if (e.target.dataset.o === "size") { ed.size = Math.max(1, Math.min(16, Math.round(Number(e.target.value)) || 1)); paintOpts(ed, H); return; }
+      if (e.target.dataset.o === "size") { ed.size = Math.max(1, Math.min(16, Math.round(Number(e.target.value)) || 1)); H.remember(ed); paintOpts(ed, H); return; }
       if (e.target.dataset.o === "tol") {
         const v = Math.max(0, Math.min(255, Math.round(Number(e.target.value)) || 0));
         if (ed.win && ed.win.cut) { ed.win.cut.tol = v; if (ed.win.drawers && ed.win.drawers.repaint) ed.win.drawers.repaint("cutout"); }

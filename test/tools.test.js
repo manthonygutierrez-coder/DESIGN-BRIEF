@@ -50,3 +50,15 @@ test("tools: the shortcut sheet lists the tools, the editing keys and the keys e
   assert.ok(s[2].rows.some((r) => r[0] === "Cmd+1"));
   assert.equal(T.sheet("pixel", Pixel.TOOLS, [["Cmd+K", "x"]]).map((g) => g.title)[2], "THIS JOB");
 });
+
+test("tools: a new window takes back the tool you left, but never one that needs something in hand", () => {
+  const px = Pixel.TOOLS, vec = Vector.TOOLS.filter((t) => !t.flyout).concat(Object.entries(Vector.SHAPES).map(([id, s]) => ({ id, key: s.key })));
+  assert.deepEqual(T.restore("pixel", T.remember("pixel", { tool: "fill", size: 3, fillAll: true, perfect: false }), px),
+    { tool: "fill", size: 3, fillAll: true, perfect: false });
+  assert.deepEqual(T.restore("pixel", { tool: "pen" }, px), {}, "the pen is not a place to start");
+  assert.deepEqual(T.restore("pixel", { tool: "nonsense", size: 99 }, px), { size: 16 }, "an unknown tool is dropped, a size is clamped");
+  assert.deepEqual(T.restore("vector", { tool: "shape", shape: "ellipse" }, vec), { tool: "shape", shape: "ellipse" });
+  assert.deepEqual(T.restore("vector", { tool: "shape", shape: "star" }, vec), {});
+  assert.deepEqual(T.restore("vector", null, vec), {});
+  assert.deepEqual(T.restore("pixel", "junk", px), {});
+});
