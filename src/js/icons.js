@@ -416,5 +416,18 @@ Object.assign(ICON_ART, {
     ".kwwwwwwwwwkkkk.",".kwwwwwwwwwk....",".kwwwwwwwwwk....",".kkkkkkkkkkk....",
     "................","................","................","................"]},
 });
+// The research games: Dennis's cards, and a pad for every other game.
+Object.assign(ICON_ART, {
+  cards:{p:{k:"#0A0A0A",p:"#6B2FA0",y:"#E0B83A",w:"#FFF8E8",r:"#C8202E"},g:[
+    "................",".kkkkkkkkk......",".kpppppppk......",".kpypykkkkkkkkk.",
+    ".kppppkrwwwwwwk.",".kpypykrwwwwwwk.",".kppppkwwwwwwwk.",".kpypykwrrwrrwk.",
+    ".kppppkwrrrrrwk.",".kpypykwwrrrwwk.",".kppppkwwwrwwwk.",".kppppkwwwwwwwk.",
+    ".kkkkkkwwwwwwwk.","......kwwwwwwwk.","......kkkkkkkkk.","................"]},
+  gamepad:{p:{k:"#0A0A0A",s:"#B8B4CC",d:"#5A566E",r:"#E0442B",b:"#1084D0"},g:[
+    "................","................","................","................",
+    "................","..kkkkkkkkkkkk..",".kksssssssssskk.","kssskssssssrrssk",
+    "kskkkkkddssssssk","ksssksssssbbsssk","kssskssssssssssk","kssssk....kssssk",
+    ".kkkk......kkkk.","................","................","................"]},
+});
 // Forward is back, the other way round.
 ICON_ART["nav-fwd"] = { p: ICON_ART["nav-back"].p, g: ICON_ART["nav-back"].g.map((r) => r.split("").reverse().join("")) };

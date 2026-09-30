@@ -337,6 +337,7 @@ const Hustle = (() => {
     renderTicket(id);
     paintTray();
     tune({ research: researching() });              // the web plays the case now
+    setTimeout(() => announceGame(id), 2400);       // after the brief has landed
   }
 
   function endResearch(id, why) {
@@ -425,6 +426,7 @@ const Hustle = (() => {
       if (hit.kind === "fact") {
         Suite.addCards([{ kind: "fact", label: hit.item.label, value: text.slice(0, 400), tags: hit.item.tags.concat(["fact"]), source: { url, ref: "fact:" + hit.item.id } }]);
         webStatus("Fact card: " + hit.item.label);
+        announceGame(id);
       } else {
         const site = siteClient(dom);
         Suite.addCards([{ kind: "trend", label: hit.item.label, value: (site ? site.co + ": " : "") + text.slice(0, 380), tags: hit.item.tags.concat(["trend"]), source: { url, ref: "trend:" + hit.item.id } }]);
@@ -642,7 +644,7 @@ const Hustle = (() => {
     if (gs.result) G().rep = Math.max(0, G().rep - (gs.result.rep || 0));
     const call = getWin(callKey(id));
     if (call) { gs.line = false; closeWin(call); }
-    for (const k of ["ticket:" + id, "compare:" + id]) { const w = getWin(k); if (w) closeWin(w); }
+    for (const k of ["ticket:" + id, "compare:" + id, "game:" + id, "popup:" + id]) { const w = getWin(k); if (w) closeWin(w); }
     Suite.forget(id, refs);
     delete G().gigs[id];
     if (focusId === id) focusId = activeGigs()[0] || null;
@@ -782,7 +784,7 @@ const Hustle = (() => {
         parts.push('<button class="w98btn w98btn--i" data-hx="ticket" data-gig="' + rid + '" title="The brief, what you have found, and delivery">' + iconSVG("ticket", 16) + "<span>Ticket</span></button>");
         parts.push('<button class="w98btn w98btn--i" data-hx="compare" data-gig="' + rid + '" title="Compare rivals: the row nobody does is the gap">' + iconSVG("compare", 16) + "<span>Compare</span></button>");
         const game = GAMES[rid];
-        if (game && host === game.site) parts.push('<button class="w98btn w98btn--i hx-tb--game" data-hx="game" data-gig="' + rid + '" title="' + esc(game.blurb) + '">' + iconSVG("cards", 16) + "<span>" + esc(game.button) + "</span></button>");
+        if (game && host === game.site && gameOpen(rid)) parts.push('<button class="w98btn w98btn--i hx-tb--game" data-hx="game" data-gig="' + rid + '" title="' + esc(game.blurb) + '">' + iconSVG(game.icon || "gamepad", 16) + "<span>" + esc(game.button) + "</span></button>");
         const here = foundHere(rid, host);
         if (here) {
           parts.push('<span class="hx-tb__here' + (here.total && here.got === here.total ? " done" : "") + '" title="What this site holds for ' + esc(gig.short) + '">' +
@@ -849,41 +851,54 @@ const Hustle = (() => {
   }
 
   /* ── research games ──────────────────────────────────────
-   * Some clients' worlds hide a game: Dennis's site, untouched since about
-   * 2004, pops up a card trick. Playing is never needed, since everything a
-   * need rests on is on the pages. It costs nothing but time: the research
-   * clock stops while its window is up, and a wrong call costs a few seconds.
-   * What it wins comes through the usual pipes, once a gig: cards in the
-   * tray, and a bonus tool lent for that job alone. You can play again for
-   * the fun of it. The game itself: cardtrick.js (the rules) and cardgame.js
-   * (the show).
+   * Every client's world hides a game (games.js has which, and what each can
+   * win): Dennis's site, untouched since about 2004, pops up a card trick;
+   * others are a walk round a market, a run of microgames, a memory table.
+   * Playing is never needed, since everything a need rests on is on the
+   * pages. It costs nothing but time: the research clock stops while a game
+   * has your attention (its window in front), and a wrong call can cost a few
+   * seconds. What a game wins comes through the usual pipes, once a gig: a
+   * fact exactly as if you had clipped it, and flavour cards in the tray.
+   * You can play again for the fun of it.
    */
-  const GAMES = {
-    "dennis-wordmark": {
-      id: "cardtrick", site: "improbabledennis.com", button: "Pick a card",
-      blurb: "Dennis's card trick. The research clock stops while you play.",
-      prize: {
-        cards: [
-          { kind: "fact", label: "His signature card: the King of Spades, in black and gold", value: "Dennis ends every card trick on the King of Spades, from a black-and-gold deck. \"Black and gold, like the act.\"", tags: ["signature"] },
-          { kind: "colour", label: "Card-back black", value: "#141414", tags: ["black"] },
-          { kind: "colour", label: "Deck gold", value: "#D4AF37", tags: ["gold"] },
-        ],
-        loan: "align",
-        note: "His signature card and his black and gold are on cards in your tray, and he's lent you Align for this job.",
-        says: "It's on a card in your tray, with my black and gold. And borrow my Align, for this job only.",
-      },
-    },
-  };
+  const GAMES = HustleGames.GAMES;
+  if (typeof HustleCardGame !== "undefined") HustleGames.register("cards", HustleCardGame);
   const GAME_MISS = 5;                               // seconds a wrong call costs
   const gameKey = (id) => "game:" + id, popKey = (id) => "popup:" + id;
-  const gameOn = (id) => { const w = GAMES[id] && getWin(gameKey(id)); return !!(w && !w.el.classList.contains("min")); };
+  const gameWin = (id) => (GAMES[id] ? getWin(gameKey(id)) : null);
+  // The clock stops only while you are playing: the game's window in front.
+  // Left open to one side while you clip, it is just another window.
+  const gameOn = (id) => { const w = gameWin(id); return !!(w && activeWin === w && !w.el.classList.contains("min")); };
   const gameState = (id) => { const gs = gsOf(id); gs.games = gs.games || {}; return gs.games[GAMES[id].id] || (gs.games[GAMES[id].id] = { goes: 0 }); };
+  // Stopped or running shows the moment a game gains or loses the front.
+  document.addEventListener("wm:focus", () => {
+    if (!state) return;
+    document.querySelectorAll("[data-hx-timer]").forEach((el) => { el.textContent = timerText(el.dataset.hxTimer); });
+  });
+  // A game opens while its gig is being researched, once you know how
+  // research is done: after your camera's tour, or once you have clipped
+  // something for this gig yourself. A game's facts never teach clipping.
+  function gameOpen(id) {
+    const spec = GAMES[id];
+    if (!spec || stageOf(id) !== "research") return false;
+    if (!(spec.grants || []).length) return true;
+    if (typeof Camera !== "undefined" && Camera.ready && Camera.ready()) return true;
+    const gs = gsOf(id), won = gameState(id).granted || [];
+    return ((gs.found && gs.found.facts) || []).some((f) => !won.includes(f));
+  }
+  // Tell the pager once, when a game first opens for a gig.
+  function announceGame(id) {
+    const spec = GAMES[id], g = spec && gameState(id);
+    if (!g || g.told || spec.popup || !gameOpen(id)) return;
+    g.told = true;
+    post(gigOf(id).poster.handle, "sys", "There's a game on " + spec.site + ": " + spec.title.split(" — ")[0] + ". The research clock stops while you play.", { gig: id, cta: "game" });
+  }
 
   // A 2004 site: of course there's a pop-up. Only while its gig is being
   // researched, not once you've caught the trick or said no thanks; the
   // research bar keeps a way back to it either way.
   function offerGame(host) {
-    const id = Object.keys(GAMES).find((k) => GAMES[k].site === host && stageOf(k) === "research");
+    const id = Object.keys(GAMES).find((k) => GAMES[k].site === host && GAMES[k].popup && gameOpen(k));
     if (!id) return;
     const g = gameState(id);
     if (g.won || g.nope || getWin(gameKey(id)) || getWin(popKey(id))) return;
@@ -904,20 +919,79 @@ const Hustle = (() => {
     });
   }
   function playGame(id) {
-    if (!GAMES[id] || typeof HustleCardGame === "undefined") return;
+    const spec = GAMES[id];
+    if (!spec || !gameOpen(id)) return;
+    const engine = HustleGames.player(spec.engine);
+    if (!engine) return;
     const pop = getWin(popKey(id));
     if (pop) closeWin(pop);
     const g = gameState(id), seed = (gsOf(id).run && gsOf(id).run.seed) || 1;
-    HustleCardGame.play({
-      key: gameKey(id),
-      seedFor: () => HustleCardTrick.seedFor(seed, g.goes || 0),
-      onResult: (kind) => gameResult(id, kind),
-      onClose: () => { save(); paintTray(); Web.refreshTools(); renderTicket(id); },
-    });
+    const onClose = () => { save(); paintTray(); Web.refreshTools(); renderTicket(id); tune({ research: researching() }); };
+    if (spec.engine === "cards") {
+      engine.play({
+        key: gameKey(id), title: spec.title, ink: spec.ink,
+        seedFor: () => HustleCardTrick.seedFor(seed, g.goes || 0),
+        onResult: (kind) => gameResult(id, kind),
+        onClose,
+      });
+    } else {
+      engine.play({
+        key: gameKey(id), spec, seed: (seed + (g.goes || 0) * 7919) >>> 0,
+        // What the game has already won, so it can say so.
+        won: (factId) => ((gsOf(id).found && gsOf(id).found.facts) || []).includes(factId),
+        factLabel: (factId) => { const f = (gigOf(id).facts || []).find((x) => x.id === factId); return f ? f.label : factId; },
+        grant: (factId, said) => grantFact(id, factId, said),
+        prize: (cards) => grantCards(id, cards),
+        miss: (sec) => gameMiss(id, sec),
+        played: (result) => { g.goes = (g.goes || 0) + 1; if (result === "won") g.won = true; save(); renderTicket(id); },
+        onClose,
+      });
+    }
     Web.refreshTools();
   }
-  // Each go's result: a wrong call costs seconds, and the first catch wins
-  // the prize. Returns what Dennis should add about it.
+
+  // A fact won in a game: exactly what clipping it would have done. The same
+  // card (its words are the game's), the same count on the ticket and for
+  // your camera, and the call hears about it. "new", "dupe", or "closed" once
+  // research is over.
+  function grantFact(id, factId, said) {
+    const gig = gigOf(id), gs = gsOf(id), spec = GAMES[id];
+    const f = (gig.facts || []).find((x) => x.id === factId);
+    if (!f || !spec || !(spec.grants || []).includes(factId)) return "closed";
+    if (gs.stage !== "research") return "closed";
+    gs.found = gs.found || Res.emptyFound();
+    if (gs.found.facts.includes(f.id)) return "dupe";
+    gs.found = Res.record(gs.found, { kind: "fact", item: f, dom: f.where });
+    const g = gameState(id);
+    g.granted = [...new Set((g.granted || []).concat(f.id))];
+    Suite.addCards([{ kind: "fact", label: f.label, value: String(said || f.label).slice(0, 400), tags: f.tags.concat(["fact"]), source: { url: "http://" + f.where + "/", ref: "fact:" + f.id } }]);
+    sound("clip-hit");
+    if (getWin(callKey(id)) && ((gs.dlg && !gs.dlg.ended) || gs.line)) callEvent(id, "clip", "Fact: " + f.label);
+    save();
+    renderTicket(id);
+    paintTray();
+    Web.refreshTools();
+    return "new";
+  }
+  // Flavour cards a game hands over (a colour, a line), once a gig.
+  function grantCards(id, cards) {
+    const spec = GAMES[id], g = gameState(id);
+    if (!spec || g.prized) return 0;
+    g.prized = true;
+    const n = Suite.addCards((cards || []).filter((c) => c.kind !== "trend").map((c) => Object.assign({}, c, { source: { url: "http://" + spec.site + "/", ref: "game:" + spec.id + ":" + c.label } })));
+    save(); paintTray();
+    return n;
+  }
+  function gameMiss(id, sec) {
+    const gs = gsOf(id);
+    if (gs.stage !== "research") return;
+    gs.research.left = Math.max(0, gs.research.left - (sec || GAME_MISS));
+    save();
+    if (gs.research.left <= 0) endResearch(id, "time");
+  }
+
+  // Each go at Dennis's trick: a wrong call costs seconds, and the first
+  // catch wins the prize. Returns what Dennis should add about it.
   function gameResult(id, kind) {
     const spec = GAMES[id], gs = gsOf(id), g = gameState(id), gig = gigOf(id);
     g.goes = (g.goes || 0) + 1;
@@ -1165,7 +1239,8 @@ const Hustle = (() => {
         if (m.who === "sys") {
           const btn = m.cta === "ticket" ? soft("ticket", m.gig, "Open ticket")
             : m.cta === "suite" ? soft("suite", m.gig, "Open Design Suite")
-            : m.cta === "review" ? soft("ticket", m.gig, "Read the review") : "";
+            : m.cta === "review" ? soft("ticket", m.gig, "Read the review")
+            : m.cta === "game" && GAMES[m.gig] && gameOpen(m.gig) ? soft("game", m.gig, GAMES[m.gig].button) : "";
           return '<div class="pg__sys"><span>' + esc(m.text) + "</span>" + (btn ? "<div>" + btn + "</div>" : "") + "</div>";
         }
         return '<div class="pg__m pg__m--' + m.who + (same ? " pg__m--more" : "") + '">' + (same ? "" : "<b>" + (m.who === "you" ? esc(myName()) : esc(t.name)) + "<i>" + hhmm(m.at) + "</i></b>") + "<span>" + esc(m.text) +
@@ -1240,6 +1315,7 @@ const Hustle = (() => {
     if (a === "call") openCall(b.dataset.gig);
     if (a === "ticket") renderTicket(b.dataset.gig, true);
     if (a === "suite") Suite.launcher(b.dataset.gig);
+    if (a === "game") playGame(b.dataset.gig);
   }
 
   /* ── the call ──────────────────────────────────────────────
@@ -1624,6 +1700,16 @@ const Hustle = (() => {
   }
 
   /* ── ticket window ─────────────────────────────────────── */
+  // The gig's game, on its ticket: how to play it, or what opens it, and what it has won.
+  function gameRow(id) {
+    const spec = GAMES[id], gs = gsOf(id);
+    if (!spec || gs.stage !== "research") return "";
+    const open = gameOpen(id), won = (gameState(id).granted || []).length;
+    return '<div class="tk__game"><button class="w98btn w98btn--i" data-tk="game"' + (open ? "" : " disabled") + ">" + iconSVG(spec.icon || "gamepad", 16) + "<span>" + esc(spec.button) + "</span></button>" +
+      '<span class="tk__dim">' + (open ? esc(spec.blurb) : "Clip something from their site first, and a game opens up.") +
+      (won ? " Won so far: " + won + (won === 1 ? " fact." : " facts.") : "") + "</span></div>";
+  }
+
   function renderTicket(id, open) {
     if (!id || !gigOf(id)) return;
     const key = "ticket:" + id;
@@ -1648,6 +1734,7 @@ const Hustle = (() => {
         }
         if (a === "search") { focusId = id; Web.visit(Sites.searchURL(b.dataset.q), siteForWeb(id, gig.poster.site)); }
         if (a === "retry") confirmRetry(b, id);
+        if (a === "game") playGame(id);
       });
     }
     const revealed = new Set(gs.dlg ? gs.dlg.revealed : []);
@@ -1675,6 +1762,7 @@ const Hustle = (() => {
           '<p class="tk__line">Facts clipped: <b>' + factsN + "</b></p>" +
           '<div class="tk__acts"><button class="w98btn" data-tk="visit" data-url="http://' + gig.poster.site + '/">Their site</button>' +
             (gig.refs || []).slice(0, 3).map((ref) => '<button class="w98btn" data-tk="search" data-q="' + esc(ref.q) + '">Pictures: ' + esc(ref.q) + "</button>").join("") + "</div>" +
+          gameRow(id) +
           '<p class="tk__line">Rivals</p><ul class="tk__list">' + rivals + "</ul>" +
           '<div class="tk__acts">' + (gig.competitors || []).map((dom) => '<button class="w98btn" data-tk="visit" data-url="http://' + dom + '/">' + esc((siteClient(dom) || {}).co || dom) + "</button>").join("") +
           '<button class="w98btn" data-tk="compare">Compare rivals</button></div>' + gap + "</section></div>";
@@ -1752,6 +1840,21 @@ const Hustle = (() => {
     rep: () => (state ? G().rep : 0),
     // For testing and for the content pipeline: the whole game state.
     debug: () => JSON.parse(JSON.stringify(G())),
+    // For tests: a gig straight into research with its brief complete, and its game.
+    test: {
+      research(id) {
+        const gig = gigOf(id);
+        if (!gig || stageOf(id) === "research") return;
+        const gs = gsOf(id);
+        rollRun(id);
+        gs.dlg = Dlg.premade(gig.dialogue, gig.needs.map((n) => n.id).concat(gig.limits.map((l) => l.id)));
+        startResearch(id);
+      },
+      play: (id) => playGame(id),
+      open: (id) => gameOpen(id),
+      on: (id) => gameOn(id),
+      skipTour: () => { if (G().me) { G().me.guide = "done"; save(); } },
+    },
     progress,
     // What your camera's "show me" buttons do, the same way the game's own do.
     tour: {

@@ -83,7 +83,7 @@ const HustleCardGame = (() => {
 
   /* ── the show ────────────────────────────────────────── */
   function play(o) {
-    const g = MiniGame.open({ key: o.key, title: o.title || "PICK A CARD! — The Improbable Dennis", iconId: "cards", w: W, h: H, scale: 3, className: "w98--cards", onClose: o.onClose });
+    const g = MiniGame.open({ key: o.key, title: o.title || "PICK A CARD! — The Improbable Dennis", iconId: "cards", w: W, h: H, scale: 3, className: "w98--cards", onClose: o.onClose, ink: o.ink });
     if (g.running) return g;
     g.running = true;
     const ui = (n) => { if (typeof uiSound === "function") uiSound(n); };
