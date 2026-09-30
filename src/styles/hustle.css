@@ -549,19 +549,61 @@
 .w98--camguide{z-index:100000 !important}
 
 /* ── research games: the frame (minigame.js) ─────────────
-   A pixel screen scaled by whole numbers, and a strip for who's talking and
-   what you can do. */
-.w98--game .client{background:var(--w-face)}
-.mg{display:flex;flex-direction:column;height:100%;min-height:0}
-.mg__screen{flex:1 1 auto;display:grid;place-items:center;min-height:0;overflow:hidden;padding:8px;background:#0E0716;border-bottom:1px solid var(--w-sh)}
+   One look for every game, inked in the game's own colours (--mg-*, set by
+   minigame.js): a strip with its name, the score and the research clock; the
+   picture, scaled by whole numbers; and who's talking, with chips for what
+   you can do. Nothing here is a Windows control. */
+.w98--game .client{background:var(--mg-panel,#1A1226)}
+/* The frame, in the game's colours too. A game keeps the keyboard, so its bar
+   opens only when you reach for the top edge (or drag), never just because
+   the game has focus: while you play, the window is the game. */
+.w98--game.w98--f-ghost{border-color:var(--mg-lo,#07040C);background:var(--mg-panel,#1A1226)}
+.w98--game.w98--f-ghost.on{border-color:var(--mg-dim,#8C7FA6)}
+.w98--game.w98--f-ghost .tbar,.w98--game.w98--f-ghost.on .tbar{background:var(--mg-lo,#07040C);color:var(--mg-fg,#EDE7F6)}
+.w98--game.w98--f-ghost:hover .tbar,.w98--game.w98--f-ghost:focus-within .tbar{max-height:5px;box-shadow:none}
+.w98--game.w98--f-ghost:hover .tbar>*,.w98--game.w98--f-ghost:focus-within .tbar>*{opacity:0;pointer-events:none}
+.w98--game.w98--f-ghost .tbar:hover,.w98--game.w98--f-ghost.dragging .tbar{max-height:20px;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.w98--game.w98--f-ghost .tbar:hover>*,.w98--game.w98--f-ghost.dragging .tbar>*{opacity:1;pointer-events:auto}
+.mg{display:flex;flex-direction:column;height:100%;min-height:0;background:var(--mg-panel);color:var(--mg-fg)}
+.mg__hud{flex:0 0 auto;display:flex;align-items:center;gap:12px;height:24px;padding:0 12px;background:var(--mg-lo);
+  font-family:"Press Start 2P",monospace;font-size:8px;line-height:1;letter-spacing:0;text-transform:uppercase;color:var(--mg-dim)}
+.mg__title{font-weight:400;color:var(--mg-fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.mg__stat{margin-left:auto;color:var(--mg-hi);white-space:nowrap}
+.mg__stat:empty{display:none}
+.mg__clock{white-space:nowrap}
+.mg__stat:empty + .mg__clock{margin-left:auto}
+.mg__clock::before{content:"";display:inline-block;width:6px;height:6px;margin-right:6px;vertical-align:0;background:currentColor}
+.mg__clock.is-stopped{color:var(--mg-hi)}
+.mg__screen{position:relative;flex:1 1 auto;display:grid;place-items:center;min-height:0;overflow:hidden;padding:10px;background:var(--mg-bg);outline:none}
+.mg__screen:focus-visible{box-shadow:inset 0 0 0 2px var(--mg-dim)}
 .mg__cv{display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+.mg__pause{position:absolute;inset:0;margin:0;display:none;place-content:center;gap:8px;text-align:center;background:rgba(0,0,0,.5);color:var(--mg-fg);
+  font-family:"Press Start 2P",monospace;font-size:16px;line-height:1.5;letter-spacing:0;cursor:pointer}
+.mg__pause span{font-size:8px;color:var(--mg-dim)}
+.mg.is-paused .mg__pause{display:grid}
+.mg__toast{position:absolute;left:50%;top:14px;z-index:2;margin:0;max-width:calc(100% - 28px);transform:translateX(-50%);padding:7px 10px 6px;
+  background:var(--mg-lo);color:var(--mg-hi);box-shadow:inset 0 0 0 2px var(--mg-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-family:"Press Start 2P",monospace;font-size:8px;line-height:1.3;letter-spacing:0;pointer-events:none;animation:mgToast 2.8s steps(1) forwards}
+@keyframes mgToast{0%{opacity:0}4%{opacity:1}92%{opacity:1}100%{opacity:0}}
 /* a steady height, so the picture doesn't jump as the choices change */
-.mg__talk{flex:0 0 auto;display:flex;flex-direction:column;gap:8px;min-height:188px;padding:8px 10px 10px}
-.mg__say{margin:0;min-height:40px;font-family:"VT323",monospace;font-size:19px;line-height:1.05;color:var(--w-txt)}
-.mg__choices{display:flex;flex-wrap:wrap;gap:6px}
+.mg__talk{flex:0 0 auto;display:flex;flex-direction:column;gap:10px;min-height:126px;padding:10px 12px 12px;border-top:2px solid var(--mg-lo)}
+.mg__say{margin:0;min-height:40px;font-family:"VT323",monospace;font-size:20px;line-height:1.05;color:var(--mg-fg)}
+.mg__choices{display:flex;flex-wrap:wrap;gap:10px 10px}
 .mg__choices:empty{display:none}
-.mg__c{min-height:24px;padding:3px 10px;white-space:normal;text-align:left;max-width:100%}
-.mg__c--go{font-weight:700}
+/* A chip: flat, a two-pixel edge and a hard step under it; pressed, it sits down. */
+.mg__c{display:inline-flex;align-items:center;gap:7px;max-width:100%;min-height:28px;margin:0 0 3px;padding:4px 11px 5px;border:0;border-radius:0;cursor:pointer;
+  font-family:"VT323",monospace;font-size:20px;line-height:1;text-align:left;white-space:normal;color:var(--mg-fg);background:var(--mg-panel);
+  box-shadow:inset 0 0 0 2px var(--mg-dim),0 3px 0 var(--mg-lo)}
+.mg__c:hover{box-shadow:inset 0 0 0 2px var(--mg-fg),0 3px 0 var(--mg-lo)}
+.mg__c:focus{outline:none}
+.mg__c:focus-visible{color:var(--mg-panel);background:var(--mg-fg);box-shadow:inset 0 0 0 2px var(--mg-fg),0 3px 0 var(--mg-lo)}
+.mg__c:active{transform:translateY(2px);box-shadow:inset 0 0 0 2px var(--mg-fg),0 1px 0 var(--mg-lo)}
+.mg__c:disabled{cursor:default;opacity:.45;transform:none}
+.mg__c--go{color:var(--mg-hi);box-shadow:inset 0 0 0 2px var(--mg-hi),0 3px 0 var(--mg-lo)}
+.mg__c--go:focus-visible{color:var(--mg-lo);background:var(--mg-hi);box-shadow:inset 0 0 0 2px var(--mg-hi),0 3px 0 var(--mg-lo)}
+.mg__c--quiet{color:var(--mg-dim)}
+.mg__caret{flex:0 0 auto;width:4px;height:7px;fill:currentColor;shape-rendering:crispEdges}
+@media (prefers-reduced-motion:reduce){.mg__toast{animation:none}.mg__c:active{transform:none}}
 
 /* Dennis's pop-up: about 2004, and proud of it */
 .w98--popad .client{padding:0}
@@ -576,3 +618,5 @@
 @media (prefers-reduced-motion:reduce){.popad__blink{animation:none}}
 .hx-tb--game{background:#3B1D57;color:#FFD86B}
 .theme-dark .hx-tb--game{background:#3B1D57;color:#FFD86B}
+.tk__game{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tk__game .tk__dim{flex:1 1 100%}
