@@ -19,9 +19,9 @@
  */
 
 const SuiteTools = (() => {
-  const MODE_KEYS = { vector: "1", pixel: "2", layout: "3", frames: "4" };
+  const MODE_KEYS = { vector: "1", pixel: "2", layout: "3" };
 
-  const HOME = { vector: "select", pixel: "select", layout: "select", frames: "select" };
+  const HOME = { vector: "select", pixel: "select", layout: "select" };
   const home = (mode) => HOME[mode] || "select";
 
   // What a tool does, in the words the status bar shows when it is picked. A
@@ -70,7 +70,7 @@ const SuiteTools = (() => {
   }
 
   // Keys: a tool's own, plus what a mode adds as a second way in.
-  const ALIASES = { pixel: { v: "select" }, frames: { v: "select" } };
+  const ALIASES = { pixel: { v: "select" } };
   function keyMap(mode, tools) {
     const map = {};
     for (const t of tools) if (t.key) map[t.key.toLowerCase()] = t.id;
@@ -91,7 +91,7 @@ const SuiteTools = (() => {
   // What every mode does the same way.
   const SHARED = [
     ["Cmd+Z", "Undo"], ["Shift+Cmd+Z", "Redo"], ["Cmd+S", "Save"],
-    ["Cmd+1", "Vector"], ["Cmd+2", "Pixel"], ["Cmd+3", "Layout"], ["Cmd+4", "Frames"],
+    ["Cmd+1", "Vector"], ["Cmd+2", "Pixel"], ["Cmd+3", "Layout"],
     ["Cmd+=", "Zoom in"], ["Cmd+-", "Zoom out"], ["Cmd+0", "Fit to the window"],
     ["Space", "Hold to move around"], ["Esc", "Step back; then back to Select"], ["?", "This sheet"],
   ];
@@ -99,9 +99,9 @@ const SuiteTools = (() => {
     vector: [["Cmd+A", "Select all"], ["Cmd+D", "Duplicate"], ["Cmd+C / X / V", "Copy, cut, paste"], ["Del", "Delete"],
       ["Arrows", "Nudge 1 px (Shift: 10)"], ["[  ]", "Send back, bring forward (Shift: to the end)"], ["X", "Swap fill and stroke"], ["'", "Grid"]],
     pixel: [["Cmd+A", "Select everything"], ["Cmd+I", "Invert the selection"], ["Cmd+C / X / V", "Copy, cut, paste the selection"], ["Del", "Clear the selection"],
-      ["Arrows", "Move the selection 1 px (Shift: 10)"], ["Shift+H / V / R", "Flip, flip, turn the selection"], ["X", "Mirror (when earned)"], ["Alt-click", "Pick a colour"]],
+      ["Arrows", "Move the selection 1 px (Shift: 10)"], ["Shift+H / V / R", "Flip, flip, turn the selection"], ["X", "Mirror (when earned)"], ["Alt-click", "Pick a colour"],
+      [",  .", "Previous, next frame (when Frames is earned)"], ["Enter", "Play or stop the preview"]],
     layout: [["Up / Down", "Select the previous, next block"], ["Alt+Up / Down", "Move the block up or down the page"], ["Cmd+D", "Duplicate the block"], ["Del", "Delete the block"], ["Drag", "A block, to a new place on the page"]],
-    frames: [[",  .", "Previous, next frame"], ["Enter", "Play, pause"], ["[  ]", "Onion skin fewer, more"], ["Cmd+D", "Duplicate the frame"]],
   };
   function sheet(mode, tools, extra) {
     const t = tools.filter((x) => x.key).map((x) => [x.key.toUpperCase(), (x.label || x.id).split(/[:(]/)[0].trim()]);

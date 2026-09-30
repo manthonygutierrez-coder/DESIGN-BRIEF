@@ -288,6 +288,9 @@ Object.assign(ICON_ART, {
   "v-grey":{p:{k:"currentColor",m:"var(--ico-mid,#8A8A96)",r:"#E8563B",w:"var(--ico-paper,#FFFFFF)",y:"#F2C94C"},g:[
     "................","................",".kkkkkkkkkkkkkk.",".kyyyyyywwwwwwk.",".kyyyyyywwwwwwk.",".kyyyyyywwwwwwk.",".krrrrrrmmmmmmk.",".krrrrrrmmmmmmk.",
     ".krrrrrrmmmmmmk.",".krrrrrrmmmmmmk.",".krrrrrrmmmmmmk.",".krrrrrrmmmmmmk.",".krrrrrrmmmmmmk.",".kkkkkkkkkkkkkk.","................","................"]},
+  "v-walk":{p:{a:"#3FA7E8",g:"#4FC27A",k:"currentColor"},g:[
+    "................",".......kk.......",".......kk.......","......kkkk......","....k.kkkk.k....","....k.kkkk.k....",".......kk.......","......k..k......",
+    ".....k....k.....","....k......k....","................","gggg..gggg..gggg","................","aa..............","................","................"]},
   "v-tile":{p:{a:"#3FA7E8",g:"#4FC27A",k:"currentColor"},g:[
     "................",".kkkkkkkkkkkkkkk",".kaaakkgggkkaaak",".kaaakkgggkkaaak",".kaaakkgggkkaaak",".kkkkkkkkkkkkkkk",".kkkkkkkkkkkkkkk",".kgggkkaaakkgggk",
     ".kgggkkaaakkgggk",".kgggkkaaakkgggk",".kkkkkkkkkkkkkkk",".kkkkkkkkkkkkkkk",".kaaakkgggkkaaak",".kaaakkgggkkaaak",".kaaakkgggkkaaak",".kkkkkkkkkkkkkkk"]}

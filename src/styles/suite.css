@@ -491,7 +491,7 @@
 .sx__sheetcols kbd{font:inherit;font-size:7px;padding:1px 4px;border:1px solid var(--sx-line);border-radius:2px;background:var(--sx-field)}
 
 /* the frames bar (Pixel): a strip of frames under the work, oldest first */
-.sx__time{flex:0 0 auto;display:flex;align-items:center;gap:3px;min-height:44px;padding:4px 6px;background:var(--sx-bar);border-top:1px solid var(--sx-line)}
+.sx__time{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:3px 3px;min-height:44px;padding:4px 6px;background:var(--sx-bar);border-top:1px solid var(--sx-line)}
 .sx__time[hidden]{display:none}
 .sx__frs{display:flex;align-items:center;gap:3px;min-width:0;max-width:52%;overflow-x:auto;padding:2px 1px}
 .sx__fr{position:relative;flex:0 0 auto;display:grid;place-items:center;width:36px;height:36px;padding:2px;border:1px solid var(--sx-line);border-radius:var(--sx-r);background:var(--sx-field)}
@@ -500,3 +500,39 @@
 .sx__fr:hover{background:var(--sx-hover)}
 .sx__fr.on{border-color:var(--sx-hi);box-shadow:inset 0 0 0 1px var(--sx-hi)}
 .sx__fr.on i{color:var(--sx-hi)}
+
+/* frames: rows, tags and the preview's own settings */
+.sx__brk{flex:0 0 100%;height:0}
+.sx__fr u{position:absolute;left:1px;right:1px;height:2px;display:block}
+.sx__tag{display:inline-flex;align-items:baseline;gap:5px;height:20px;padding:0 6px;border:1px solid var(--sx-line);border-left:4px solid var(--tc,var(--sx-hi));border-radius:var(--sx-r);background:var(--sx-field)}
+.sx__tag b{font-weight:400}
+.sx__tag i{font-style:normal;font-size:7px;color:var(--sx-dim)}
+.sx__tag:hover{background:var(--sx-hover)}
+.sx__tag.on{border-color:var(--tc,var(--sx-hi));box-shadow:inset 0 0 0 1px var(--tc,var(--sx-hi))}
+.sx__pvo{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:4px 6px 6px}
+.sx__pvo .sx__num{flex:0 0 auto}
+.sx__pvn{flex:1 0 100%;font-family:"VT323",monospace;font-size:14px;letter-spacing:0;color:var(--sx-dim)}
+.sx__pvn:empty{display:none}
+
+/* the export box */
+.sx__exp{position:absolute;inset:0;z-index:45;display:grid;place-items:center;background:rgba(0,0,0,.5)}
+.sx__expbox{width:min(720px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;background:var(--sx-bar);color:var(--sx-ink);
+  border:1px solid var(--sx-line);border-radius:var(--sx-r);box-shadow:4px 4px 0 rgba(0,0,0,.35);padding:10px 14px 12px}
+.sx__expbox header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.sx__expbox header b{letter-spacing:.14em}
+.sx__expbox header span{flex:1;color:var(--sx-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sx__expbox header button{width:20px;height:20px;font-size:14px;border:1px solid var(--sx-line)}
+.sx__expcols{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px}
+.sx__expf{display:flex;flex-direction:column;gap:7px;align-items:flex-start}
+.sx__expfmt{display:flex;flex-wrap:wrap;gap:3px}
+.sx__expfmt button{padding:5px 8px;border:1px solid var(--sx-line);border-radius:var(--sx-r);background:var(--sx-field)}
+.sx__expfmt button:hover{background:var(--sx-hover)}
+.sx__expfmt button.on{border-color:var(--sx-hi);box-shadow:inset 0 0 0 1px var(--sx-hi)}
+.sx__chk{display:flex;gap:6px;align-items:flex-start;max-width:300px}
+.sx__chk span{font-family:"VT323",monospace;font-size:15px;letter-spacing:0;line-height:1.1}
+.sx__expnote{margin:4px 0 0;white-space:pre-line;font-family:"VT323",monospace;font-size:14px;letter-spacing:0;color:var(--sx-dim)}
+.sx__expv{display:flex;flex-direction:column;align-items:center;gap:6px}
+.sx__expc{max-width:100%;image-rendering:pixelated;background:repeating-conic-gradient(#fff 0 25%,#E4E4E4 0 50%) 0 0/8px 8px;border:1px solid var(--sx-line)}
+.sx__expn{margin:0;font-family:"VT323",monospace;font-size:15px;letter-spacing:0;color:var(--sx-dim);text-align:center}
+.sx__expbox footer{display:flex;align-items:center;gap:8px;margin-top:10px}
+@media (max-width:640px){.sx__expcols{grid-template-columns:1fr}}

@@ -484,7 +484,7 @@ const Suite = (() => {
 
   const H = {
     status: setStatus, sound, look: () => S().look, reduced,
-    mutate, record, changed,
+    mutate, record, changed, saveFiles,
     remember: (ed) => { S().tools[ed.mode] = T.remember(ed.mode, ed); clearTimeout(rememberTimer); rememberTimer = setTimeout(save, 800); },
     card: cardById, addCards, fonts,
     drawerButtons: (ed) => ["cutout", "swatch", "cards"].concat(ed.win.lesson ? ["lesson"] : []).map((id) => {
@@ -1063,6 +1063,23 @@ const Suite = (() => {
     else setStatus(ed, "Save failed: " + (res && res.error));
     sound("press");
   }
+  // Several files at once (a sheet and its JSON, a GIF, a ZIP): each to 04-final in the
+  // desktop app, or a download in a browser tab.
+  const MIME = { ".png": "image/png", ".gif": "image/gif", ".zip": "application/zip", ".json": "application/json" };
+  async function saveFiles(ed, files) {
+    const done = [];
+    for (const f of files) {
+      const req = { ...jobPlace(ed), slot: "04-final", name: f.name.slice(0, -f.ext.length), ext: f.ext };
+      if (f.bytes) req.bytesBase64 = SuiteEncode.toBase64(f.bytes); else req.text = f.text;
+      const res = await Bridge.suiteSave(req);
+      if (res && res.ok) done.push(res.name);
+      else if (!Bridge.native) { download(f.name, URL.createObjectURL(new Blob([f.bytes || f.text], { type: MIME[f.ext] || "application/octet-stream" }))); done.push(f.name); }
+      else { setStatus(ed, "Export failed: " + (res && res.error)); sound("press"); return false; }
+    }
+    setStatus(ed, (Bridge.native ? "Exported " : "Downloaded ") + done.join(", ") + (Bridge.native ? " to 04-final" + (slot() === "studio" ? " — ready to attach to a reply." : ".") : "."));
+    sound("press");
+    return true;
+  }
   async function exportPNG(ed, scale) {
     // An animated sprite goes out as a sheet: every frame, left to right.
     const sheet = !!(ed.doc.frames && ed.doc.frames.length > 1);
@@ -1138,6 +1155,8 @@ const Suite = (() => {
     if (!win) return;
     e.stopImmediatePropagation();
     if (win.swatchPick) { win.swatchPick = false; win.drawers.repaint("swatch"); return; }
+    const exp = win.root && win.root.querySelector(".sx__exp");
+    if (exp) { const x = exp.querySelector('[data-x="close"]'); if (x) x.click(); return; }
     const sheet = win.root && win.root.querySelector(".sx__sheet");
     if (sheet && !sheet.hidden) { sheet.hidden = true; return; }
     const ed = win.eds[win.mode];

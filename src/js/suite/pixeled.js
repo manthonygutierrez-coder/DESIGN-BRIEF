@@ -16,6 +16,7 @@ const SuitePixelEd = (() => {
   const Sh = typeof SuiteShapes !== "undefined" ? SuiteShapes : need("SuiteShapes", "./shapes.js");
   const R = typeof SuiteRender !== "undefined" ? SuiteRender : null;
   const T = typeof SuiteTools !== "undefined" ? SuiteTools : need("SuiteTools", "./tools.js");
+  const F = typeof SuiteFrames !== "undefined" ? SuiteFrames : need("SuiteFrames", "./frames.js");
   const P = typeof SuitePolish !== "undefined" ? SuitePolish : need("SuitePolish", "./polish.js");
   const TOOLS = [
     { id: "pencil", icon: "t-pencil", label: "Pencil (Shift-click: a line from the last pixel; Alt-click: pick a colour)", key: "b" },
@@ -37,8 +38,13 @@ const SuitePixelEd = (() => {
   const VIEWS = [
     ["sil", "v-sil", "Silhouette: does it read as a shape?"],
     ["grey", "v-grey", "Greyscale: are the lights and darks right?"],
-    ["tile", "v-tile", "Tiled three by three: does it repeat without seams?"],
+    ["tile", "v-tile", "Tiled: does it repeat without seams? (size and seam marks are under the picture)"],
+    ["walk", "v-walk", "Walk: the sprite over ground that slides by one step a frame: does it slip?"],
   ];
+  const TAG_COLOURS = ["#E0442B", "#3FA7E8", "#F0B429", "#4CAF50", "#B05FE0", "#FF7A9C", "#2FB3A6", "#9A9A9A"];
+  const GROUNDS = [["checker", "Checker"], ["dark", "Dark"], ["light", "Light"], ["grass", "Green"]];
+  const GROUND_FILL = { dark: "#1A1C22", light: "#EDEAE0", grass: "#3E7A4B" };
+  const SPEEDS = [0.25, 0.5, 1, 2, 4];
   const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
 
   /* ── the pro inks (Hustle earns them; Studio has them) ─── */
@@ -271,7 +277,7 @@ const SuitePixelEd = (() => {
         '<div class="sx__side sx__side--pixel">' +
           '<section class="sx__panel"><header class="sx__ph"><span>PREVIEW</span><span class="sx__pvv" role="group" aria-label="Ways to look">' +
             VIEWS.map(([id, icon, t]) => '<button class="sx__ib sx__ib--sm" data-pv="' + id + '" title="' + t + '" aria-pressed="false">' + iconSVG(icon, 16) + "</button>").join("") +
-          '</span></header><div class="sx__pv"><canvas class="sx__pvc"></canvas></div></section>' +
+          '</span></header><div class="sx__pv"><canvas class="sx__pvc"></canvas></div><div class="sx__pvo"></div></section>' +
           '<section class="sx__panel sx__panel--pol" hidden><header class="sx__ph"><span>POLISH</span></header><div class="sx__pol"></div></section>' +
           '<section class="sx__panel sx__panel--grow"><header class="sx__ph"><span>COLOURS IN USE</span></header><div class="sx__used"></div></section>' +
         "</div>" +
@@ -281,6 +287,8 @@ const SuitePixelEd = (() => {
       tool: ed.tool || "pencil", fg: ed.fg || "#0A0A0A", filled: !!ed.filled, mx: !!ed.mx, my: !!ed.my, face: ed.face || 0, perfect: ed.perfect !== false, size: ed.size || 1, fillAll: !!ed.fillAll,
       drag: null, pen: null, mask: null, float: null, stamp: null, grid: ed.grid !== false, polish: !!ed.polish, pol: null,
       shade: !!ed.shade, dither: ed.dither || 0, lockAlpha: !!ed.lockAlpha, onion: !!ed.onion, playing: false, pvFrame: 0,
+      onB: ed.onB == null ? 1 : ed.onB, onA: ed.onA == null ? 1 : ed.onA, tagSel: null, loopMode: ed.loopMode || "forward", speed: ed.speed || 1,
+      tiles: ed.tiles || 3, seam: !!ed.seam, pvBg: ed.pvBg || "checker", walkPx: ed.walkPx || 2, walkX: 0, pvPos: 0,
     });
     ed.opts = ed.body.querySelector(".sx__opts");
     ed.rail = ed.body.querySelector(".sx__rail");
@@ -405,6 +413,13 @@ const SuitePixelEd = (() => {
   const STEP_MS = 60000 / 96 / 4;
   const LENGTHS = [[1, "1/4 beat"], [2, "1/2 beat"], [3, "3/4 beat"], [4, "1 beat"], [6, "1 1/2 beats"], [8, "2 beats"]];
   const framesOK = (ed) => ed.bonus.includes("frames");
+  const tb = (o, label, title, on, off) => '<button class="sx__tb' + (on ? " on" : "") + '" data-o="' + o + '" title="' + esc(title) + '" aria-pressed="' + !!on + '"' + (off ? " disabled" : "") + ">" + esc(label) + "</button>";
+  const DIR_MARK = { forward: "→", reverse: "←", pingpong: "↔" };
+  const DIR_NAME = { forward: "Forward", reverse: "Backward", pingpong: "There and back" };
+  // The tag being worked on, or null: what plays and what retime and reverse act on.
+  const tagOf = (ed) => (ed.tagSel != null && ed.doc.tags && ed.doc.tags[ed.tagSel]) || null;
+  // The run of frames tools act on: the chosen tag's, or all of them.
+  const runOf = (ed) => { const t = tagOf(ed), n = D.framesOf(ed.doc).length; return t ? [t.from, t.to] : [0, n - 1]; };
 
   function paintTime(ed, H) {
     const el = ed.body.querySelector(".sx__time");
@@ -413,22 +428,45 @@ const SuitePixelEd = (() => {
     if (el.hidden) { stopPlay(ed); return; }
     const doc = ed.doc, frames = D.framesOf(doc), n = frames.length, cur = doc.frames ? doc.frame : 0;
     if (n < 2) stopPlay(ed);
+    if (ed.tagSel != null && !(doc.tags && doc.tags[ed.tagSel])) ed.tagSel = null;
     const ms = frames[cur].ms, near = LENGTHS.find(([k]) => Math.abs(Math.round(k * STEP_MS) - ms) <= 2);
-    el.innerHTML = '<span class="sx__olab">FRAMES</span>' +
+    const tags = doc.tags || [], tag = tagOf(ed);
+    let h = '<span class="sx__olab">FRAMES</span>' +
       ib("fr:prev", "fr-prev", "Previous frame (,)", false, n < 2) +
-      ib("fr:play", ed.playing ? "fr-stop" : "fr-play", ed.playing ? "Stop the preview" : "Play it in the preview", ed.playing, n < 2) +
+      ib("fr:play", ed.playing ? "fr-stop" : "fr-play", ed.playing ? "Stop the preview (Enter)" : "Play it in the preview (Enter)", ed.playing, n < 2) +
       ib("fr:next", "fr-next", "Next frame (.)", false, n < 2) + '<span class="sx__osep"></span>' +
-      '<span class="sx__frs">' + frames.map((f, i) => '<button class="sx__fr' + (i === cur ? " on" : "") + '" data-fr="' + i + '" title="Frame ' + (i + 1) + ", " + f.ms + ' ms">' +
-        '<canvas width="' + doc.w + '" height="' + doc.h + '"></canvas><i>' + (i + 1) + "</i></button>").join("") + "</span>" +
-      ib("fr:add", "plus", "New frame: a copy of this one, straight after it") + '<span class="sx__osep"></span>' +
-      (n > 1
-        ? '<label class="sx__num"><span>LENGTH</span><select data-o="frms">' +
-          LENGTHS.map(([k, label]) => '<option value="' + Math.round(k * STEP_MS) + '"' + (near && near[0] === k ? " selected" : "") + ">" + label + "</option>").join("") +
-          (near ? "" : '<option selected value="' + ms + '">' + ms + " ms</option>") + "</select></label>" +
-          ib("fr:left", "fr-left", "Move this frame earlier", false, cur === 0) + ib("fr:right", "fr-right", "Move this frame later", false, cur === n - 1) +
-          ib("fr:del", "l-del", "Delete this frame") + '<span class="sx__osep"></span>' +
-          ib("fr:onion", "fr-onion", "Onion skin: the frame before shows through in red, the one after in blue", ed.onion)
-        : '<span class="sx__ohint">Add a frame to animate. Each starts as a copy of the one before.</span>');
+      '<span class="sx__frs">' + frames.map((f, i) => '<button class="sx__fr' + (i === cur ? " on" : "") + '" data-fr="' + i + '" title="Frame ' + (i + 1) + ", " + f.ms + " ms" +
+        tags.filter((t) => i >= t.from && i <= t.to).map((t) => ", " + t.name).join("") + '">' +
+        '<canvas width="' + doc.w + '" height="' + doc.h + '"></canvas><i>' + (i + 1) + "</i>" +
+        tags.map((t, k) => (i >= t.from && i <= t.to ? '<u style="background:' + TAG_COLOURS[k % TAG_COLOURS.length] + ";bottom:" + k % 3 * 3 + 'px"></u>' : "")).join("") + "</button>").join("") + "</span>" +
+      ib("fr:add", "plus", "New frame: a copy of this one, straight after it") + '<span class="sx__osep"></span>';
+    if (n > 1) {
+      h += '<label class="sx__num"><span>LENGTH</span><select data-o="frms">' +
+        LENGTHS.map(([k, label]) => '<option value="' + Math.round(k * STEP_MS) + '"' + (near && near[0] === k ? " selected" : "") + ">" + label + "</option>").join("") +
+        (near ? "" : '<option selected value="' + ms + '">' + ms + " ms</option>") + "</select></label>" +
+        ib("fr:left", "fr-left", "Move this frame earlier", false, cur === 0) + ib("fr:right", "fr-right", "Move this frame later", false, cur === n - 1) +
+        ib("fr:del", "l-del", "Delete this frame");
+      // Second row: what runs of frames can do.
+      h += '<span class="sx__brk"></span><span class="sx__olab">TAGS</span>' +
+        tags.map((t, k) => '<button class="sx__tag' + (k === ed.tagSel ? " on" : "") + '" data-tag="' + k + '" style="--tc:' + TAG_COLOURS[k % TAG_COLOURS.length] + '" title="' + esc(t.name + ": frames " + (t.from + 1) + " to " + (t.to + 1) + ", " + DIR_NAME[t.dir] + ". Click to play just this run and act on it.") + '"><b>' + esc(t.name) + "</b><i>" + (t.from + 1) + "–" + (t.to + 1) + " " + DIR_MARK[t.dir] + "</i></button>").join("") +
+        (tags.length < D.MAX_TAGS ? tb("fr:tagadd", "+ Tag", "Name a run of frames (idle, walk, attack), starting at this one") : "");
+      if (tag) h += '<label class="sx__num sx__num--wide"><span>NAME</span><input data-o="tagname" maxlength="16" value="' + esc(tag.name) + '"></label>' +
+        '<label class="sx__num"><span>FROM</span><input type="number" data-o="tagfrom" min="1" max="' + n + '" value="' + (tag.from + 1) + '" style="width:40px"></label>' +
+        '<label class="sx__num"><span>TO</span><input type="number" data-o="tagto" min="1" max="' + n + '" value="' + (tag.to + 1) + '" style="width:40px"></label>' +
+        '<label class="sx__num"><span>PLAYS</span><select data-o="tagdir">' + D.TAG_DIRS.map((d) => '<option value="' + d + '"' + (d === tag.dir ? " selected" : "") + ">" + DIR_NAME[d] + "</option>").join("") + "</select></label>" +
+        ib("fr:tagdel", "l-del", "Remove this tag (the frames stay)");
+      else h += '<label class="sx__num"><span>PLAYS</span><select data-o="loopmode">' + D.TAG_DIRS.map((d) => '<option value="' + d + '"' + (d === ed.loopMode ? " selected" : "") + ">" + DIR_NAME[d] + "</option>").join("") + "</select></label>";
+      h += '<span class="sx__osep"></span><label class="sx__num"><span>SPEED</span><select data-o="speed">' + SPEEDS.map((x) => '<option value="' + x + '"' + (x === ed.speed ? " selected" : "") + ">" + x + "×</option>").join("") + "</select></label>" +
+        '<span class="sx__osep"></span>' + ib("fr:onion", "fr-onion", "Onion skin: the frames before show through in red, the ones after in blue", ed.onion) +
+        (ed.onion ? '<label class="sx__num"><span>BACK</span><input type="number" data-o="onb" min="0" max="3" value="' + ed.onB + '" style="width:34px"></label><label class="sx__num"><span>AHEAD</span><input type="number" data-o="ona" min="0" max="3" value="' + ed.onA + '" style="width:34px"></label>' : "") +
+        '<span class="sx__osep"></span><span class="sx__olab">' + (tag ? "THIS TAG" : "ALL") + "</span>" +
+        tb("fr:same", "Same length", "Give every frame here the length of this one") +
+        tb("fr:easein", "Ease in", "Lengths go from the first frame's to the last frame's, slow to speed up", false, false) +
+        tb("fr:easeout", "Ease out", "Lengths go from the first frame's to the last frame's, quick to slow down") +
+        tb("fr:rev", "Reverse", "Play these frames the other way round") +
+        '<span class="sx__ospace"></span>' + tb("fr:export", "Export…", "Save it as a sheet, a GIF, an animated PNG or a run of PNGs");
+    } else h += '<span class="sx__ohint">Add a frame to animate. Each starts as a copy of the one before.</span>';
+    el.innerHTML = h;
     el.querySelectorAll(".sx__fr canvas").forEach((c, i) => {
       const g = c.getContext("2d");
       g.imageSmoothingEnabled = false;
@@ -453,30 +491,57 @@ const SuitePixelEd = (() => {
     }
     if (what === "play") { if (ed.playing) stopPlay(ed); else startPlay(ed); paintTime(ed, H); paintPreview(ed); }
     if (what === "onion") { ed.onion = !ed.onion; render(ed, H, {}); H.sound("tool"); }
+    if (what === "tagadd") {
+      const k = (doc.tags || []).length;
+      if (!H.mutate(ed, () => D.addTag(doc, "tag " + (k + 1), doc.frame, Math.min(doc.frames.length - 1, doc.frame + 1), "forward"))) return;
+      ed.tagSel = k; H.sound("layer");
+      H.status(ed, "A tag: set its name, its frames and how it plays. Click it again to leave it.");
+    }
+    if (what === "tagdel") { if (ed.tagSel != null) H.mutate(ed, () => D.removeTag(doc, ed.tagSel)); ed.tagSel = null; H.sound("tuck"); }
+    const [from, to] = runOf(ed);
+    if (what === "same") { H.mutate(ed, () => D.setRangeMs(doc, from, Array(to - from + 1).fill(doc.frames[doc.frame].ms))); H.sound("tool"); }
+    if (what === "easein" || what === "easeout") {
+      const list = F.spread(to - from + 1, doc.frames[from].ms, doc.frames[to].ms, what === "easein" ? "in" : "out");
+      H.mutate(ed, () => D.setRangeMs(doc, from, list));
+      H.sound("tool");
+      H.status(ed, "Lengths eased between frame " + (from + 1) + " and frame " + (to + 1) + ": change either end and ease again.");
+    }
+    if (what === "rev") { H.mutate(ed, () => D.reverseFrames(doc, from, to)); H.sound("layer"); }
+    if (what === "export") { stopPlay(ed); if (typeof SuiteFrameExport !== "undefined") SuiteFrameExport.open(ed, H); }
+    paintTime(ed, H);
   }
-  // The preview plays the frames, each for its own length, while you draw.
+  // Frame lengths fall on the game's beat; a playing preview keeps to its own clock.
+  // The preview plays a run of frames, each for its own length (faster or slower by
+  // the speed), while you draw: a tag's run in its own direction, or every frame.
   function startPlay(ed) {
     stopPlay(ed);
     if (!ed.doc.frames) return;
+    const seq = () => { const t = tagOf(ed); return F.sequence(D.framesOf(ed.doc), t || { from: 0, to: ed.doc.frames.length - 1, dir: ed.loopMode }); };
     ed.playing = true;
-    ed.pvFrame = ed.doc.frame;
+    let s = seq();
+    ed.pvPos = Math.max(0, s.findIndex((x) => x.i === ed.doc.frame));
+    ed.pvFrame = s[ed.pvPos].i;
     const step = () => {
       if (!ed.playing || !ed.body.isConnected || !ed.doc.frames) { stopPlay(ed); return; }
-      ed.pvFrame = (ed.pvFrame + 1) % ed.doc.frames.length;
+      s = seq();
+      ed.pvPos = (ed.pvPos + 1) % s.length;
+      ed.pvFrame = s[ed.pvPos].i;
+      ed.walkX += ed.walkPx;
       paintPreview(ed);
-      ed.playTimer = setTimeout(step, ed.doc.frames[ed.pvFrame].ms);
+      ed.playTimer = setTimeout(step, s[ed.pvPos].ms / ed.speed);
     };
-    ed.playTimer = setTimeout(step, ed.doc.frames[ed.pvFrame].ms);
+    ed.playTimer = setTimeout(step, s[ed.pvPos].ms / ed.speed);
   }
   function stopPlay(ed) { clearTimeout(ed.playTimer); ed.playTimer = 0; ed.playing = false; }
-  // The frames either side, faint: the one before in red, the one after in blue.
+  // The frames either side, faint: those before in red, those after in blue, the nearest strongest.
   function onion(ed, ctx) {
     const doc = ed.doc, fr = D.framesOf(doc);
     const tint = (px, colour) => { ctx.fillStyle = colour; for (let i = 0; i < px.length; i++) if (px[i]) ctx.fillRect(i % doc.w, Math.floor(i / doc.w), 1, 1); };
     ctx.save();
-    ctx.globalAlpha = 0.32;
-    if (doc.frame > 0) tint(fr[doc.frame - 1].px, "#FF4040");
-    if (doc.frame < fr.length - 1) tint(fr[doc.frame + 1].px, "#3FA0FF");
+    for (const o of F.onion(doc.frame, fr.length, ed.onB, ed.onA).reverse()) {
+      ctx.globalAlpha = o.alpha * 0.6;
+      tint(fr[o.i].px, o.side === "before" ? "#FF4040" : "#3FA0FF");
+    }
     ctx.restore();
   }
 
@@ -662,22 +727,67 @@ const SuitePixelEd = (() => {
     if (!c) return;
     const frames = D.framesOf(ed.doc);
     const doc = ed.playing && frames.length > 1 ? Object.assign({}, ed.doc, { bitmap: frames[ed.pvFrame % frames.length].px }) : ed.doc;
-    const v = ed.looks || {}, n = v.tile ? 3 : 1;
-    const k = Math.max(1, Math.floor(Math.min(112 / (ed.doc.w * n), 112 / (ed.doc.h * n))));
+    const v = ed.looks || {}, w = ed.doc.w, h = ed.doc.h;
+    // One sprite, a block of them (a tile) or one on ground that slides by (a walk).
+    const cols = v.tile ? ed.tiles : v.walk ? 3 : 1, rows = v.tile ? ed.tiles : 1, ground = v.walk ? 2 : 0;
+    const box = v.tile || v.walk ? 196 : 112;
+    const k = Math.max(1, Math.floor(Math.min(box / (w * cols), box / ((h + ground) * rows))));
+    // A walk is a scene: it always has a sky, so the checker gives way to a dark one.
+    const fill = !v.sil && (GROUND_FILL[ed.pvBg] || (v.walk ? "#2A2D34" : null));
     const one = document.createElement("canvas");
-    one.width = ed.doc.w * k; one.height = ed.doc.h * k;
+    one.width = w * k; one.height = h * k;
     const g = one.getContext("2d");
     g.imageSmoothingEnabled = false;
+    if (fill) { g.fillStyle = fill; g.fillRect(0, 0, one.width, one.height); }
     // Every drawn pixel in one dark ink, on plain ground: the shape alone.
-    R.draw(g, v.sil ? Object.assign({}, doc, { bg: null }) : doc, { scale: k, checker: !v.sil });
+    R.draw(g, v.sil ? Object.assign({}, doc, { bg: null }) : doc, { scale: k, checker: !v.sil && !fill });
     if (v.sil) { g.globalCompositeOperation = "source-in"; g.fillStyle = "#0A0A0A"; g.fillRect(0, 0, one.width, one.height); }
-    c.width = one.width * n; c.height = one.height * n;
+    c.width = one.width * cols; c.height = one.height * rows + ground * k;
     const ctx = c.getContext("2d");
     ctx.imageSmoothingEnabled = false;
     if (v.sil) { ctx.fillStyle = "#E9E9E4"; ctx.fillRect(0, 0, c.width, c.height); }
     ctx.filter = v.grey ? "grayscale(1)" : "none";
-    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) ctx.drawImage(one, i * one.width, j * one.height);
+    if (v.walk) {
+      // The ground goes by ed.walkPx pixels a frame; the sprite stays put. A foot that
+      // slides on it is a step the wrong size.
+      ctx.fillStyle = v.sil ? "#E9E9E4" : fill; ctx.fillRect(0, 0, c.width, one.height);
+      ctx.fillStyle = "#6B5232"; ctx.fillRect(0, one.height, c.width, ground * k);
+      ctx.fillStyle = "#8C6E45";
+      const off = ((ed.walkX % 8) + 8) % 8;
+      for (let x = -8; x < w * cols + 8; x++) if (((x + off) % 8 + 8) % 8 < 4) ctx.fillRect((x - off) * k, one.height, k, k);
+      ctx.drawImage(one, one.width, 0);
+    } else for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) ctx.drawImage(one, i * one.width, j * one.height);
+    ctx.filter = "none";
+    let note = "";
+    if (v.tile && ed.seam) {
+      const sm = F.seams(doc.bitmap, w, h);
+      ctx.fillStyle = "rgba(255,40,40,.65)";
+      for (let i = 1; i < cols; i++) for (const y of sm.across) ctx.fillRect(i * w * k - k, y * k, 2 * k, k);
+      for (let j = 1; j < rows; j++) for (let i = 0; i < cols; i++) for (const x of sm.down) ctx.fillRect(i * w * k + x * k, j * h * k - k, k, 2 * k);
+      note = sm.across.length || sm.down.length
+        ? "Hard seams: " + sm.across.length + " row" + (sm.across.length === 1 ? "" : "s") + ", " + sm.down.length + " column" + (sm.down.length === 1 ? "" : "s") + " (red)"
+        : "No hard seams: it repeats cleanly.";
+    }
+    paintPvo(ed, note);
     ed.body.querySelectorAll("[data-pv]").forEach((b) => { const on = !!v[b.dataset.pv]; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); });
+  }
+  // What the preview can be set to: its ground, the tile's size and seam marks,
+  // the walk's speed. Only rebuilt when they change, so a menu is not pulled
+  // from under you while the sprite plays.
+  function paintPvo(ed, note) {
+    const el = ed.body.querySelector(".sx__pvo");
+    if (!el) return;
+    const v = ed.looks || {}, sig = [ed.pvBg, v.tile, v.walk, ed.tiles, ed.seam, ed.walkPx, v.sil].join("|");
+    if (el.dataset.sig !== sig) {
+      el.dataset.sig = sig;
+      el.innerHTML = '<label class="sx__num"><span>GROUND</span><select data-o="pvbg"' + (v.sil ? " disabled" : "") + ">" + GROUNDS.map(([id, label]) => '<option value="' + id + '"' + (id === ed.pvBg ? " selected" : "") + ">" + label + "</option>").join("") + "</select></label>" +
+        (v.tile ? '<label class="sx__num"><span>TILES</span><select data-o="pvtiles">' + [2, 3, 4].map((n) => '<option value="' + n + '"' + (n === ed.tiles ? " selected" : "") + ">" + n + " × " + n + "</option>").join("") + "</select></label>" +
+          '<button class="sx__tb' + (ed.seam ? " on" : "") + '" data-o="pvseam" aria-pressed="' + ed.seam + '" title="Mark where the tile meets itself with a harder change than it has inside">Seams</button>' : "") +
+        (v.walk ? '<label class="sx__num"><span>GROUND MOVES</span><select data-o="walkpx">' + [1, 2, 3, 4].map((n) => '<option value="' + n + '"' + (n === ed.walkPx ? " selected" : "") + ">" + n + " px a frame</option>").join("") + "</select></label>" : "") +
+        '<span class="sx__pvn"></span>';
+    }
+    const n = el.querySelector(".sx__pvn");
+    if (n) n.textContent = note || "";
   }
   function paintSide(ed) {
     const sec = ed.body.querySelector(".sx__panel--pol");
@@ -1030,6 +1140,7 @@ const SuitePixelEd = (() => {
     if (e.key === " " && !e.repeat) { ed.st.spaceDown = true; const u = (ev) => { if (ev.key === " ") { ed.st.spaceDown = false; document.removeEventListener("keyup", u); } }; document.addEventListener("keyup", u); return true; }
     if ((e.key === "Delete" || e.key === "Backspace") && ed.mask) { selectionAct(ed, H, "clear"); return true; }
     if (e.key === "Enter" && ed.pen) { finishPen(ed, H); return true; }
+    if (e.key === "Enter" && !mod && framesOK(ed) && ed.doc.frames && !ed.stamp) { frameAct(ed, H, "play"); return true; }
     if (e.key.startsWith("Arrow") && ed.mask) {
       if (!ed.float) lift(ed);
       const step = e.shiftKey ? 10 : 1;
@@ -1133,6 +1244,14 @@ const SuitePixelEd = (() => {
   }
   function wirePanels(ed, H) {
     ed.body.addEventListener("click", (e) => {
+      const tg = e.target.closest("[data-tag]");
+      if (tg) {
+        const k = Number(tg.dataset.tag);
+        ed.tagSel = ed.tagSel === k ? null : k;
+        if (ed.tagSel != null && ed.doc.tags[k]) { D.goFrame(ed.doc, ed.doc.tags[k].from); render(ed, H, {}); } else paintTime(ed, H);
+        H.sound("tool");
+        return;
+      }
       const pv = e.target.closest("[data-pv]");
       if (pv) { ed.looks = Object.assign({}, ed.looks, { [pv.dataset.pv]: !(ed.looks || {})[pv.dataset.pv] }); paintPreview(ed); H.sound("tool"); return; }
       const t = e.target.closest("[data-tool],[data-o],[data-pal],[data-drawer]");
@@ -1146,6 +1265,7 @@ const SuitePixelEd = (() => {
       const o = t.dataset.o;
       if (o === "outline" || o === "filled") { ed.filled = o === "filled"; paintOpts(ed, H); }
       if (o === "perfect") { ed.perfect = !ed.perfect; H.remember(ed); paintOpts(ed, H); H.sound("tool"); }
+      if (o === "pvseam") { ed.seam = !ed.seam; paintPreview(ed); H.sound("tool"); }
       if (o === "fill:joined" || o === "fill:all") { ed.fillAll = o === "fill:all"; H.remember(ed); paintOpts(ed, H); H.sound("tool"); }
       if (o === "shade") { ed.shade = !ed.shade; paintOpts(ed, H); H.sound("tool"); H.status(ed, ed.shade ? "Shading ink: drag over pixels to step them darker along the ramp; the right button steps them lighter." : ""); }
       if (o === "dither") { ed.dither = ed.dither === 50 ? 25 : ed.dither === 25 ? 0 : 50; paintOpts(ed, H); H.sound("tool"); H.status(ed, ed.dither ? "Dither: a " + ed.dither + "% checker, fixed to the sprite's grid so strokes and fills mesh." : ""); }
@@ -1183,6 +1303,17 @@ const SuitePixelEd = (() => {
         paintOpts(ed, H); return;
       }
       if (e.target.dataset.o === "frms") { H.mutate(ed, () => D.frameMs(ed.doc, Number(e.target.value))); return; }
+      const o = e.target.dataset.o, val = e.target.value, n1 = Math.round(Number(val)) || 1;
+      if (o === "tagname") { H.mutate(ed, () => D.updateTag(ed.doc, ed.tagSel, { name: val })); return; }
+      if (o === "tagfrom") { H.mutate(ed, () => D.updateTag(ed.doc, ed.tagSel, { from: n1 - 1 })); return; }
+      if (o === "tagto") { H.mutate(ed, () => D.updateTag(ed.doc, ed.tagSel, { to: n1 - 1 })); return; }
+      if (o === "tagdir") { H.mutate(ed, () => D.updateTag(ed.doc, ed.tagSel, { dir: val })); return; }
+      if (o === "loopmode") { if (D.TAG_DIRS.includes(val)) ed.loopMode = val; paintTime(ed, H); return; }
+      if (o === "speed") { ed.speed = SPEEDS.includes(Number(val)) ? Number(val) : 1; return; }
+      if (o === "onb" || o === "ona") { const m = Math.max(0, Math.min(3, Math.round(Number(val)) || 0)); if (o === "onb") ed.onB = m; else ed.onA = m; render(ed, H, {}); return; }
+      if (o === "pvbg") { ed.pvBg = GROUNDS.some(([id]) => id === val) ? val : "checker"; paintPreview(ed); return; }
+      if (o === "pvtiles") { ed.tiles = Math.max(2, Math.min(4, n1)); paintPreview(ed); return; }
+      if (o === "walkpx") { ed.walkPx = Math.max(1, Math.min(4, n1)); paintPreview(ed); return; }
       if (e.target.dataset.o === "face") {
         ed.face = Number(e.target.value) || 0;
         if (ed.stamp) { const [face, size, weight] = FACES[ed.face]; ed.stamp.pts = textPts(ed.stamp.text, face, size, weight); draw(ed); }

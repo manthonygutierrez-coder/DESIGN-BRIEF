@@ -20,7 +20,7 @@ test("tools: V picks Select in Pixel as it does in Vector, and M still works", (
 });
 
 test("tools: Escape comes back to Select in every mode", () => {
-  for (const m of ["vector", "pixel", "layout", "frames"]) assert.equal(T.home(m), "select");
+  for (const m of ["vector", "pixel", "layout"]) assert.equal(T.home(m), "select");
 });
 
 test("tools: every tool in a mode has something to say when it is picked", () => {
