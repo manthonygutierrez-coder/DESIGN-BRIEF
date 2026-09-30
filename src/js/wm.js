@@ -106,13 +106,17 @@ function unsnap(w){
 }
 
 /* ── the generic window ────────────────────────────────── */
+const FRAMES = ["classic", "slim", "ghost"];
 function createWindow(opts){
   const { key, title, iconId, footer = "", className = "", onClose = null } = opts;
+  // How much frame the window wears: classic Win98 plastic, a slim flat one,
+  // or a ghost whose title strip only opens when you point at it.
+  const frame = FRAMES.includes(opts.frame) ? opts.frame : "classic";
 
   const w = { key, briefIdx: 0, timers: [], prev: null, meta: opts.meta || {} };
 
   const el = document.createElement("div");
-  el.className = "w98" + (className ? " " + className : "");
+  el.className = "w98" + (frame !== "classic" ? " w98--f-" + frame : "") + (className ? " " + className : "");
   el.innerHTML =
     '<div class="tbar">' +
       '<span class="tbar__i">' + iconSVG(iconId, 16) + '</span>' +
@@ -240,6 +244,7 @@ function dragBy(handle, w, mode, dir){
     e.preventDefault();
     focusWin(w);
     handle.setPointerCapture(e.pointerId);
+    if (mode === "move") w.el.classList.add("dragging");
     const sx = e.clientX, sy = e.clientY;
     const desk = deskSize(), deskBox = deskEl.getBoundingClientRect();
     const min = { w: parseInt(w.el.style.minWidth, 10) || 250, h: parseInt(w.el.style.minHeight, 10) || 170 };
@@ -268,6 +273,7 @@ function dragBy(handle, w, mode, dir){
       }
     };
     const up = (ev) => {
+      w.el.classList.remove("dragging");
       handle.releasePointerCapture(ev.pointerId);
       handle.removeEventListener("pointermove", move);
       handle.removeEventListener("pointerup", up);

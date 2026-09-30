@@ -169,7 +169,7 @@ const Suite = (() => {
   function makeWindow(key, job) {
     const w = createWindow({
       key, title: "DESIGN SUITE — " + (job ? job.brief.project : "SCRATCH"), iconId: "suite", w: 1000, h: 680, minW: 720, minH: 500,
-      className: "w98--suite", onClose: () => closeWindow(key),
+      className: "w98--suite", frame: "slim", onClose: () => closeWindow(key),
     });
     w.client.classList.add("client--flush");
     const win = { key, job, w, mode: null, eds: {}, status: "", cut: { mode: "wand", tol: 36 } };

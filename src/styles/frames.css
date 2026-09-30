@@ -1,0 +1,59 @@
+/* ── window frames ─────────────────────────────────────
+   Classic is the Win98 plastic in desktop.css. Two lighter frames sit on the
+   same --w-* colours (so dark mode follows), chosen per window with
+   createWindow({frame}): "slim" is a flat, thin bar, and "ghost" shows only
+   a hairline grab strip until the pointer, keyboard focus or a drag reaches
+   it. Neither changes the window's DOM, so drag, resize, docking and the
+   taskbar behave exactly as before. */
+
+/* slim: flat, 1px, the active window marked by its blue edge and bar */
+.w98--f-slim{padding:0;border:1px solid var(--w-sh);
+  box-shadow:0 0 0 1px rgba(0,0,0,.25),3px 3px 10px rgba(0,0,0,.45)}
+.w98--f-slim.on{border-color:var(--w-nav)}
+.w98--f-slim .tbar{padding:0 2px 0 5px;gap:4px;height:18px;
+  background:var(--w-in1);border-bottom:1px solid var(--w-sh)}
+.w98--f-slim.on .tbar{background:var(--w-nav);border-bottom-color:var(--w-nav)}
+.w98--f-slim .tbar__t{font-size:9px}
+.w98--f-slim .tbtns{gap:0;margin-left:6px}
+.w98--f-slim .tb{width:16px;height:14px;background:transparent;border:0;box-shadow:none}
+.w98--f-slim .tb:hover{background:rgba(255,255,255,.18)}
+.w98--f-slim .tb[data-w="cls"]:hover{background:#B3302A}
+.w98--f-slim .tb:active{background:rgba(0,0,0,.25);box-shadow:none}
+.w98--f-slim .gmin,.w98--f-slim .gmax,.w98--f-slim .gcls::before,.w98--f-slim .gcls::after{
+  background-color:#E9EBEF;border-color:#E9EBEF}
+.w98--f-slim .gmax{background:transparent}
+.w98--f-slim .gmin{width:7px;margin-top:6px}
+.w98--f-slim .gmax{width:8px;height:7px}
+.w98--f-slim .client{margin-top:0;border:0;box-shadow:none}
+.w98--f-slim .wfoot{padding:4px 3px 3px}
+.w98--f-slim .grip{right:0;bottom:0}
+
+/* ghost: a grab strip; the bar opens over the top of the client on demand.
+   The client never moves, so revealing the bar cannot shift what you are doing. */
+.w98--f-ghost{padding:0;border:1px solid var(--w-sh);
+  box-shadow:0 0 0 1px rgba(0,0,0,.2),3px 3px 10px rgba(0,0,0,.4)}
+.w98--f-ghost.on{border-color:var(--w-nav)}
+.w98--f-ghost .client{margin-top:5px;border:0;box-shadow:none}
+.w98--f-ghost .tbar{position:absolute;left:0;right:0;top:0;z-index:6;height:20px;max-height:5px;
+  padding:0 2px 0 5px;overflow:hidden;background:var(--w-in1);
+  transition:max-height .12s steps(3,end),background-color .12s}
+.w98--f-ghost.on .tbar{background:var(--w-nav)}
+.w98--f-ghost .tbar>*{opacity:0;pointer-events:none;transition:opacity .1s}
+.w98--f-ghost:hover .tbar,.w98--f-ghost:focus-within .tbar,.w98--f-ghost.dragging .tbar{max-height:20px;
+  box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.w98--f-ghost:hover .tbar>*,.w98--f-ghost:focus-within .tbar>*,.w98--f-ghost.dragging .tbar>*{opacity:1;pointer-events:auto}
+.w98--f-ghost .tbar__t{font-size:9px}
+.w98--f-ghost .tbtns{gap:0;margin-left:6px}
+.w98--f-ghost .tb{width:16px;height:16px;background:transparent;border:0;box-shadow:none}
+.w98--f-ghost .tb:hover{background:rgba(255,255,255,.18)}
+.w98--f-ghost .tb[data-w="cls"]:hover{background:#B3302A}
+.w98--f-ghost .gmin,.w98--f-ghost .gmax,.w98--f-ghost .gcls::before,.w98--f-ghost .gcls::after{
+  background-color:#E9EBEF;border-color:#E9EBEF}
+.w98--f-ghost .gmax{background:transparent}
+.w98--f-ghost .gmin{width:7px;margin-top:7px}
+.w98--f-ghost .gmax{width:8px;height:7px}
+.w98--f-ghost .wfoot{padding:4px 3px 3px}
+.w98--f-ghost .grip{right:0;bottom:0}
+@media (prefers-reduced-motion:reduce){
+  .w98--f-ghost .tbar,.w98--f-ghost .tbar>*{transition:none}
+}

@@ -241,7 +241,7 @@ const Mail = (() => {
 
     const w = createWindow({
       key: "mail", title: "INBOX", iconId: "mail",
-      w: 720, h: 500, minW: 460, minH: 300, className: "w98--mail",
+      w: 720, h: 500, minW: 460, minH: 300, className: "w98--mail", frame: "slim",
     });
     w.client.classList.add("client--flush");
     w.client.innerHTML =
@@ -430,7 +430,7 @@ const Mail = (() => {
     const c = clientOf(m);
     const w = createWindow({
       key, title: "RE: " + briefOf(m).project, iconId: "mail",
-      w: 540, h: 420, minW: 380, minH: 280, className: "w98--mail",
+      w: 540, h: 420, minW: 380, minH: 280, className: "w98--mail", frame: "slim",
     });
     w.client.classList.add("client--flush");
     w.client.innerHTML =

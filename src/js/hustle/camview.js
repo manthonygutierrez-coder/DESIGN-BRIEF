@@ -59,7 +59,7 @@ Object.assign(Camera, (() => {
     const existing = getWin(KEY);
     if (existing){ revealWin(existing); return existing; }
     const w = createWindow({ key: KEY, title: "Your camera", iconId: "camera", w: 760, h: 540, minW: 640, minH: 460,
-                             className: "w98--cam", onClose: () => {
+                             className: "w98--cam", frame: "slim", onClose: () => {
       clearInterval(anim); anim = 0;
       // However the window closes during setup, the guide comes next.
       const f = onFinish; onFinish = null;
@@ -284,7 +284,7 @@ Object.assign(Camera, (() => {
     let w = getWin(GKEY);
     if (!w){
       w = createWindow({ key: GKEY, title: "Your camera", iconId: "camera", w: 300, h: 420, minW: 280, minH: 300,
-                         className: "w98--camguide", onClose: () => { clearInterval(typeTimer); clearInterval(pollTimer); hint(null); } });
+                         className: "w98--camguide", frame: "ghost", onClose: () => { clearInterval(typeTimer); clearInterval(pollTimer); hint(null); } });
       w.client.classList.add("client--flush");
       w.client.addEventListener("click", onGuideClick);
       w.client.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.matches("[data-cam-name]")) step(1); });

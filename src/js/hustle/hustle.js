@@ -997,7 +997,7 @@ const Hustle = (() => {
   function openPager() {
     let w = getWin("pager");
     if (!w) {
-      w = createWindow({ key: "pager", title: "PAGER", iconId: "pager", w: 620, h: 460, minW: 440, minH: 320, className: "w98--pager" });
+      w = createWindow({ key: "pager", title: "PAGER", iconId: "pager", w: 620, h: 460, minW: 440, minH: 320, className: "w98--pager", frame: "ghost" });
       w.client.classList.add("client--flush");
       w.client.addEventListener("click", onPagerClick);
       pagerMini = false;
@@ -1174,7 +1174,7 @@ const Hustle = (() => {
     if (!w) {
       w = createWindow({
         key: callKey(id), title: "CALL — " + String(who.co || gig.poster.name).toUpperCase(),
-        iconId: "pager", w: DOCK_W, h: 700, minW: 240, minH: 420, className: "w98--call",
+        iconId: "pager", w: DOCK_W, h: 700, minW: 240, minH: 420, className: "w98--call", frame: "ghost",
         onClose: () => hangUp(id),
       });
       w.client.classList.add("client--flush");
@@ -1530,7 +1530,7 @@ const Hustle = (() => {
     if (!w && !open) return;
     const gig = gigOf(id), gs = gsOf(id);
     if (!w) {
-      w = createWindow({ key, title: "TICKET — " + gig.short, iconId: "ticket", w: 620, h: 520, minW: 460, minH: 360, className: "w98--ticket" });
+      w = createWindow({ key, title: "TICKET — " + gig.short, iconId: "ticket", w: 620, h: 520, minW: 460, minH: 360, className: "w98--ticket", frame: "ghost" });
       w.client.classList.add("client--flush");
       w.client.addEventListener("click", (e) => {
         const b = e.target.closest("[data-tk]");
@@ -1614,7 +1614,7 @@ const Hustle = (() => {
     if (!w && !open) return;
     const gig = gigOf(id), gs = gsOf(id);
     if (!w) {
-      w = createWindow({ key, title: "COMPARE — " + gig.short, iconId: "ticket", w: 560, h: 380, minW: 420, minH: 280, className: "w98--compare" });
+      w = createWindow({ key, title: "COMPARE — " + gig.short, iconId: "ticket", w: 560, h: 380, minW: 420, minH: 280, className: "w98--compare", frame: "ghost" });
       w.client.classList.add("client--flush");
       w.client.addEventListener("click", (e) => {
         const b = e.target.closest("[data-gap]");
