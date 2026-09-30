@@ -110,7 +110,7 @@ const Web = (() => {
 
     const w = createWindow({
       key: key(), title: "The Web", iconId: "web",
-      w: 760, h: 540, minW: 480, minH: 320, className: "w98--web",
+      w: 760, h: 540, minW: 480, minH: 320, className: "w98--web", frame: "slim",
     });
     w.client.classList.add("client--flush");
     w.client.innerHTML =
@@ -270,7 +270,7 @@ const Web = (() => {
     if (existing) return revealWin(existing);
     const w = createWindow({
       key: k, title: Imagery.filename(q, i), iconId: "web",
-      w: 520, h: 440, minW: 300, minH: 240, className: "w98--web",
+      w: 520, h: 440, minW: 300, minH: 240, className: "w98--web", frame: "slim",
     });
     w.client.classList.add("client--flush");
     w.client.innerHTML =
