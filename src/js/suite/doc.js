@@ -68,7 +68,7 @@ const SuiteDoc = (() => {
       guides: { v: [], h: [] },
       meta: { name: str(opts.name, MAX.name, "Untitled"), briefId: opts.briefId || null, gigId: opts.gigId || null, intent: [] },
       site: mode === "layout" ? site(opts.site) : null,
-      ...(mode === "pixel" ? { frames: null, frame: 0 } : {}),
+      ...(mode === "pixel" ? { frames: null, frame: 0, tags: [] } : {}),
     };
   }
 
@@ -403,6 +403,54 @@ const SuiteDoc = (() => {
    * copies the one it follows. ms is how long a frame shows.
    */
   const FRAME_MS = { min: 40, max: 4000, dflt: 156 };
+  /* Tags name a run of frames (idle, walk, attack) and how it plays: forward,
+   * backward, or there and back. They point at frames by number, so adding,
+   * deleting and moving a frame carries them along. */
+  const TAG_DIRS = ["forward", "reverse", "pingpong"], MAX_TAGS = 8;
+  function cleanTags(tags, n) {
+    if (!Array.isArray(tags) || n < 2) return [];
+    const out = [];
+    for (const t of tags.slice(0, MAX_TAGS)) {
+      if (!t || typeof t !== "object") continue;
+      let from = Math.round(num(t.from, 0, 0, n - 1)), to = Math.round(num(t.to, from, 0, n - 1));
+      if (to < from) [from, to] = [to, from];
+      out.push({ name: str(t.name, 16, "tag"), from, to, dir: TAG_DIRS.includes(t.dir) ? t.dir : "forward" });
+    }
+    return out;
+  }
+  // A frame put in at index j: tags at or after it move along; one it lands inside grows.
+  const retagInsert = (tags, j) => tags.map((t) => Object.assign({}, t, { from: t.from >= j ? t.from + 1 : t.from, to: t.to >= j ? t.to + 1 : t.to }));
+  // A frame taken out at index j: tags shrink round it, and one that was only that frame goes.
+  const retagRemove = (tags, j) => tags.map((t) => {
+    if (t.from === j && t.to === j) return null;
+    return Object.assign({}, t, { from: t.from > j ? t.from - 1 : t.from, to: t.to >= j ? t.to - 1 : t.to });
+  }).filter(Boolean);
+  // Two neighbouring frames traded places: every tag end on one is now on the other.
+  const retagSwap = (tags, a, b) => tags.map((t) => {
+    const m = (i) => (i === a ? b : i === b ? a : i);
+    let from = m(t.from), to = m(t.to);
+    if (to < from) [from, to] = [to, from];
+    return Object.assign({}, t, { from, to });
+  });
+  function addTag(doc, name, from, to, dir) {
+    if (!doc.frames) return false;
+    doc.tags = doc.tags || [];
+    if (doc.tags.length >= MAX_TAGS) return false;
+    const next = cleanTags(doc.tags.concat([{ name, from, to, dir }]), doc.frames.length);
+    doc.tags = next;
+    return next.length > 0;
+  }
+  function updateTag(doc, i, patch) {
+    if (!doc.frames || !doc.tags || !doc.tags[i]) return false;
+    const all = doc.tags.map((t, k) => (k === i ? Object.assign({}, t, patch) : t));
+    doc.tags = cleanTags(all, doc.frames.length);
+    return true;
+  }
+  function removeTag(doc, i) {
+    if (!doc.tags || !doc.tags[i]) return false;
+    doc.tags.splice(i, 1);
+    return true;
+  }
   // Anything that swapped doc.bitmap for a new array: put it back in its frame.
   function syncFrame(doc) {
     if (doc.frames && doc.frames[doc.frame]) doc.frames[doc.frame].px = doc.bitmap;
@@ -423,13 +471,15 @@ const SuiteDoc = (() => {
     syncFrame(doc);
     const here = doc.frames[doc.frame];
     doc.frames.splice(doc.frame + 1, 0, { px: here.px.slice(), ms: here.ms });
+    doc.tags = retagInsert(doc.tags || [], doc.frame + 1);
     return goFrame(doc, doc.frame + 1);
   }
   function removeFrame(doc) {
     if (!doc.frames || doc.frames.length < 2) return false;
     syncFrame(doc);
     doc.frames.splice(doc.frame, 1);
-    if (doc.frames.length === 1) { doc.bitmap = doc.frames[0].px; doc.frames = null; doc.frame = 0; return true; }
+    doc.tags = retagRemove(doc.tags || [], doc.frame);
+    if (doc.frames.length === 1) { doc.bitmap = doc.frames[0].px; doc.frames = null; doc.frame = 0; doc.tags = []; return true; }
     return goFrame(doc, Math.min(doc.frame, doc.frames.length - 1));
   }
   function moveFrame(doc, delta) {
@@ -437,7 +487,37 @@ const SuiteDoc = (() => {
     if (!doc.frames || j < 0 || j >= doc.frames.length) return false;
     syncFrame(doc);
     [doc.frames[doc.frame], doc.frames[j]] = [doc.frames[j], doc.frames[doc.frame]];
+    doc.tags = retagSwap(doc.tags || [], doc.frame, j);
     return goFrame(doc, j);
+  }
+  // Frames from `from` to `to` in the other order, keeping the one being drawn on the same picture.
+  function reverseFrames(doc, from = 0, to = doc.frames ? doc.frames.length - 1 : 0) {
+    if (!doc.frames) return false;
+    from = Math.max(0, from | 0); to = Math.min(doc.frames.length - 1, to | 0);
+    if (to <= from) return false;
+    syncFrame(doc);
+    const keep = doc.frames[doc.frame];
+    const part = doc.frames.slice(from, to + 1).reverse();
+    doc.frames.splice(from, part.length, ...part);
+    doc.tags = (doc.tags || []).map((t) => {
+      const m = (i) => (i >= from && i <= to ? from + to - i : i);
+      let f = m(t.from), e = m(t.to);
+      if (e < f) [f, e] = [e, f];
+      return Object.assign({}, t, { from: f, to: e });
+    });
+    return goFrame(doc, doc.frames.indexOf(keep));
+  }
+  // Give frames from `from` these lengths, one each (the last one is used for any beyond).
+  function setRangeMs(doc, from, list) {
+    if (!doc.frames || !list.length) return false;
+    let changed = false;
+    list.forEach((ms, k) => {
+      const f = doc.frames[from + k];
+      if (!f) return;
+      const v = Math.round(num(ms, FRAME_MS.dflt, FRAME_MS.min, FRAME_MS.max));
+      if (f.ms !== v) { f.ms = v; changed = true; }
+    });
+    return changed;
   }
   function frameMs(doc, ms) {
     if (!doc.frames) return false;
@@ -560,6 +640,7 @@ const SuiteDoc = (() => {
       if (frames.length > 1) {
         doc.frames = frames;
         doc.frame = Math.max(0, Math.min(frames.length - 1, Math.round(num(raw.frame, 0, 0, MAX.frames))));
+        doc.tags = cleanTags(raw.tags, frames.length);
         // The bitmap as saved is the frame being drawn, whatever its copy says.
         if (Array.isArray(raw.bitmap) && raw.bitmap.length === n) frames[doc.frame].px = doc.bitmap;
         doc.bitmap = frames[doc.frame].px;
@@ -585,7 +666,8 @@ const SuiteDoc = (() => {
     create, layer, find, add, update, remove, restack, duplicate,
     toLocal, contains, hitTest, align, distribute, pasteLayers, snap,
     getPx, setPx, fill, line,
-    FRAME_MS, syncFrame, framesOf, goFrame, addFrame, removeFrame, moveFrame, frameMs,
+    FRAME_MS, TAG_DIRS, MAX_TAGS, syncFrame, framesOf, goFrame, addFrame, removeFrame, moveFrame, frameMs,
+    reverseFrames, setRangeMs, cleanTags, addTag, updateTag, removeTag,
     subjects: (doc) => doc.layers.filter((l) => l.type === "subject" && !l.hidden),
     addBlock, moveBlock, moveBlockTo, removeBlock, resize,
     colours, usesGradient, cardsUsed,

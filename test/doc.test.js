@@ -211,3 +211,82 @@ test("doc: frames survive saving, undo and a resize", () => {
   assert.equal(junk.frames.length, 2, "a frame of the wrong size is dropped");
   assert.equal(junk.frames[0].ms, D.FRAME_MS.max);
 });
+
+function frameDoc(n) {
+  const doc = D.create({ mode: "pixel", w: 2, h: 2 });
+  for (let i = 1; i < n; i++) D.addFrame(doc);
+  // each frame's first pixel says which frame it is: 0..n-1
+  doc.frames.forEach((f, i) => { f.px[0] = "#00000" + i; });
+  D.goFrame(doc, 0);
+  return doc;
+}
+const order = (doc) => doc.frames.map((f) => f.px[0].slice(-1)).join("");
+
+test("tags: a named run of frames, kept in bounds, at most eight", () => {
+  const doc = frameDoc(5);
+  assert.equal(D.addTag(doc, "walk", 3, 1, "pingpong"), true);
+  assert.deepEqual(doc.tags[0], { name: "walk", from: 1, to: 3, dir: "pingpong" }, "the ends are put in order");
+  D.addTag(doc, "x".repeat(50), -4, 99, "sideways");
+  assert.deepEqual([doc.tags[1].name.length, doc.tags[1].from, doc.tags[1].to, doc.tags[1].dir], [16, 0, 4, "forward"], "long names, wild ends and unknown directions are set right");
+  for (let i = 0; i < 12; i++) D.addTag(doc, "t" + i, 0, 1, "forward");
+  assert.equal(doc.tags.length, D.MAX_TAGS);
+  assert.equal(D.addTag(D.create({ mode: "pixel", w: 2, h: 2 }), "a", 0, 0, "forward"), false, "one frame has nothing to tag");
+  assert.equal(D.removeTag(doc, 0), true);
+  assert.equal(D.updateTag(doc, 0, { to: 2, name: "run" }), true);
+  assert.equal(doc.tags[0].name, "run");
+});
+
+test("tags: adding, deleting and moving frames carries them along", () => {
+  const doc = frameDoc(4);                                      // frames 0 1 2 3
+  D.addTag(doc, "mid", 1, 2, "forward");
+  D.goFrame(doc, 0); D.addFrame(doc);                            // a copy of 0 goes in at 1: mid is now 2..3
+  assert.deepEqual([doc.tags[0].from, doc.tags[0].to], [2, 3]);
+  D.goFrame(doc, 2); D.addFrame(doc);                            // put in at 3, inside the run: it grows
+  assert.deepEqual([doc.tags[0].from, doc.tags[0].to], [2, 4]);
+  D.goFrame(doc, 3); D.removeFrame(doc);                         // and out again
+  assert.deepEqual([doc.tags[0].from, doc.tags[0].to], [2, 3]);
+  D.goFrame(doc, 1); D.removeFrame(doc);                         // one before the run: it moves back
+  assert.deepEqual([doc.tags[0].from, doc.tags[0].to], [1, 2]);
+  D.goFrame(doc, 1); D.moveFrame(doc, 1);                        // the run's first frame swaps with its last
+  assert.deepEqual([doc.tags[0].from, doc.tags[0].to], [1, 2], "a swap inside the run leaves it whole");
+  const one = frameDoc(3);
+  D.addTag(one, "solo", 1, 1, "forward");
+  D.goFrame(one, 1); D.removeFrame(one);
+  assert.deepEqual(one.tags, [], "a tag on just the frame that goes, goes");
+  const two = frameDoc(2);
+  D.addTag(two, "all", 0, 1, "forward");
+  D.removeFrame(two);
+  assert.deepEqual(two.tags, [], "back to one frame: no tags");
+});
+
+test("tags: they survive saving, and nonsense in a file does not", () => {
+  const doc = frameDoc(4);
+  D.addTag(doc, "idle", 0, 1, "reverse");
+  const back = D.parse(D.serialize(doc));
+  assert.deepEqual(back.tags, doc.tags);
+  const junk = D.normalize({ mode: "pixel", w: 2, h: 2, bitmap: ["", "", "", ""], frames: [{ px: ["", "", "", ""] }, { px: ["", "", "", ""] }],
+    tags: [null, "x", { name: 7, from: "a", to: 999, dir: {} }, { name: "ok", from: 1, to: 0 }] });
+  assert.equal(junk.tags.length, 2, "the null and the string are dropped");
+  assert.deepEqual(junk.tags[0], { name: "tag", from: 0, to: 1, dir: "forward" }, "a number for a name, a letter for a frame: the defaults");
+  assert.deepEqual(junk.tags[1], { name: "ok", from: 0, to: 1, dir: "forward" });
+  assert.deepEqual(D.normalize({ mode: "pixel", w: 2, h: 2, tags: [{ name: "a", from: 0, to: 1 }] }).tags, [], "no frames: no tags");
+  const old = D.normalize({ mode: "pixel", w: 2, h: 2, bitmap: ["", "", "", ""], frames: [{ px: ["", "", "", ""] }, { px: ["", "", "", ""] }] });
+  assert.deepEqual(old.tags, [], "an old animation has none");
+});
+
+test("frames: reverse a range, and give a run of frames their lengths", () => {
+  const doc = frameDoc(5);
+  D.addTag(doc, "run", 1, 3, "forward");
+  D.goFrame(doc, 2);
+  assert.equal(D.reverseFrames(doc, 1, 3), true);
+  assert.equal(order(doc), "03214");
+  assert.equal(doc.frames[doc.frame].px[0].slice(-1), "2", "you stay on the same picture");
+  assert.equal(doc.frame, 2);
+  assert.deepEqual([doc.tags[0].from, doc.tags[0].to], [1, 3], "a tag that was the range is still the range");
+  assert.equal(D.reverseFrames(doc), true);
+  assert.equal(order(doc), "41230");
+  assert.equal(D.reverseFrames(doc, 2, 2), false, "one frame reversed is the same");
+  assert.equal(D.setRangeMs(doc, 1, [100, 200, 99999, 5]), true);
+  assert.deepEqual(doc.frames.map((f) => f.ms).slice(1), [100, 200, D.FRAME_MS.max, D.FRAME_MS.min], "lengths are kept between a blink and four seconds");
+  assert.equal(D.setRangeMs(doc, 1, [100, 200, D.FRAME_MS.max, D.FRAME_MS.min]), false, "nothing changed: nothing to record");
+});
