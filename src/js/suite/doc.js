@@ -7,6 +7,8 @@
  *   { v, w, h, bg, mode: "free"|"pixel"|"layout",
  *     layers:  [ Layer ],          free mode: bottom → top
  *     bitmap:  [ "" | "#RRGGBB" ], pixel mode: w*h cells, "" is transparent
+ *     frames:  [ { px, ms } ] | null, pixel mode, animated: see "frames" below
+ *     frame:   the frame being drawn; bitmap is always its px
  *     blocks:  [ SiteBlock ],      layout mode: sites.js block objects
  *     palette: [ "#RRGGBB" ],
  *     meta:    { name, briefId, gigId, intent: [cardId] } }
@@ -23,7 +25,7 @@ const SuiteDoc = (() => {
   // editor-only: never exported, never a colour, never part of the picture.
   const TYPES = ["rect", "ellipse", "text", "image", "path", "subject", "polygon"];
   const WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900];
-  const MAX = { layers: 200, blocks: 40, text: 400, src: 6 * 1024 * 1024, dim: 4096, pixelDim: 128, palette: 32, name: 80 };
+  const MAX = { layers: 200, blocks: 40, text: 400, src: 6 * 1024 * 1024, dim: 4096, pixelDim: 128, palette: 32, name: 80, frames: 24 };
   const HEX = /^#[0-9A-Fa-f]{6}$/;
 
   let seq = 0;
@@ -66,6 +68,7 @@ const SuiteDoc = (() => {
       guides: { v: [], h: [] },
       meta: { name: str(opts.name, MAX.name, "Untitled"), briefId: opts.briefId || null, gigId: opts.gigId || null, intent: [] },
       site: mode === "layout" ? site(opts.site) : null,
+      ...(mode === "pixel" ? { frames: null, frame: 0 } : {}),
     };
   }
 
@@ -307,12 +310,16 @@ const SuiteDoc = (() => {
     if (w === doc.w && h === doc.h) return false;
     const dx = Math.round((w - doc.w) / 2), dy = Math.round((h - doc.h) / 2);
     if (doc.mode === "pixel") {
-      const next = new Array(w * h).fill("");
-      for (let y = 0; y < doc.h; y++) for (let x = 0; x < doc.w; x++) {
-        const nx = x + dx, ny = y + dy;
-        if (nx >= 0 && ny >= 0 && nx < w && ny < h) next[ny * w + nx] = doc.bitmap[y * doc.w + x];
-      }
-      doc.bitmap = next;
+      const moved = (px) => {
+        const next = new Array(w * h).fill("");
+        for (let y = 0; y < doc.h; y++) for (let x = 0; x < doc.w; x++) {
+          const nx = x + dx, ny = y + dy;
+          if (nx >= 0 && ny >= 0 && nx < w && ny < h) next[ny * w + nx] = px[y * doc.w + x];
+        }
+        return next;
+      };
+      if (doc.frames) { syncFrame(doc); doc.frames.forEach((f) => { f.px = moved(f.px); }); doc.bitmap = doc.frames[doc.frame].px; }
+      else doc.bitmap = moved(doc.bitmap);
     } else {
       for (const l of doc.layers) { l.x += dx; l.y += dy; }
     }
@@ -330,7 +337,7 @@ const SuiteDoc = (() => {
     };
     addPaint(doc.bg);
     for (const l of doc.layers) if (!l.hidden && l.type !== "subject") { addPaint(l.fill); if (l.strokeW > 0) addPaint(l.stroke); }
-    for (const c of doc.bitmap) if (c) out.add(c);
+    for (const f of framesOf(doc)) for (const c of f.px) if (c) out.add(c);
     return [...out];
   }
 
@@ -345,6 +352,56 @@ const SuiteDoc = (() => {
     }
     for (const b of doc.blocks) if (b && b.card) ids.add(b.card);
     return [...ids];
+  }
+
+  /* ── frames: an animated sprite ──────────────────────────
+   * A pixel doc can hold frames, [{ px, ms }], with doc.frame the one being
+   * drawn. doc.bitmap is always that frame's pixels (the same array), so every
+   * tool, the scorer and the renderer keep working on "the picture" without
+   * knowing. A doc with a single frame has none: frames is null. A new frame
+   * copies the one it follows. ms is how long a frame shows.
+   */
+  const FRAME_MS = { min: 40, max: 4000, dflt: 156 };
+  // Anything that swapped doc.bitmap for a new array: put it back in its frame.
+  function syncFrame(doc) {
+    if (doc.frames && doc.frames[doc.frame]) doc.frames[doc.frame].px = doc.bitmap;
+    return doc;
+  }
+  const framesOf = (doc) => (doc.frames ? syncFrame(doc).frames : [{ px: doc.bitmap, ms: FRAME_MS.dflt }]);
+  function goFrame(doc, i) {
+    if (!doc.frames) return false;
+    syncFrame(doc);
+    doc.frame = Math.max(0, Math.min(doc.frames.length - 1, i | 0));
+    doc.bitmap = doc.frames[doc.frame].px;
+    return true;
+  }
+  function addFrame(doc) {
+    if (doc.mode !== "pixel") return false;
+    if (!doc.frames) { doc.frames = [{ px: doc.bitmap, ms: FRAME_MS.dflt }]; doc.frame = 0; }
+    if (doc.frames.length >= MAX.frames) return false;
+    syncFrame(doc);
+    const here = doc.frames[doc.frame];
+    doc.frames.splice(doc.frame + 1, 0, { px: here.px.slice(), ms: here.ms });
+    return goFrame(doc, doc.frame + 1);
+  }
+  function removeFrame(doc) {
+    if (!doc.frames || doc.frames.length < 2) return false;
+    syncFrame(doc);
+    doc.frames.splice(doc.frame, 1);
+    if (doc.frames.length === 1) { doc.bitmap = doc.frames[0].px; doc.frames = null; doc.frame = 0; return true; }
+    return goFrame(doc, Math.min(doc.frame, doc.frames.length - 1));
+  }
+  function moveFrame(doc, delta) {
+    const j = doc.frame + delta;
+    if (!doc.frames || j < 0 || j >= doc.frames.length) return false;
+    syncFrame(doc);
+    [doc.frames[doc.frame], doc.frames[j]] = [doc.frames[j], doc.frames[doc.frame]];
+    return goFrame(doc, j);
+  }
+  function frameMs(doc, ms) {
+    if (!doc.frames) return false;
+    doc.frames[doc.frame].ms = Math.round(num(ms, FRAME_MS.dflt, FRAME_MS.min, FRAME_MS.max));
+    return true;
   }
 
   /* ── undo ──────────────────────────────────────────────── */
@@ -455,6 +512,18 @@ const SuiteDoc = (() => {
     if (doc.mode === "pixel" && Array.isArray(raw.bitmap) && raw.bitmap.length === doc.w * doc.h) {
       doc.bitmap = raw.bitmap.map((c) => (c ? hex(c, "") : ""));
     }
+    if (doc.mode === "pixel" && Array.isArray(raw.frames)) {
+      const n = doc.w * doc.h;
+      const frames = raw.frames.slice(0, MAX.frames).filter((f) => f && Array.isArray(f.px) && f.px.length === n)
+        .map((f) => ({ px: f.px.map((c) => (c ? hex(c, "") : "")), ms: Math.round(num(f.ms, FRAME_MS.dflt, FRAME_MS.min, FRAME_MS.max)) }));
+      if (frames.length > 1) {
+        doc.frames = frames;
+        doc.frame = Math.max(0, Math.min(frames.length - 1, Math.round(num(raw.frame, 0, 0, MAX.frames))));
+        // The bitmap as saved is the frame being drawn, whatever its copy says.
+        if (Array.isArray(raw.bitmap) && raw.bitmap.length === n) frames[doc.frame].px = doc.bitmap;
+        doc.bitmap = frames[doc.frame].px;
+      }
+    }
     if (doc.mode === "layout" && Array.isArray(raw.blocks)) {
       // Block content is escaped by sites.js at render time; here it only has to
       // be plain JSON data of a bounded size.
@@ -475,6 +544,7 @@ const SuiteDoc = (() => {
     create, layer, find, add, update, remove, restack, duplicate,
     toLocal, contains, hitTest, align, snap,
     getPx, setPx, fill, line,
+    FRAME_MS, syncFrame, framesOf, goFrame, addFrame, removeFrame, moveFrame, frameMs,
     subjects: (doc) => doc.layers.filter((l) => l.type === "subject" && !l.hidden),
     addBlock, moveBlock, removeBlock, resize,
     colours, usesGradient, cardsUsed,

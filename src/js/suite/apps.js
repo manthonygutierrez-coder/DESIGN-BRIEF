@@ -32,7 +32,7 @@ const SuiteApps = (() => {
       label: "Pixel", icon: "app-pixel", mode: "pixel", blurb: "Sprites, icons, tiles at true resolution",
       presets: [["Icon", 16, 16], ["Sprite", 32, 32], ["Portrait", 64, 64], ["Tile sheet", 96, 96]],
       tools: ["pencil", "erase", "fill", "pick"],
-      bonus: ["mirror"],
+      bonus: ["mirror", "shade", "dither", "lockalpha", "frames"],
       for: ["character", "asset3d", "illustrative"],
     },
     layout: {
@@ -73,6 +73,10 @@ const SuiteApps = (() => {
     snap: "Snap to a 10px grid",
     align: "Align to canvas or selection",
     mirror: "Mirror drawing across the centre",
+    shade: "Shading ink: step pixels along the palette's ramp",
+    dither: "The dither brush: a checker, for textures and in-between tones",
+    lockalpha: "Lock alpha: paint only onto pixels already drawn",
+    frames: "Frames: animate a sprite, with onion skin and a sheet to export",
   };
 
   /* ── modes ─────────────────────────────────────────────

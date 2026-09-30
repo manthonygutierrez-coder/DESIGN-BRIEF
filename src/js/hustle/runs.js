@@ -12,6 +12,8 @@
  *                     itself when the run changes nothing)
  *   every(gig)        every run roll() can produce, bar the question order,
  *                     which changes nothing the tests look at
+ *   rng(seed)         the dice themselves, for anything else a run seeds (the
+ *                     research games deal from it)
  *
  * The client's day is a small change to how the meeting runs (meeting.js reads
  * patience, pause, silenceCost, given and catchBonus), and a line that tells
@@ -109,7 +111,7 @@ const HustleRuns = (() => {
   const dayLine = (run, name) => (run && MOODS[run.mood] ? MOODS[run.mood].say(name) : "");
   const dayTag = (run) => (run && MOODS[run.mood] ? MOODS[run.mood].tag : "");
 
-  return { V, MOODS, DAYS, roll, canonical, view, every, givable, dayLine, dayTag, MIN_PATIENCE, MIN_PAUSE };
+  return { V, MOODS, DAYS, roll, canonical, view, every, givable, dayLine, dayTag, rng, MIN_PATIENCE, MIN_PAUSE };
 })();
 
 if (typeof module !== "undefined") module.exports = HustleRuns;

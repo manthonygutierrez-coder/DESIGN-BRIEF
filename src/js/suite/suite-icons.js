@@ -231,6 +231,39 @@ Object.assign(ICON_ART, {
   "show":{p:{k:"currentColor",w:"var(--ico-paper,#FFFFFF)"},g:[
     ".....kk.........","....kwwk........","....kwwk........","....kwwk........","....kwwkkkkkk...","....kwwkwwkwwkk.",".kk.kwwkwwkwwkwk","kwwkkwwkwwkwwkwk",
     "kwwwkwwwwwwwwwwk",".kwwwwwwwwwwwwwk","..kwwwwwwwwwwwwk","..kwwwwwwwwwwwk.","...kwwwwwwwwwwk.","....kwwwwwwwwk..",".....kwwwwwwwk..",".....kkkkkkkkk.."]},
+  "cards":{p:{k:"currentColor",w:"var(--ico-paper,#FFFFFF)",r:"#E0442B"},g:[
+    "................",".kkkkkkkk.......",".kwwwwwwk.......",".kwkkkkkkkkkk...",".kwkwwwwwwwwk...",".kwkwrrwrrwwk...",".kwkwrrrrrwwk...",".kwkwrrrrrwwk...",
+    ".kwkwwrrrwwwk...",".kkkwwwrwwwwk...","...kwwwwwwwwk...","...kwwwwwwwwk...","...kwwwwwwwwk...","...kkkkkkkkkk...","................","................"]},
+  "ink-shade":{p:{k:"currentColor",a:"#3A2418",b:"#8A4A2E",c:"#D9804A",d:"#F6D0A0"},g:[
+    "................","................",".kkkkkkkkkkkkkk.",".kaaabbbcccdddk.",".kaaabbbcccdddk.",".kaaabbbcccdddk.",".kkkkkkkkkkkkkk.","................",
+    "....k...........","...kk...........","..kkkkkkkkkkk...","...kk...........","....k...........","................","................","................"]},
+  "ink-dither":{p:{k:"currentColor",w:"var(--ico-paper,#FFFFFF)"},g:[
+    "................",".kkkkkkkkkkkkkk.",".kkwkwkwkwkwkwk.",".kwkwkwkwkwkwkk.",".kkwkwkwkwkwkwk.",".kwkwkwkwkwkwkk.",".kkwkwkwkwkwkwk.",".kwkwkwkwkwkwkk.",
+    ".kkwkwkwkwkwkwk.",".kwkwkwkwkwkwkk.",".kkwkwkwkwkwkwk.",".kwkwkwkwkwkwkk.",".kkwkwkwkwkwkwk.",".kwkwkwkwkwkwkk.",".kkkkkkkkkkkkkk.","................"]},
+  "lock-alpha":{p:{k:"currentColor",y:"#F2C94C",w:"var(--ico-paper,#FFFFFF)"},g:[
+    "................",".....kkkkk......","....kk...kk.....","....k.....k.....","....k.....k.....","..kkkkkkkkkkk...","..kyyyyyyyyyk...","..kyyyykyyyyk...",
+    "..kyyyykyyyyk...","..kyyyyyyyyyk...","..kkkkkkkkkkk...","................",".kwkwkwkwkwkwk..",".wkwkwkwkwkwkw..","................","................"]},
+  "fr-play":{p:{k:"currentColor"},g:[
+    "................","................",".....k..........",".....kk.........",".....kkk........",".....kkkk.......",".....kkkkk......",".....kkkkkk.....",
+    ".....kkkkkk.....",".....kkkkk......",".....kkkk.......",".....kkk........",".....kk.........",".....k..........","................","................"]},
+  "fr-stop":{p:{k:"currentColor"},g:[
+    "................","................","................","...kkkkkkkkkk...","...kkkkkkkkkk...","...kkkkkkkkkk...","...kkkkkkkkkk...","...kkkkkkkkkk...",
+    "...kkkkkkkkkk...","...kkkkkkkkkk...","...kkkkkkkkkk...","...kkkkkkkkkk...","...kkkkkkkkkk...","................","................","................"]},
+  "fr-prev":{p:{k:"currentColor"},g:[
+    "................","................","................","...kk......k....","...kk.....kk....","...kk....kkk....","...kk...kkkk....","...kk..kkkkk....",
+    "...kk..kkkkk....","...kk...kkkk....","...kk....kkk....","...kk.....kk....","...kk......k....","................","................","................"]},
+  "fr-next":{p:{k:"currentColor"},g:[
+    "................","................","................","....k......kk...","....kk.....kk...","....kkk....kk...","....kkkk...kk...","....kkkkk..kk...",
+    "....kkkkk..kk...","....kkkk...kk...","....kkk....kk...","....kk.....kk...","....k......kk...","................","................","................"]},
+  "fr-left":{p:{k:"currentColor"},g:[
+    "................","................","................","................","......k.........",".....kk.........","....kkkkkkkkkk..","...kkkkkkkkkkk..",
+    "....kkkkkkkkkk..",".....kk.........","......k.........","................","................","................","................","................"]},
+  "fr-right":{p:{k:"currentColor"},g:[
+    "................","................","................","................",".........k......",".........kk.....","..kkkkkkkkkk....","..kkkkkkkkkkk...",
+    "..kkkkkkkkkk....",".........kk.....",".........k......","................","................","................","................","................"]},
+  "fr-onion":{p:{r:"#FF6060",b:"#40A0FF"},g:[
+    "................",".rrrrrrrrr......",".r.......r......",".r.......r......",".r.......r......",".r.......r......",".r....bbbbbbbbb.",".r....b..r....b.",
+    ".r....b..r....b.",".rrrrrbrrr....b.","......b.......b.","......b.......b.","......b.......b.","......b.......b.","......bbbbbbbbb.","................"]},
   "star":{p:{k:"currentColor",y:"#F2C94C"},g:[
     "................",".......kk.......","......kyyk......","......kyyk......",".....kyyyyk.....","kkkkkkyyyykkkkkk","kyyyyyyyyyyyyyyk",".kyyyyyyyyyyyyk.",
     "..kyyyyyyyyyyk..","...kyyyyyyyyk...","...kyyyyyyyyk...","..kyyyyyyyyyyk..","..kyyyykkyyyyk..",".kyyykk..kkyyyk.",".kykk......kkyk.",".kk..........kk."]},
@@ -240,6 +273,9 @@ Object.assign(ICON_ART, {
   "s-outline":{p:{k:"currentColor",r:"#E8563B",y:"#F2C94C"},g:[
     "................","................","......kkkk......","....kkyyyykk....","...kyyrrrryyk...","...kyrrrrrryk...","..kyrrrrrrrryk..","..kyrrrrrrrryk..",
     "..kyrrrrrrrryk..","..kyrrrrrrrryk..","...kyrrrrrryk...","...kyyrrrryyk...","....kkyyyykk....","......kkkk......","................","................"]},
+  "polish":{p:{k:"currentColor",y:"#F2C94C",w:"var(--ico-paper,#FFFFFF)"},g:[
+    "................",".......k........","......kyk.......","......kyk.......",".....kyyyk......","..kkkyyyyykkk...",".kyyyyywyyyyyk..","..kkkyyyyykkk...",
+    ".....kyyyk......","......kyk.......","......kyk....k..",".......k....kyk.",".............k..","................","................","................"]},
   "v-sil":{p:{k:"currentColor"},g:[
     "................",".......kk.......","......kkkk......","......kkkk......",".......kk.......",".....kkkkkk.....","....kkkkkkkk....","....k.kkkk.k....",
     "....k.kkkk.k....","......kkkk......","......k..k......","......k..k......","......k..k......",".....kk..kk.....","................","................"]},

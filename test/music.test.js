@@ -152,3 +152,13 @@ test("every interface sound, the suite's included, is in key and playable", () =
     }
   }
 });
+
+test("pixel sounds: a ramp plays a scale, and a line keeps time or stumbles", () => {
+  const pitch = (h) => M.sfxNotes("px", 0, { h })[0][2];
+  for (let i = 1; i <= 10; i++) assert.ok(pitch(i / 10) >= pitch((i - 1) / 10), "a lighter step is no lower");
+  assert.ok(pitch(1) > pitch(0), "and the ramp spans a range");
+  assert.ok(M.sfxNotes("px", 0, { h: 0.5, erase: true })[0][2] < pitch(0.5), "rubbing out is lower");
+  const gaps = (runs) => { const n = M.sfxNotes("px-line", 0, { runs }); return n.slice(1).map((x, i) => x[0] - n[i][0]); };
+  assert.deepEqual(gaps([2, 2, 2, 2]), [1, 1, 1], "clean steps keep time");
+  assert.deepEqual(gaps([2, 1, 3, 2]), [1, 0.5, 1.5], "jaggies stumble");
+});

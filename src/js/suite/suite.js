@@ -53,7 +53,7 @@ const Suite = (() => {
   const save = () => Bridge.saveState(state);
   const slot = () => Bridge.slot();
   const reduced = () => typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const sound = (name) => { if (typeof Music !== "undefined" && Music.ui) Music.ui(name); };
+  const sound = (name, o) => { if (typeof Music !== "undefined" && Music.ui) Music.ui(name, o); };
 
   /* ── jobs: what the work is for ────────────────────────── */
   // Studio jobs are briefs in the mailbox; Hustle jobs are gigs in progress.
@@ -290,7 +290,7 @@ const Suite = (() => {
       doc = D.create({ mode: mode === "vector" ? "free" : mode, w: pw, h: ph, name: job ? job.brief.project : A.MODES[mode].label + " sketch", briefId: job ? job.id : null,
         site: mode === "layout" ? { tagline: job ? job.client && job.client.site && job.client.site.tagline : "" } : undefined });
     }
-    const ed = { win, mode, appId, docKey, job, doc, hist: D.history(), bonus: A.bonusForMode(mode, slot(), S().unlocks) };
+    const ed = { win, mode, appId, docKey, job, doc, hist: D.history(), bonus: bonusOf(mode, job) };
     win.eds[mode] = ed;
     return ed;
   }
@@ -301,7 +301,7 @@ const Suite = (() => {
     if (prev) { if (prev.unmount) prev.unmount(); flushAutosave(prev); if (prev.ro) prev.ro.disconnect(); }
     win.mode = mode;
     const ed = editorFor(win, mode);
-    ed.bonus = A.bonusForMode(mode, slot(), S().unlocks);
+    ed.bonus = bonusOf(mode, ed.job);
     // Each mode gets a fresh host: its listeners go when it goes, so a click
     // in one mode never reaches another's handlers.
     const host = document.createElement("div");
@@ -1012,8 +1012,11 @@ const Suite = (() => {
     sound("press");
   }
   async function exportPNG(ed, scale) {
-    const dataURL = R.toPNG(ed.doc, scale);
-    const name = ed.doc.meta.name + (scale && scale !== 1 ? "@" + scale + "x" : "");
+    // An animated sprite goes out as a sheet: every frame, left to right.
+    const sheet = !!(ed.doc.frames && ed.doc.frames.length > 1);
+    if (sheet) D.syncFrame(ed.doc);
+    const dataURL = sheet ? R.toSheet(ed.doc, scale) : R.toPNG(ed.doc, scale);
+    const name = ed.doc.meta.name + (sheet ? " sheet" : "") + (scale && scale !== 1 ? "@" + scale + "x" : "");
     const res = await Bridge.suiteSave({ ...jobPlace(ed), slot: "04-final", name, dataURL });
     if (res && res.ok) setStatus(ed, "Exported " + res.name + " to 04-final" + (slot() === "studio" ? " — ready to attach to a reply." : "."));
     else if (!Bridge.native) { download(name + ".png", dataURL); setStatus(ed, "Downloaded " + name + ".png"); }
@@ -1090,8 +1093,20 @@ const Suite = (() => {
     if (!A.BONUS[name] || S().unlocks.includes(name)) return false;
     S().unlocks.push(name);
     save();
-    wins.forEach((win) => Object.values(win.eds).forEach((ed) => { ed.bonus = A.bonusForMode(ed.mode, slot(), S().unlocks); }));
+    refreshBonus();
     return true;
+  }
+  // The bonus tools a mode has: those earned, and any lent for this job (a
+  // research game's prize, kept by Hustle with the gig).
+  function bonusOf(mode, job) {
+    const lent = job && typeof Hustle !== "undefined" && Hustle.loans ? Hustle.loans(job.id) : [];
+    return A.bonusForMode(mode, slot(), S().unlocks.concat(lent));
+  }
+  function refreshBonus() {
+    wins.forEach((win) => Object.values(win.eds).forEach((ed) => {
+      ed.bonus = bonusOf(ed.mode, ed.job);
+      if (win.mode === ed.mode && ed.render && ed.body && ed.body.isConnected) ed.render({});
+    }));
   }
 
   // The most recently edited document for a job, from whichever mode made it.
@@ -1104,7 +1119,7 @@ const Suite = (() => {
   }
 
   return {
-    boot, launcher, open, addCards, unlock, docFor, forget, replaceCard,
+    boot, launcher, open, addCards, unlock, refreshBonus, docFor, forget, replaceCard,
     cards: () => S().cards.slice(),
     cutoutFrom: (initial, jobId) => {
       const w = launcher(jobId);

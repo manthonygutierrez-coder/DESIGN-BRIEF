@@ -104,3 +104,20 @@ test("selections: an outline rings what is drawn, one pixel, and never paints ov
   assert.equal(o.bitmap.filter(Boolean).length, 6);
 });
 
+
+test("pixel inks: shading steps along the palette's ramp, and stops at its ends", () => {
+  const ramp = P.rampOf(["#F6D0A0", "#3A2418", "#D9804A", "#8A4A2E"], []);
+  assert.deepEqual(ramp, ["#3A2418", "#8A4A2E", "#D9804A", "#F6D0A0"], "darkest to lightest");
+  assert.equal(P.shadeStep(ramp, "#D9804A", -1), "#8A4A2E", "a dab darkens one step");
+  assert.equal(P.shadeStep(ramp, "#D9804A", 1), "#F6D0A0", "the other button lightens");
+  assert.equal(P.shadeStep(ramp, "#3A2418", -1), "#3A2418", "the darkest stays the darkest");
+  assert.equal(P.shadeStep(ramp, "#D8814B", -1), "#8A4A2E", "a colour off the ramp steps from the nearest on it");
+  assert.deepEqual(P.rampOf([], ["#FFFFFF", "", "#000000", "#FFFFFF"]), ["#000000", "#FFFFFF"], "no palette: the sprite's own colours");
+});
+
+test("pixel inks: dither patterns are fixed to the sprite's grid", () => {
+  const count = (f) => { let n = 0; for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) if (f(x, y)) n++; return n; };
+  assert.equal(count(P.DITHERS[50]), 32, "a 50% checker");
+  assert.equal(count(P.DITHERS[25]), 16, "and a 25% one");
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 7; x++) assert.notEqual(P.DITHERS[50](x, y), P.DITHERS[50](x + 1, y), "neighbours alternate");
+});

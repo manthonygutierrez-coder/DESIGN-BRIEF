@@ -357,14 +357,35 @@ const MusicTheme = (() => {
     if (name === "ring") return [[0, 1, t[3], 0.3, "bell"], [1, 1, t[2], 0.26, "bell"], [3, 1, t[3], 0.3, "bell"], [4, 2, t[2], 0.26, "bell"]];
     if (name === "pickup") return [[0, 0.5, t[0], 0.3, "blip"], [0.5, 1, t[2], 0.3, "blip"]];
     if (name === "hangup") return [[0, 0.5, t[2], 0.26, "blip"], [0.5, 1.5, thirdBelow(t[0]), 0.26, "blip"]];
-    return UI_SOUNDS.has(name) ? uiNotes(name, c, t) : [];
+    return UI_SOUNDS.has(name) ? uiNotes(name, c, t, o) : [];
   }
 
   // The interface's own small sounds: quiet, short, and still in the key of
   // the bar, so clicking about never fights the music. The player can switch
   // these off (the tray's volume box) without losing the game's own cues.
-  const UI_SOUNDS = new Set(["open", "close", "min", "menu", "pick", "press", "loaded", "tool", "layer", "drop", "drawer", "tuck", "grid"]);
-  function uiNotes(name, c, t) {
+  const UI_SOUNDS = new Set(["open", "close", "min", "menu", "pick", "press", "loaded", "tool", "layer", "drop", "drawer", "tuck", "grid",
+    "px", "px-line", "polish-fix", "polish-clean"]);
+  function uiNotes(name, c, t, o = {}) {
+    // Pixel mode, as you work. Every pixel laid down plucks a note of the
+    // chord, pitched by its colour's step in the ramp (o.h, 0 darkest to 1
+    // lightest), so shading down a ramp plays a scale; rubbing out is an
+    // octave down and softer. A line lands as a note a step, each after a
+    // 32nd for every pixel of the run before it (o.runs): clean steps (2, 2,
+    // 2) keep time, and jaggies (2, 1, 3) stumble. Polish chimes as each
+    // thing is tidied, and runs up the chord when there's nothing left.
+    const ladder = c.tones.map((m) => m + 12).concat(t);
+    const rung = ladder[Math.max(0, Math.min(ladder.length - 1, Math.round((o.h == null ? 0.5 : o.h) * (ladder.length - 1))))];
+    if (name === "px") return o.erase ? [[0, 0.5, rung - 12, 0.06, "blip"]] : [[0, 0.5, rung, 0.08, "pluck"]];
+    if (name === "px-line") {
+      let at = 0;
+      return (o.runs && o.runs.length ? o.runs : [2, 2, 2]).slice(0, 8).map((r, i) => {
+        const n = [at, 0.5, rung, i ? 0.08 : 0.1, "pluck"];
+        at += Math.min(4, Math.max(1, r)) * 0.5;
+        return n;
+      });
+    }
+    if (name === "polish-fix") return [[0, 1, t[3], 0.14, "vibes"]];
+    if (name === "polish-clean") return [[0, 1, t[0], 0.16, "vibes"], [0.5, 1, t[1], 0.16, "vibes"], [1, 1, t[2], 0.16, "vibes"], [1.5, 1, t[3], 0.16, "vibes"], [2, 5, t[0] + 12, 0.15, "vibes"]];
     if (name === "open") return [[0, 0.5, t[0], 0.18, "blip"], [0.5, 1, t[2], 0.16, "blip"]];
     if (name === "close") return [[0, 0.5, t[2], 0.15, "blip"], [0.5, 1, t[0], 0.13, "blip"]];
     if (name === "min") return [[0, 1, t[0] - 12, 0.14, "blip"]];

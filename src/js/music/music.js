@@ -16,7 +16,7 @@
  *   Music.set({ zone, fullness, pressure, call, far, research })
  *   Music.sfx("clip-hit" | "clip-dupe" | "clip-miss" | "chime" | "deliver" | "gap"
  *             | "ring" | "pickup" | "hangup", opts)
- *   Music.ui("open" | "close" | "min" | "menu" | "pick" | "press" | "loaded")
+ *   Music.ui("open" | "close" | "min" | "menu" | "pick" | "press" | "loaded" | "px", opts)
  *     the interface's own sounds, which the tray's volume box can switch off
  * Which window is in front comes from the window manager ("wm:focus"), so
  * no app has to know the music exists.
@@ -35,7 +35,7 @@ const Music = (() => {
   let t0 = 0, nextBar = 0, booked = -1;
   let mixNow = null, mixNext = null, mixFrom = Infinity;   // the mix, and the bar the next one starts at
   let liveLast = new Set();
-  let sfxEnds = [], combo = 0, lastHit = -Infinity;
+  let sfxEnds = [], combo = 0, lastHit = -Infinity, lastPx = -Infinity;
   let trayBtn = null, panel = null;
 
   function readPrefs() {
@@ -190,6 +190,9 @@ const Music = (() => {
     if (sfxEnds.length >= SFX_VOICES) return;
     if (name === "clip-hit") { combo = now - lastHit < 6 ? combo + 1 : 0; lastHit = now; o = Object.assign({ combo }, o); }
     const at = T.sfxTime(now, t0), bar = barAt(at);
+    // A stroke lays pixels down faster than notes can go: one a sixteenth,
+    // so dragging plays a run instead of a rattle.
+    if (name === "px") { if (at - lastPx < T.STEP_SEC - 1e-6) return; lastPx = at; }
     let end = at;
     for (const [dt, len, m, v, patch] of T.sfxNotes(name, bar, o)) {
       const when = at + dt * T.STEP_SEC, dur = len * T.STEP_SEC;
@@ -306,7 +309,7 @@ const Music = (() => {
 
   // The interface's sounds go through here, so a caller never needs to check
   // whether the music is up or the player has turned them off.
-  const ui = (name) => sfx(name);
+  const ui = (name, o) => sfx(name, o);
 
   return { start, stop, screen, set, sfx, ui, mountTray, state, level, tap };
 })();
