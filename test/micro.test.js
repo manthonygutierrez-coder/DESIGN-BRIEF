@@ -104,7 +104,7 @@ test("micro: every run grants its own facts, each from one game, and says what w
       if (g.kind === "pick") assert.ok(g.answer >= 0 && g.answer < g.options.length, id + " " + g.cmd + ": the answer is one of the options");
       assert.ok(g.cmd && g.cmd.length <= 16, id + ": a short word to act on");
     }
-    assert.ok(spec.grants.length <= 3, id + " keeps most of its research on the pages");
+    assert.ok(spec.grants.length <= 3, id + " grants three facts at most");
     assert.ok(spec.intro && spec.name && spec.scene, id + " is set up");
   }
 });

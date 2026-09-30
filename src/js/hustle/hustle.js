@@ -644,7 +644,7 @@ const Hustle = (() => {
     if (gs.result) G().rep = Math.max(0, G().rep - (gs.result.rep || 0));
     const call = getWin(callKey(id));
     if (call) { gs.line = false; closeWin(call); }
-    for (const k of ["ticket:" + id, "compare:" + id]) { const w = getWin(k); if (w) closeWin(w); }
+    for (const k of ["ticket:" + id, "compare:" + id, "game:" + id, "popup:" + id]) { const w = getWin(k); if (w) closeWin(w); }
     Suite.forget(id, refs);
     delete G().gigs[id];
     if (focusId === id) focusId = activeGigs()[0] || null;
