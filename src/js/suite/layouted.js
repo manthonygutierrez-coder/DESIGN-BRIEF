@@ -9,7 +9,7 @@
  */
 
 const SuiteLayoutEd = (() => {
-  const D = SuiteDoc, A = SuiteApps;
+  const D = SuiteDoc, A = SuiteApps, T = SuiteTools;
   const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
 
   // What the page looks like to Sites: the document as a client with one page.
@@ -64,14 +64,37 @@ const SuiteLayoutEd = (() => {
       paintRail();
       if (H.painted) H.painted(ed);
     };
+    const setTool = (t) => { ed.tool = t; H.sound("tool"); paintRail(); H.status(ed, T.hint("layout", t)); };
+    // A block to a new place: one undo step, and it stays selected.
+    const moveTo = (from, to) => {
+      if (!H.mutate(ed, () => D.moveBlockTo(ed.doc, from, to))) return false;
+      ed.blockSel = to; paintBlocks(); paintEdit(); markSel(); H.sound("layer");
+      return true;
+    };
     ed.key = (e) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return false;
-      const k = e.key.toLowerCase();
-      if (k === "v" || k === "t") { ed.tool = k === "v" ? "select" : "text"; H.sound("tool"); paintRail(); return true; }
+      const mod = e.metaKey || e.ctrlKey, k = e.key.toLowerCase(), n = ed.doc.blocks.length;
+      if (mod && k === "d" && ed.blockSel >= 0) {
+        H.mutate(ed, () => { if (D.addBlock(ed.doc, JSON.parse(JSON.stringify(ed.doc.blocks[ed.blockSel])), ed.blockSel + 1)) ed.blockSel += 1; });
+        H.sound("drop"); return true;
+      }
+      if (mod) return false;
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        const d = e.key === "ArrowUp" ? -1 : 1;
+        if (!n) return false;
+        if (e.altKey) { if (ed.blockSel >= 0) moveTo(ed.blockSel, ed.blockSel + d); return true; }
+        select(Math.max(0, Math.min(n - 1, (ed.blockSel < 0 ? (d > 0 ? -1 : n) : ed.blockSel) + d)), true);
+        return true;
+      }
+      if (e.altKey) return false;
+      if (k === "v" || k === "t") { setTool(k === "v" ? "select" : "text"); return true; }
       if ((e.key === "Delete" || e.key === "Backspace") && ed.blockSel >= 0) { H.mutate(ed, () => { D.removeBlock(ed.doc, ed.blockSel); ed.blockSel = Math.min(ed.blockSel, ed.doc.blocks.length - 1); }); return true; }
       return false;
     };
-    ed.escape = () => { if (ed.blockSel >= 0) { select(-1); return true; } return false; };
+    ed.escape = () => {
+      if (ed.blockSel >= 0) { select(-1); return true; }
+      if (ed.tool !== T.home("layout")) { setTool(T.home("layout")); return true; }
+      return false;
+    };
     ed.drop = (c) => dropOnBlock(ed, H, c);
     ed.sample = () => null;
     ed.selectedImage = () => null;
@@ -199,6 +222,44 @@ const SuiteLayoutEd = (() => {
         { label: "Delete", key: "Del", icon: "l-del", act: () => { H.mutate(ed, () => { D.removeBlock(ed.doc, i); ed.blockSel = Math.min(ed.blockSel, ed.doc.blocks.length - 1); }); H.sound("close"); } },
       ], { look: H.look() === "classic" ? null : "graphite" });
     });
+    // Drag a block, on the page or in the list, to where it should sit: a line
+    // shows the place, and letting go there is one undo step.
+    root.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 || ed.tool !== "select" || e.target.closest("button,input,textarea,select,a")) return;
+      const src = e.target.closest(".sx__page [data-block], [data-bsel]");
+      if (!src) return;
+      const onPage = !!src.closest(".sx__page");
+      const from = Number(onPage ? src.dataset.block : src.dataset.bsel);
+      const items = () => [...(onPage ? page : ed.body.querySelector(".sx__blocks")).querySelectorAll(onPage ? "[data-block]" : "[data-bsel]")];
+      const sx = e.clientX, sy = e.clientY;
+      let moving = false, slot = from;
+      const clear = () => items().forEach((el) => el.classList.remove("is-drop-before", "is-drop-after"));
+      const move = (ev) => {
+        if (!moving && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return;
+        moving = true;
+        const els = items();
+        slot = els.filter((el) => { const r = el.getBoundingClientRect(); return ev.clientY > r.top + r.height / 2; }).length;
+        clear();
+        if (els[slot]) els[slot].classList.add("is-drop-before"); else if (els.length) els[els.length - 1].classList.add("is-drop-after");
+        ed.body.classList.add("is-dragging-block");
+      };
+      const up = (ev) => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+        window.removeEventListener("pointercancel", up);
+        clear();
+        ed.body.classList.remove("is-dragging-block");
+        if (!moving) return;
+        // The click that ends a drag must not also pick a block.
+        const swallow = (c) => { c.stopPropagation(); c.preventDefault(); };
+        root.addEventListener("click", swallow, { capture: true, once: true });
+        setTimeout(() => root.removeEventListener("click", swallow, true), 0);
+        if (ev.type === "pointerup") moveTo(from, slot > from ? slot - 1 : slot);
+      };
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+      window.addEventListener("pointercancel", up);
+    });
     root.addEventListener("click", (e) => {
       if (e.target.closest(".sx__page")) {
         // The preview is not navigable; a click in it picks the block it lands on.
@@ -210,7 +271,7 @@ const SuiteLayoutEd = (() => {
       const t = e.target.closest("[data-tool],[data-mode],[data-add],[data-bsel],[data-bmove],[data-bdel],[data-iadd],[data-irm],[data-s],[data-drawer]");
       if (!t) return;
       if (t.dataset.drawer) { H.toggleDrawer(ed, t.dataset.drawer); return; }
-      if (t.dataset.tool) { ed.tool = t.dataset.tool; H.sound("tool"); paintRail(); return; }
+      if (t.dataset.tool) { setTool(t.dataset.tool); return; }
       if (t.dataset.mode) { H.switchMode(ed, t.dataset.mode); return; }
       if (t.dataset.add) { addBlock(t.dataset.add, ed.blockSel >= 0 ? ed.blockSel + 1 : ed.doc.blocks.length); return; }
       if (t.dataset.bmove) { const i = Number(t.dataset.bmove), d = Number(t.dataset.d); H.mutate(ed, () => { if (D.moveBlock(ed.doc, i, d)) ed.blockSel = i + d; }); H.sound("layer"); return; }

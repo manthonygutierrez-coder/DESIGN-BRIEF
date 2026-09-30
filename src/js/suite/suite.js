@@ -17,7 +17,7 @@
  */
 
 const Suite = (() => {
-  const D = SuiteDoc, R = SuiteRender, C = SuiteCards, A = SuiteApps, X = SuiteCutout;
+  const D = SuiteDoc, R = SuiteRender, C = SuiteCards, A = SuiteApps, X = SuiteCutout, T = SuiteTools;
   const AUTOSAVE_MAX = 3 * 1024 * 1024;
   const MODES = ["vector", "pixel", "layout"];
   const EDITORS = { vector: () => SuiteVectorEd, pixel: () => SuitePixelEd, layout: () => SuiteLayoutEd };
@@ -203,7 +203,9 @@ const Suite = (() => {
         '<div class="sx__body"></div>' +
         '<div class="sx__foot"><span class="sx__status" role="status"></span><span class="sx__spacer"></span>' +
           '<label class="sx__job"><span>WORK ON</span><select data-s="job"></select></label>' +
+          '<button class="sx__look" data-s="keys" title="Keyboard shortcuts (?)" aria-haspopup="dialog">?</button>' +
           '<button class="sx__look" data-s="look" title="Switch the suite\'s look"></button></div>' +
+        '<div class="sx__sheet" role="dialog" aria-label="Keyboard shortcuts" hidden></div>' +
         '<div class="sx__splash" aria-hidden="true"></div>' +
       "</div>" +
       '<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="sx__file" hidden>';
@@ -339,7 +341,7 @@ const Suite = (() => {
   /* ── the top bar ───────────────────────────────────────── */
   function paintTop(win) {
     const ed = win.eds[win.mode], root = win.root;
-    root.querySelectorAll("[data-mode]").forEach((b) => { if (b.closest(".sx__modes")) { const on = b.dataset.mode === win.mode; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); } });
+    root.querySelectorAll("[data-mode]").forEach((b) => { if (b.closest(".sx__modes")) { const on = b.dataset.mode === win.mode; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); b.tabIndex = on ? 0 : -1; } });
     const canvas = win.mode !== "layout";
     root.querySelectorAll(".sx__g--zoom,.sx__g--doc,.sx__g--export").forEach((el) => { el.hidden = !canvas; });
     const presets = A.presetsFor(win.mode, ed.appId);
@@ -384,6 +386,7 @@ const Suite = (() => {
       if (s === "zin" && ed.st) { ed.st.step(1); }
       if (s === "zout" && ed.st) { ed.st.step(-1); }
       if ((s === "fit" || s === "zval") && ed.st) { ed.st.fit(ed.doc); ed.draw(); paintZoom(win); }
+      if (s === "keys") { toggleSheet(win); return; }
       if (s === "save") saveDoc(ed);
       if (s === "export") exportPNG(ed, win.mode === "pixel" ? Number(root.querySelector('[data-s="xscale"]').value) : 1);
       if (s === "deliver") deliver(ed);
@@ -404,6 +407,8 @@ const Suite = (() => {
         setStatus(ed, "New " + pw + "×" + ph + " document. Undo brings the old one back.");
       }
     });
+    root.addEventListener("keydown", walkBar);
+    root.addEventListener("click", (e) => { if (e.target.closest("[data-s='keysclose']") || (e.target.classList && e.target.classList.contains("sx__sheet"))) root.querySelector(".sx__sheet").hidden = true; });
     root.addEventListener("input", (e) => {
       if (e.target.dataset.s === "name") { const ed = win.eds[win.mode]; ed.doc.meta.name = e.target.value.slice(0, 80) || "Untitled"; changed(ed, { quiet: true }); if (win.mode === "layout") ed.draw(); }
     });
@@ -485,7 +490,7 @@ const Suite = (() => {
     toggleDrawer: (ed, id) => { ed.win.drawers.toggle(id); if (ed.render) ed.render({ panels: false }); },
     switchMode: (ed, mode) => switchMode(ed.win, mode),
     // After any repaint: the lesson's controls light up again, and its ticks move.
-    painted: (ed) => afterPaint(ed.win),
+    painted: (ed) => { describeCanvas(ed); afterPaint(ed.win); },
     // Open panels over the canvas, in the view's pixels: fitting keeps the board clear of them.
     covered: (ed) => (ed.view ? [...ed.view.querySelectorAll(".dw__panel:not([hidden]):not(.is-closing)")] : [])
       .map((p) => ({ x: p.offsetLeft, y: p.offsetTop, w: p.offsetWidth, h: p.offsetHeight })),
@@ -845,8 +850,6 @@ const Suite = (() => {
     const doc = ed ? ed.doc : D.normalize(S().docs[(L.mode === "vector" ? (L.app === "type" ? "type" : "banner") : L.mode) + ":" + win.job.id]);
     return { doc, cards: S().cards };
   }
-  const MODE_TOOLS = { vector: SuiteVectorEd.TOOLS.map((t) => t.id).concat(Object.keys(SuiteVectorEd.SHAPES)),
-    pixel: SuitePixelEd.TOOLS.map((t) => t.id), layout: ["select", "text"] };
   function selectorsFor(ctrl) {
     const [kind, id] = ctrl.split(":");
     if (ctrl === "ruler") return [".sx__rx", ".sx__ry"];
@@ -869,6 +872,42 @@ const Suite = (() => {
     // A shape that isn't the one showing in the rail: ring the shapes button.
     if (!out.length && ctrl.startsWith("tool:") && SuiteVectorEd.SHAPES[ctrl.slice(5)]) win.root.querySelectorAll(".sx__rail .sx__fly").forEach((el) => out.push(el));
     return out;
+  }
+
+  /* ── keyboard: the shortcut sheet, toolbars you can walk, a labelled canvas ── */
+  // The tools of each mode as the sheet lists them (the shapes are Vector tools too).
+  const sheetTools = (mode) => mode === "pixel" ? SuitePixelEd.TOOLS
+    : mode === "layout" ? [{ id: "select", key: "v", label: "Select" }, { id: "text", key: "t", label: "Type" }]
+    : SuiteVectorEd.TOOLS.filter((t) => !t.flyout).concat(Object.entries(SuiteVectorEd.SHAPES).map(([id, sh]) => ({ id, key: sh.key, label: sh.label })));
+  function toggleSheet(win) {
+    const el = win.root.querySelector(".sx__sheet");
+    if (!el.hidden) { el.hidden = true; return; }
+    const kbd = (k) => k.split(" / ").map((x) => "<kbd>" + esc(kb(x)) + "</kbd>").join(" ");
+    el.innerHTML = '<div class="sx__sheetbox"><header><b>KEYBOARD</b><span>' + esc(A.MODES[win.mode].label) + '</span><button data-s="keysclose" title="Close (Esc)" aria-label="Close">×</button></header><div class="sx__sheetcols">' +
+      T.sheet(win.mode, sheetTools(win.mode)).map((g) => '<section><h4>' + esc(g.title) + "</h4><dl>" +
+        g.rows.map(([k, what]) => "<dt>" + kbd(k) + "</dt><dd>" + esc(what) + "</dd>").join("") + "</dl></section>").join("") + "</div></div>";
+    el.hidden = false;
+    el.querySelector("button").focus();
+  }
+  // Arrow keys walk along a toolbar or the mode tabs, as they do in any desktop app.
+  function walkBar(e) {
+    const bar = e.target.closest && e.target.closest(".sx__rail,.sx__modes,.sx__opts");
+    if (!bar || !/^Arrow(Left|Right|Up|Down)$/.test(e.key) || e.target.matches("input,select,textarea")) return;
+    const items = [...bar.querySelectorAll("button:not(:disabled)")], i = items.indexOf(e.target.closest("button"));
+    if (i < 0) return;
+    const d = e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 1;
+    const next = items[(i + d + items.length) % items.length];
+    e.preventDefault(); e.stopPropagation();
+    next.focus();
+    if (bar.classList.contains("sx__modes")) next.click();          // the tabs follow focus
+  }
+  // What the canvas is, for anyone who cannot see it.
+  function describeCanvas(ed) {
+    const cv = ed && ed.st && ed.st.cv;
+    if (!cv || !ed.doc) return;
+    const d = ed.doc, n = ed.mode === "pixel" ? d.bitmap.filter(Boolean).length + " pixels drawn" : d.layers.length + " layer" + (d.layers.length === 1 ? "" : "s");
+    cv.setAttribute("role", "img");
+    cv.setAttribute("aria-label", A.MODES[ed.mode].label + " canvas, " + d.w + " by " + d.h + ", " + n + (ed.sel && ed.sel.length ? ", " + ed.sel.length + " selected" : ""));
   }
 
   function afterPaint(win) {
@@ -1075,6 +1114,9 @@ const Suite = (() => {
     if (e.target.closest && e.target.closest("input,textarea,select")) return;
     const mod = e.metaKey || e.ctrlKey;
     if (mod && e.key.toLowerCase() === "z") { e.preventDefault(); undo(ed, e.shiftKey); return; }
+    const modeKey = mod && Object.keys(T.MODE_KEYS).find((m) => T.MODE_KEYS[m] === e.key);
+    if (modeKey) { e.preventDefault(); if (MODES.includes(modeKey)) switchMode(win, modeKey); return; }
+    if (e.key === "?" && !mod) { e.preventDefault(); toggleSheet(win); return; }
     if (mod && e.key.toLowerCase() === "s") { e.preventDefault(); saveDoc(ed); return; }
     if (mod && (e.key === "=" || e.key === "+" || e.key === "-") && ed.st) { e.preventDefault(); ed.st.step(e.key === "-" ? -1 : 1); return; }
     if (mod && e.key === "0" && ed.st) { e.preventDefault(); ed.st.fit(ed.doc); ed.draw(); paintZoom(win); return; }
@@ -1089,6 +1131,8 @@ const Suite = (() => {
     if (!win) return;
     e.stopImmediatePropagation();
     if (win.swatchPick) { win.swatchPick = false; win.drawers.repaint("swatch"); return; }
+    const sheet = win.root && win.root.querySelector(".sx__sheet");
+    if (sheet && !sheet.hidden) { sheet.hidden = true; return; }
     const ed = win.eds[win.mode];
     if (ed && ed.escape && ed.escape()) return;
     const open = ["cutout", "swatch", "cards"].filter((id) => win.drawers.isOpen(id));

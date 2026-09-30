@@ -107,9 +107,58 @@ test("resizing keeps the work where it was, around the centre", () => {
 
 test("duplicating a locked layer gives a copy you can work on", () => {
   const doc = D.create({ mode: "free" });
-  const l = D.add(doc, { type: "rect", x: 0, y: 0, w: 10, h: 10 });
+  const l = D.add(doc, D.layer("rect", { x: 0, y: 0, w: 10, h: 10 }));
   l.locked = true;
   const c = D.duplicate(doc, l.id);
   assert.equal(c.locked, false);
   assert.equal(l.locked, true, "the original stays locked");
+});
+
+test("distribute: three or more layers get equal gaps, the outer two stay", () => {
+  const doc = D.create({ mode: "free" });
+  const a = D.add(doc, D.layer("rect", { x: 0, y: 0, w: 10, h: 10 }));
+  const b = D.add(doc, D.layer("rect", { x: 15, y: 0, w: 10, h: 10 }));
+  const c = D.add(doc, D.layer("rect", { x: 100, y: 0, w: 10, h: 10 }));
+  assert.equal(D.distribute(doc, [a.id, b.id, c.id], "h"), true);
+  assert.equal(a.x, 0); assert.equal(c.x, 100);
+  assert.equal(b.x, 50, "the middle one sits halfway: gaps of 40 either side");
+  assert.equal(D.distribute(doc, [a.id, b.id, c.id], "h"), false, "already even: nothing to do");
+  assert.equal(D.distribute(doc, [a.id, b.id], "h"), false, "two layers have nothing between them");
+});
+
+test("distribute and align leave a locked layer where it is", () => {
+  const doc = D.create({ mode: "free" });
+  const a = D.add(doc, D.layer("rect", { x: 0, y: 0, w: 10, h: 10 }));
+  const b = D.add(doc, D.layer("rect", { x: 15, y: 0, w: 10, h: 10 }));
+  const c = D.add(doc, D.layer("rect", { x: 100, y: 0, w: 10, h: 10 }));
+  b.locked = true;
+  D.distribute(doc, [a.id, b.id, c.id], "h");
+  assert.equal(b.x, 15);
+  D.align(doc, [a.id, b.id, c.id], "left");
+  assert.equal(b.x, 15);
+  assert.equal(c.x, 0);
+});
+
+test("paste: copies get new ids, land offset on top, unlocked, and the originals are untouched", () => {
+  const src = D.create({ mode: "free" }), dst = D.create({ mode: "free" });
+  const a = D.add(src, D.layer("rect", { x: 5, y: 5, w: 10, h: 10 }));
+  a.locked = true;
+  const out = D.pasteLayers(dst, [a], 20);
+  assert.equal(out.length, 1);
+  assert.equal(dst.layers.length, 1);
+  assert.notEqual(out[0].id, a.id);
+  assert.equal(out[0].x, 25);
+  assert.equal(out[0].locked, false);
+  assert.equal(a.x, 5);
+  assert.equal(a.locked, true);
+});
+
+test("blocks: moveBlockTo puts a block at an index, and refuses a move that goes nowhere", () => {
+  const doc = D.create({ mode: "layout" });
+  for (const t of ["lede", "prose", "faq"]) D.addBlock(doc, { t });
+  assert.equal(D.moveBlockTo(doc, 0, 2), true);
+  assert.deepEqual(doc.blocks.map((b) => b.t), ["prose", "faq", "lede"]);
+  assert.equal(D.moveBlockTo(doc, 1, 1), false);
+  assert.equal(D.moveBlockTo(doc, 0, 3), false);
+  assert.equal(D.moveBlockTo(doc, -1, 0), false);
 });

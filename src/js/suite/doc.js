@@ -144,6 +144,19 @@ const SuiteDoc = (() => {
     return copy;
   }
 
+  // Copies of layers set down on the board with new ids, offset a little, on
+  // top: what paste does, from this document or another.
+  function pasteLayers(doc, layers, off = 10) {
+    const out = [];
+    for (const l of layers || []) {
+      const n = sanitizeLayer(Object.assign(JSON.parse(JSON.stringify(l)), { id: uid("L"), x: l.x + off, y: l.y + off, locked: false, hidden: false }));
+      if (!n || doc.layers.length >= MAX.layers) continue;
+      doc.layers.push(n);
+      out.push(n);
+    }
+    return out;
+  }
+
   /* ── geometry ──────────────────────────────────────────── */
   // A point in doc space, un-rotated into the layer's own frame.
   function toLocal(l, px, py) {
@@ -217,6 +230,7 @@ const SuiteDoc = (() => {
       x1: Math.max(...ls.map((l) => l.x + l.w)), y1: Math.max(...ls.map((l) => l.y + l.h)),
     };
     for (const l of ls) {
+      if (l.locked) continue;                 // a locked layer stays where it is
       if (how === "left") l.x = b.x0;
       if (how === "right") l.x = b.x1 - l.w;
       if (how === "hcenter") l.x = Math.round((b.x0 + b.x1 - l.w) / 2);
@@ -224,6 +238,25 @@ const SuiteDoc = (() => {
       if (how === "bottom") l.y = b.y1 - l.h;
       if (how === "vcenter") l.y = Math.round((b.y0 + b.y1 - l.h) / 2);
     }
+  }
+
+  // Three or more layers spaced evenly along an axis ("h" or "v"): the two at the
+  // ends stay, and the gaps between edges are made equal. Locked ones stay too.
+  function distribute(doc, ids, axis) {
+    const ls = ids.map((id) => find(doc, id)).filter(Boolean);
+    if (ls.length < 3) return false;
+    const p = axis === "v" ? "y" : "x", s = axis === "v" ? "h" : "w";
+    ls.sort((a, b) => a[p] + a[s] / 2 - (b[p] + b[s] / 2));
+    const first = ls[0], last = ls[ls.length - 1];
+    const span = last[p] + last[s] - first[p];
+    const gap = (span - ls.reduce((n, l) => n + l[s], 0)) / (ls.length - 1);
+    let at = first[p] + first[s] + gap, moved = false;
+    for (const l of ls.slice(1, -1)) {
+      const to = Math.round(at);
+      if (!l.locked && l[p] !== to) { l[p] = to; moved = true; }
+      at += l[s] + gap;
+    }
+    return moved;
   }
 
   const snap = (v, grid) => (grid > 1 ? Math.round(v / grid) * grid : v);
@@ -288,6 +321,14 @@ const SuiteDoc = (() => {
     if (i < 0 || i >= doc.blocks.length || j < 0 || j >= doc.blocks.length) return false;
     const [b] = doc.blocks.splice(i, 1);
     doc.blocks.splice(j, 0, b);
+    return true;
+  }
+  // A block taken out and put back so it ends up at index `to`.
+  function moveBlockTo(doc, from, to) {
+    const n = doc.blocks.length;
+    if (from < 0 || from >= n || to < 0 || to >= n || from === to) return false;
+    const [b] = doc.blocks.splice(from, 1);
+    doc.blocks.splice(to, 0, b);
     return true;
   }
   function removeBlock(doc, i) {
@@ -473,10 +514,10 @@ const SuiteDoc = (() => {
   return {
     MODES, TYPES, MAX,
     create, layer, find, add, update, remove, restack, duplicate,
-    toLocal, contains, hitTest, align, snap,
+    toLocal, contains, hitTest, align, distribute, pasteLayers, snap,
     getPx, setPx, fill, line,
     subjects: (doc) => doc.layers.filter((l) => l.type === "subject" && !l.hidden),
-    addBlock, moveBlock, removeBlock, resize,
+    addBlock, moveBlock, moveBlockTo, removeBlock, resize,
     colours, usesGradient, cardsUsed,
     history, normalize, serialize, parse, sanitizeLayer, site,
   };

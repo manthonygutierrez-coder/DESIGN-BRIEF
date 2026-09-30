@@ -153,6 +153,12 @@
 .sx__page [data-block]{cursor:pointer;outline-offset:3px}
 .sx__page [data-block]:hover{outline:2px dashed rgba(16,132,208,.65)}
 .sx__page [data-block].is-sel{outline:2px solid #1084D0}
+/* the place a dragged block will land */
+.sx__page [data-block].is-drop-before{box-shadow:0 -4px 0 0 #1084D0}
+.sx__page [data-block].is-drop-after{box-shadow:0 4px 0 0 #1084D0}
+.sx__ly.is-drop-before{box-shadow:0 -2px 0 0 var(--sx-hi)}
+.sx__ly.is-drop-after{box-shadow:0 2px 0 0 var(--sx-hi)}
+.is-dragging-block .sx__page,.is-dragging-block .sx__ly{cursor:grabbing;user-select:none}
 .sx__page [data-block].is-drop{outline:3px solid #FF5FA8;background-color:rgba(255,95,168,.08)}
 .sx__page [data-block].is-drop-after{box-shadow:0 4px 0 #FF5FA8}
 .sx__page [data-block].is-new{animation:sxNew .8s ease-out}
@@ -445,3 +451,21 @@
 .tray__ref.has{border-color:var(--w-sh) var(--w-hi) var(--w-hi) var(--w-sh);color:#6A2FB0}
 .cd__pin{position:absolute;top:0;left:0;height:15px;padding:0 3px;font-family:"Silkscreen",monospace;font-size:6.5px;background:#FFF3C4;display:none}
 .cd:hover .cd__pin{display:block}
+
+/* ── keyboard: focus you can see, and the shortcut sheet ─────────── */
+.sx :focus-visible{outline:2px solid var(--sx-hi);outline-offset:1px}
+.sx[data-look="classic"] :focus-visible{outline:1px dotted var(--sx-ink);outline-offset:-3px}
+.sx__sheet{position:absolute;inset:0;z-index:40;display:grid;place-items:center;background:rgba(0,0,0,.45)}
+.sx__sheet[hidden]{display:none}
+.sx__sheetbox{width:min(640px,calc(100% - 32px));max-height:calc(100% - 32px);overflow:auto;background:var(--sx-bar);color:var(--sx-ink);
+  border:1px solid var(--sx-line);border-radius:var(--sx-r);box-shadow:4px 4px 0 rgba(0,0,0,.35);padding:10px 14px 14px}
+.sx__sheetbox header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.sx__sheetbox header b{letter-spacing:.14em}
+.sx__sheetbox header span{color:var(--sx-dim);flex:1}
+.sx__sheetbox header button{width:20px;height:20px;font-size:14px;border:1px solid var(--sx-line)}
+.sx__sheetcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:4px 22px}
+.sx__sheetcols h4{margin:8px 0 4px;font-weight:400;font-size:7px;letter-spacing:.14em;color:var(--sx-dim)}
+.sx__sheetcols dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;align-items:baseline}
+.sx__sheetcols dt{white-space:nowrap}
+.sx__sheetcols dd{margin:0;font-family:"VT323",monospace;font-size:15px;letter-spacing:0}
+.sx__sheetcols kbd{font:inherit;font-size:7px;padding:1px 4px;border:1px solid var(--sx-line);border-radius:2px;background:var(--sx-field)}

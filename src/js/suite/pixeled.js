@@ -15,6 +15,7 @@ const SuitePixelEd = (() => {
   const X = typeof SuiteCutout !== "undefined" ? SuiteCutout : need("SuiteCutout", "./cutout.js");
   const Sh = typeof SuiteShapes !== "undefined" ? SuiteShapes : need("SuiteShapes", "./shapes.js");
   const R = typeof SuiteRender !== "undefined" ? SuiteRender : null;
+  const T = typeof SuiteTools !== "undefined" ? SuiteTools : need("SuiteTools", "./tools.js");
   const TOOLS = [
     { id: "pencil", icon: "t-pencil", label: "Pencil (Shift-click: a line from the last pixel; Alt-click: pick a colour)", key: "b" },
     { id: "erase", icon: "t-erase", label: "Eraser (Shift-click: a line from the last pixel)", key: "e" },
@@ -25,7 +26,8 @@ const SuitePixelEd = (() => {
     { id: "ellipse", icon: "t-ellipse", label: "Ellipse (Shift: circle)", key: "o" },
     { id: "pen", icon: "t-pen", label: "Pen: click and drag a curve, Enter lays it down in pixels", key: "p" },
     { id: "text", icon: "t-text", label: "Type, stamped in a pixel face", key: "t" },
-    { id: "select", icon: "t-marquee", label: "Select: drag a box, then drag inside it to move", key: "m" },
+    { id: "select", icon: "t-marquee", label: "Select: drag a box, then drag inside it to move (Shift adds, Alt takes away)", key: "m" },
+    { id: "wand", icon: "c-wand", label: "Magic wand: click a colour to select it (Shift adds, Alt takes away)", key: "w" },
     { id: "hand", icon: "t-hand", label: "Hand (or hold Space)", key: "h" },
   ];
   const FACES = [["Silkscreen", 8, 400], ["Silkscreen", 16, 400], ["VT323", 16, 400], ["Silkscreen", 8, 700]];
@@ -171,6 +173,54 @@ const SuitePixelEd = (() => {
     return out;
   }
 
+  // Every pixel a square brush of `size` covers when dabbed at (x, y).
+  function brushPts(x, y, size) {
+    const n = Math.max(1, Math.min(16, Math.round(size) || 1)), o = Math.floor((n - 1) / 2), out = [];
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) out.push([x - o + i, y - o + j]);
+    return out;
+  }
+  // Selections as masks (one byte a pixel): the other way round, one pixel
+  // bigger all round, one smaller.
+  const selInvert = (mask) => { const m = new Uint8Array(mask.length); for (let i = 0; i < mask.length; i++) m[i] = mask[i] ? 0 : 1; return m; };
+  function selGrow(mask, w, h) {
+    const m = Uint8Array.from(mask);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (mask[y * w + x]) continue;
+      if ((x > 0 && mask[y * w + x - 1]) || (x < w - 1 && mask[y * w + x + 1]) || (y > 0 && mask[(y - 1) * w + x]) || (y < h - 1 && mask[(y + 1) * w + x])) m[y * w + x] = 1;
+    }
+    return m;
+  }
+  function selShrink(mask, w, h) {
+    const m = new Uint8Array(mask.length);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (!mask[y * w + x]) continue;
+      const on = (a, b) => a >= 0 && b >= 0 && a < w && b < h && mask[b * w + a];
+      if (on(x - 1, y) && on(x + 1, y) && on(x, y - 1) && on(x, y + 1)) m[y * w + x] = 1;
+    }
+    return m;
+  }
+  // Copy what is drawn inside a selection, keeping its shape: { w, h, px:[[x, y, colour]] }
+  // relative to the selection's own top-left, or null when nothing drawn is in it.
+  function clipCopy(bitmap, mask, w, h) {
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let i = 0; i < mask.length; i++) if (mask[i]) { const x = i % w, y = (i / w) | 0; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    if (x1 < 0) return null;
+    const px = [];
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (mask[y * w + x] && bitmap[y * w + x]) px.push([x - x0, y - y0, bitmap[y * w + x]]);
+    return px.length ? { w: x1 - x0 + 1, h: y1 - y0 + 1, px } : null;
+  }
+  // A copy set down with its top-left at `at`: the pixels, and a selection over them.
+  function clipPaste(clip, w, h, at = [0, 0]) {
+    const px = [], mask = new Uint8Array(w * h);
+    for (const [x, y, c] of clip.px) {
+      const px1 = x + at[0], py1 = y + at[1];
+      if (px1 < 0 || py1 < 0 || px1 >= w || py1 >= h) continue;
+      px.push([px1, py1, c]); mask[py1 * w + px1] = 1;
+    }
+    return { px, mask };
+  }
+  let clip = null;                    // what was last copied, shared by every sprite
+
   /* ── mount ─────────────────────────────────────────────── */
   function mount(ed, H) {
     ed.body.innerHTML =
@@ -186,7 +236,7 @@ const SuitePixelEd = (() => {
         "</div>" +
       "</div>";
     Object.assign(ed, {
-      tool: ed.tool || "pencil", fg: ed.fg || "#0A0A0A", filled: !!ed.filled, mx: !!ed.mx, my: !!ed.my, face: ed.face || 0, perfect: ed.perfect !== false,
+      tool: ed.tool || "pencil", fg: ed.fg || "#0A0A0A", filled: !!ed.filled, mx: !!ed.mx, my: !!ed.my, face: ed.face || 0, perfect: ed.perfect !== false, size: ed.size || 1, fillAll: !!ed.fillAll,
       drag: null, pen: null, mask: null, float: null, stamp: null, grid: ed.grid !== false,
     });
     ed.opts = ed.body.querySelector(".sx__opts");
@@ -251,6 +301,8 @@ const SuitePixelEd = (() => {
     }
     return out;
   }
+  // Points as the brush lays them: each one a dab of the brush's size.
+  const dab = (ed, pts) => (ed.size > 1 ? pts.flatMap(([x, y]) => brushPts(x, y, ed.size)) : pts);
   function paintPts(ed, pts, colour) { for (const [x, y] of mirrored(ed, pts)) D.setPx(ed.doc, x, y, colour); }
   // A freehand stroke, pixel by pixel. It remembers what it painted over, so
   // with pixel-perfect on, an L-shaped corner can go back to what it was.
@@ -259,6 +311,8 @@ const SuitePixelEd = (() => {
     for (const p of pts) {
       const l = d.trail[d.trail.length - 1];
       if (l && l[0] === p[0] && l[1] === p[1]) continue;
+      // A wide brush just dabs: there are no L-shaped corners to take back.
+      if (ed.size > 1) { paintPts(ed, brushPts(p[0], p[1], ed.size), ink); d.trail.push(p); if (d.trail.length > 3) d.trail.shift(); continue; }
       for (const [mx, my] of mirrored(ed, [p])) { const k = my * w + mx; if (!d.orig.has(k)) d.orig.set(k, D.getPx(ed.doc, mx, my) || ""); }
       paintPts(ed, [p], ink);
       d.trail.push(p);
@@ -416,14 +470,18 @@ const SuitePixelEd = (() => {
   }
   // Fill, double-clicked: the colour the first click filled over is swapped for
   // the new one everywhere in the sprite, not just where it touches.
+  function swapColour(ed, was, ink) {
+    const b = ed.doc.bitmap;
+    let n = 0;
+    for (let i = 0; i < b.length; i++) if ((b[i] || "") === was) { b[i] = ink; n++; }
+    return n;
+  }
   function fillEverywhere(ed, H) {
     const f = ed.lastFill;
     ed.lastFill = null;
     if (!f || Date.now() - f.at > 600 || f.was === f.ink) return;
-    const pre = JSON.stringify(ed.doc), b = ed.doc.bitmap;
-    let n = 0;
-    for (let i = 0; i < b.length; i++) if ((b[i] || "") === f.was) { b[i] = f.ink; n++; }
-    if (!n) return;
+    const pre = JSON.stringify(ed.doc);
+    if (!swapColour(ed, f.was, f.ink)) return;
     H.record(ed, pre);
     render(ed, H, {});
     H.sound("layer");
@@ -445,13 +503,14 @@ const SuitePixelEd = (() => {
       const f = ed.lastFill;
       if (f && f.x === x && f.y === y && Date.now() - f.at < 500) return;
       ed.lastFill = { x, y, was: D.getPx(doc, x, y) || "", ink: inkOf(ed), at: Date.now() };
+      if (ed.fillAll) { ed.lastFill.at = 0; swapColour(ed, ed.lastFill.was, inkOf(ed)); H.record(ed, pre); render(ed, H, {}); return; }
       for (const [px, py] of mirrored(ed, [[x, y]])) D.fill(doc, px, py, inkOf(ed));
       H.record(ed, pre); render(ed, H, {}); return;
     }
     if (t === "pencil" || t === "erase") {
       // Shift-click: a straight line on from where the last stroke ended.
       if (e.shiftKey && ed.lastPx && inDoc(ed, ed.lastPx[0], ed.lastPx[1])) {
-        paintPts(ed, linePts(ed.lastPx[0], ed.lastPx[1], x, y), inkOf(ed));
+        paintPts(ed, dab(ed, linePts(ed.lastPx[0], ed.lastPx[1], x, y)), inkOf(ed));
         ed.lastPx = [x, y]; ed.rightInk = false;
         H.record(ed, pre); render(ed, H, {}); return;
       }
@@ -469,7 +528,7 @@ const SuitePixelEd = (() => {
       return;
     }
     if (t === "text") { startStamp(ed, H, x, y); return; }
-    if (t === "wand") { wandAt(ed, H, x, y, ed.win && ed.win.cut ? ed.win.cut.tol : 24, e.shiftKey); return; }
+    if (t === "wand") { wandAt(ed, H, x, y, tolerance(ed), e.shiftKey, e.altKey); return; }
     if (t === "select") {
       const fx = ed.float ? ed.float.dx : 0, fy = ed.float ? ed.float.dy : 0;
       if (ed.mask && inMask(ed, x - fx, y - fy)) {
@@ -478,7 +537,7 @@ const SuitePixelEd = (() => {
         return;
       }
       commitFloat(ed, H);
-      ed.drag = { mode: "marquee", box: [x, y, x, y], add: e.shiftKey };
+      ed.drag = { mode: "marquee", box: [x, y, x, y], add: e.shiftKey, sub: e.altKey };
       draw(ed);
     }
   }
@@ -487,7 +546,7 @@ const SuitePixelEd = (() => {
   function move(ed, H, e) {
     const d = ed.drag, [x, y] = cell(ed, e);
     if (ed.tool === "pen" && ed.pen && !d) return;
-    if (!d) { ed.st.cv.style.cursor = ed.tool === "hand" ? "grab" : ed.tool === "select" && ed.mask && inMask(ed, x - (ed.float ? ed.float.dx : 0), y - (ed.float ? ed.float.dy : 0)) ? "move" : "crosshair"; return; }
+    if (!d) { ed.st.cv.style.cursor = T.cursor(ed.tool, { overSel: ed.tool === "select" && !!ed.mask && inMask(ed, x - (ed.float ? ed.float.dx : 0), y - (ed.float ? ed.float.dy : 0)) }); return; }
     if (d.mode === "paint") { strokeTo(ed, d, linePts(d.last[0], d.last[1], x, y).slice(1)); d.last = [x, y]; draw(ed); return; }
     if (d.mode === "shape") {
       let [x1, y1] = [x, y];
@@ -516,8 +575,8 @@ const SuitePixelEd = (() => {
     if (d.mode === "shape") { paintPts(ed, previewPts(Object.assign({}, ed, { drag: d, pen: null, stamp: null })), inkOf(ed)); ed.rightInk = false; H.record(ed, d.pre); H.sound("layer"); render(ed, H, {}); return; }
     if (d.mode === "marquee") {
       const [x0, y0, x1, y1] = d.box, w = ed.doc.w;
-      const m = d.add && ed.mask ? ed.mask : new Uint8Array(w * ed.doc.h);
-      for (let y = Math.max(0, Math.min(y0, y1)); y <= Math.min(ed.doc.h - 1, Math.max(y0, y1)); y++) for (let x = Math.max(0, Math.min(x0, x1)); x <= Math.min(w - 1, Math.max(x0, x1)); x++) m[y * w + x] = 1;
+      const m = (d.add || d.sub) && ed.mask ? ed.mask : new Uint8Array(w * ed.doc.h);
+      for (let y = Math.max(0, Math.min(y0, y1)); y <= Math.min(ed.doc.h - 1, Math.max(y0, y1)); y++) for (let x = Math.max(0, Math.min(x0, x1)); x <= Math.min(w - 1, Math.max(x0, x1)); x++) m[y * w + x] = d.sub ? 0 : 1;
       ed.mask = X.count(m) ? m : null;
       render(ed, H, {});
       return;
@@ -556,9 +615,17 @@ const SuitePixelEd = (() => {
     H.record(ed, fl.pre);
   }
   function selectionAct(ed, H, what) {
+    if (what === "all") { commitFloat(ed, H); ed.mask = new Uint8Array(ed.doc.w * ed.doc.h).fill(1); if (ed.tool !== "wand") ed.tool = "select"; render(ed, H, {}); return; }
     if (!ed.mask) return;
     commitFloat(ed, H);
     const doc = ed.doc;
+    if (what === "invert" || what === "grow" || what === "shrink") {
+      const m = what === "invert" ? selInvert(ed.mask) : what === "grow" ? selGrow(ed.mask, doc.w, doc.h) : selShrink(ed.mask, doc.w, doc.h);
+      ed.mask = X.count(m) ? m : null;
+      H.sound("layer");
+      render(ed, H, {});
+      return;
+    }
     if (what === "clear") H.mutate(ed, () => { ed.mask.forEach((v, i) => { if (v) doc.bitmap[i] = ""; }); });
     if (what === "paint") H.mutate(ed, () => { ed.mask.forEach((v, i) => { if (v && doc.bitmap[i]) doc.bitmap[i] = ed.fg; }); });
     if (what === "fillsel") H.mutate(ed, () => { ed.mask.forEach((v, i) => { if (v) doc.bitmap[i] = ed.fg; }); });
@@ -588,11 +655,16 @@ const SuitePixelEd = (() => {
     return out;
   }
   // Cutout's wand, on the sprite: select a colour region.
-  function wandAt(ed, H, x, y, tol, add) {
+  // One tolerance for the wand, wherever it is set: the Cutout drawer's slider
+  // and the strip's box are the same number.
+  const tolerance = (ed) => (ed.win && ed.win.cut && Number.isFinite(ed.win.cut.tol) ? ed.win.cut.tol : 24);
+  function wandAt(ed, H, x, y, tol, add, sub) {
     commitFloat(ed, H);
-    const m = X.wand(rgbaOf(ed.doc), ed.doc.w, ed.doc.h, x, y, tol, add && ed.mask ? ed.mask : new Uint8Array(ed.doc.w * ed.doc.h));
-    ed.mask = X.count(m) ? m : null;
-    ed.tool = "select";
+    const len = ed.doc.w * ed.doc.h;
+    const m = X.wand(rgbaOf(ed.doc), ed.doc.w, ed.doc.h, x, y, tol, add && ed.mask ? Uint8Array.from(ed.mask) : new Uint8Array(len));
+    if (sub && ed.mask) { const keep = Uint8Array.from(ed.mask); for (let i = 0; i < len; i++) if (m[i]) keep[i] = 0; ed.mask = X.count(keep) ? keep : null; }
+    else ed.mask = X.count(m) ? m : null;
+    if (ed.tool !== "wand") ed.tool = "select";
     render(ed, H, {});
     H.status(ed, ed.mask ? X.count(ed.mask) + " pixels selected. Drag them, recolour them, or make them a card." : "Nothing there to select.");
   }
@@ -675,8 +747,10 @@ const SuitePixelEd = (() => {
     if (t !== "select") commitFloat(ed, H);
     ed.tool = t;
     ed.st.handTool = t === "hand";
+    ed.st.cv.style.cursor = T.cursor(t);
     H.sound("tool");
     render(ed, H, {});
+    H.status(ed, T.hint("pixel", t));
   }
   function onKey(ed, H, e) {
     const mod = e.metaKey || e.ctrlKey, k = e.key.toLowerCase();
@@ -685,24 +759,51 @@ const SuitePixelEd = (() => {
     if (e.key === "Enter" && ed.pen) { finishPen(ed, H); return true; }
     if (e.key.startsWith("Arrow") && ed.mask) {
       if (!ed.float) lift(ed);
-      ed.float.dx += e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
-      ed.float.dy += e.key === "ArrowUp" ? -1 : e.key === "ArrowDown" ? 1 : 0;
+      const step = e.shiftKey ? 10 : 1;
+      ed.float.dx += e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+      ed.float.dy += e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
       draw(ed);
       return true;
     }
-    if (mod && k === "a") { ed.mask = new Uint8Array(ed.doc.w * ed.doc.h).fill(1); ed.tool = "select"; render(ed, H, {}); return true; }
+    if (mod && k === "a") { selectionAct(ed, H, "all"); return true; }
+    if (mod && k === "i") { selectionAct(ed, H, "invert"); return true; }
+    if (mod && (k === "c" || k === "x")) { return copySel(ed, H, k === "x"); }
+    if (mod && k === "v") { return pasteSel(ed, H); }
     if (e.shiftKey && !mod && ed.mask && ["h", "v", "r"].includes(k)) { selectionAct(ed, H, { h: "fliph", v: "flipv", r: "rotate" }[k]); return true; }
     if (mod || e.altKey) return false;
     if (k === "x" && mirrorOK(ed)) { ed.mx = !ed.mx; render(ed, H, {}); return true; }
-    const t = TOOLS.find((x) => x.key === k);
-    if (t) { setTool(ed, H, t.id); return true; }
+    const id = T.keyMap("pixel", TOOLS)[k];
+    if (id) { setTool(ed, H, id); return true; }
     return false;
+  }
+  function copySel(ed, H, cut) {
+    if (!ed.mask) return false;
+    commitFloat(ed, H);
+    clip = clipCopy(ed.doc.bitmap, ed.mask, ed.doc.w, ed.doc.h);
+    if (!clip) { H.status(ed, "Nothing drawn in the selection to copy."); return true; }
+    H.status(ed, (cut ? "Cut " : "Copied ") + clip.px.length + " pixel" + (clip.px.length === 1 ? "" : "s") + ". Paste with the paste key, here or in another sprite.");
+    if (cut) selectionAct(ed, H, "clear");
+    return true;
+  }
+  // A paste arrives lifted, in the top-left of the sprite, ready to drag.
+  function pasteSel(ed, H) {
+    if (!clip) { H.status(ed, "Nothing copied yet."); return true; }
+    commitFloat(ed, H);
+    const at = clip.w > ed.doc.w || clip.h > ed.doc.h ? [0, 0] : [Math.floor((ed.doc.w - clip.w) / 2), Math.floor((ed.doc.h - clip.h) / 2)];
+    const r = clipPaste(clip, ed.doc.w, ed.doc.h, at);
+    if (!r.px.length) return true;
+    ed.mask = r.mask; ed.tool = "select";
+    ed.float = { px: r.px, dx: 0, dy: 0, pre: JSON.stringify(ed.doc) };
+    render(ed, H, {});
+    H.status(ed, "Pasted. Drag it into place; anything else puts it down.");
+    return true;
   }
   function escape(ed, H) {
     if (ed.stamp) { ed.stamp = null; render(ed, H, {}); return true; }
     if (ed.pen) { finishPen(ed, H); return true; }
     if (ed.float) { commitFloat(ed, H); render(ed, H, {}); return true; }
     if (ed.mask) { ed.mask = null; render(ed, H, {}); return true; }
+    if (ed.tool !== T.home("pixel")) { setTool(ed, H, T.home("pixel")); return true; }
     return false;
   }
 
@@ -723,11 +824,17 @@ const SuitePixelEd = (() => {
         (ed.stamp ? '<button class="sx__tb" data-o="stamp">Stamp it</button>' : '<span class="sx__ohint">Click where the words go</span>') + '<span class="sx__osep"></span>';
     }
     if (ed.tool === "pen") h += '<span class="sx__ohint">Click, or drag for a curve · Enter lays the line down in pixels</span><span class="sx__osep"></span>';
-    if (ed.tool === "pencil" || ed.tool === "erase") h += '<button class="sx__tb' + (ed.perfect ? " on" : "") + '" data-o="perfect" aria-pressed="' + ed.perfect +
-      '" title="Pixel-perfect: a freehand stroke never doubles up at a corner">Pixel-perfect</button><span class="sx__osep"></span>';
+    if (ed.tool === "pencil" || ed.tool === "erase") h += '<label class="sx__num"><span>SIZE</span><input type="number" data-o="size" min="1" max="16" step="1" value="' + ed.size + '"></label>' +
+      '<button class="sx__tb' + (ed.perfect && ed.size === 1 ? " on" : "") + '" data-o="perfect" aria-pressed="' + (ed.perfect && ed.size === 1) + '"' + (ed.size > 1 ? " disabled" : "") +
+      ' title="Pixel-perfect: a freehand stroke never doubles up at a corner (one-pixel brush)">Pixel-perfect</button><span class="sx__osep"></span>';
+    if (ed.tool === "fill") h += '<span class="sx__olab">FILL</span><button class="sx__tb' + (!ed.fillAll ? " on" : "") + '" data-o="fill:joined" aria-pressed="' + !ed.fillAll + '" title="Fill the pixels joined to the one you click">Joined</button>' +
+      '<button class="sx__tb' + (ed.fillAll ? " on" : "") + '" data-o="fill:all" aria-pressed="' + ed.fillAll + '" title="Swap that colour everywhere in the sprite (also: double-click)">Every pixel</button><span class="sx__osep"></span>';
+    if (ed.tool === "wand") h += '<label class="sx__num"><span>TOLERANCE</span><input type="number" data-o="tol" min="0" max="255" step="4" value="' + tolerance(ed) + '"></label><span class="sx__osep"></span>';
+    if ((ed.tool === "select" || ed.tool === "wand") && !ed.mask) h += '<span class="sx__olab">SELECTION</span>' + ib("sel:all", "f-rect", "Select everything (⌘A)") + '<span class="sx__osep"></span>';
     if (ed.mask) h += '<span class="sx__olab">SELECTION</span>' + ib("sel:paint", "t-fill", "Recolour what's drawn in it") + ib("sel:fillsel", "f-rect", "Fill it") +
       ib("sel:fliph", "flip-h", "Flip it left to right (Shift+H)") + ib("sel:flipv", "flip-v", "Flip it top to bottom (Shift+V)") + ib("sel:rotate", "rot90", "Turn it a quarter clockwise (Shift+R)") +
       ib("sel:outline", "s-outline", "Outline what's in it, one pixel, in the drawing colour") +
+      ib("sel:invert", "c-invert", "Select everything else (⌘I)") + ib("sel:grow", "plus", "Grow it by a pixel") + ib("sel:shrink", "l-del", "Shrink it by a pixel") +
       ib("sel:clear", "l-del", "Clear it (Del)") + ib("sel:card", "card", "Make it a card") + ib("sel:none", "none", "Deselect (Esc)") + '<span class="sx__osep"></span>';
     if (mirrorOK(ed)) h += ib("mx", "mirror", "Mirror left to right (X)", ed.mx) + ib("my", "mirror-h", "Mirror top to bottom", ed.my) + '<span class="sx__osep"></span>';
     const f = ed.st.focus();
@@ -753,6 +860,7 @@ const SuitePixelEd = (() => {
       const o = t.dataset.o;
       if (o === "outline" || o === "filled") { ed.filled = o === "filled"; paintOpts(ed, H); }
       if (o === "perfect") { ed.perfect = !ed.perfect; paintOpts(ed, H); H.sound("tool"); }
+      if (o === "fill:joined" || o === "fill:all") { ed.fillAll = o === "fill:all"; paintOpts(ed, H); H.sound("tool"); }
       if (o === "mx") { ed.mx = !ed.mx; render(ed, H, {}); }
       if (o === "my") { ed.my = !ed.my; render(ed, H, {}); }
       if (o === "grid") { ed.grid = !ed.grid; render(ed, H, {}); }
@@ -769,6 +877,12 @@ const SuitePixelEd = (() => {
       }
     });
     ed.body.addEventListener("change", (e) => {
+      if (e.target.dataset.o === "size") { ed.size = Math.max(1, Math.min(16, Math.round(Number(e.target.value)) || 1)); paintOpts(ed, H); return; }
+      if (e.target.dataset.o === "tol") {
+        const v = Math.max(0, Math.min(255, Math.round(Number(e.target.value)) || 0));
+        if (ed.win && ed.win.cut) { ed.win.cut.tol = v; if (ed.win.drawers && ed.win.drawers.repaint) ed.win.drawers.repaint("cutout"); }
+        paintOpts(ed, H); return;
+      }
       if (e.target.dataset.o === "face") {
         ed.face = Number(e.target.value) || 0;
         if (ed.stamp) { const [face, size, weight] = FACES[ed.face]; ed.stamp.pts = textPts(ed.stamp.text, face, size, weight); draw(ed); }
@@ -784,7 +898,7 @@ const SuitePixelEd = (() => {
     });
   }
 
-  return { mount, TOOLS, linePts, rectPts, ellipsePts, curvePts, perfectDrop, cleanLine, selTransform, selOutline, withFloat };
+  return { mount, TOOLS, brushPts, selInvert, selGrow, selShrink, clipCopy, clipPaste, linePts, rectPts, ellipsePts, curvePts, perfectDrop, cleanLine, selTransform, selOutline, withFloat };
 })();
 
 if (typeof module !== "undefined") module.exports = SuitePixelEd;

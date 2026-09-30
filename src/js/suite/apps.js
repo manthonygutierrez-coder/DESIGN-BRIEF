@@ -52,21 +52,6 @@ const SuiteApps = (() => {
     },
   };
 
-  const TOOLS = {
-    select: { label: "Select / move", key: "v" },
-    rect: { label: "Rectangle", key: "r" },
-    ellipse: { label: "Ellipse", key: "o" },
-    text: { label: "Text", key: "t" },
-    image: { label: "Place image", key: "i" },
-    eyedrop: { label: "Eyedropper", key: "e" },
-    pen: { label: "Pen — click points, click the first to close", key: "p" },
-    build: { label: "Shape builder — drag across shapes to merge, alt-drag to cut", key: "m" },
-    pencil: { label: "Pencil", key: "b" },
-    erase: { label: "Eraser", key: "e" },
-    fill: { label: "Fill", key: "g" },
-    pick: { label: "Pick colour", key: "i" },
-  };
-
   const BONUS = {
     gradient: "Two-colour gradient fills",
 
@@ -183,7 +168,7 @@ const SuiteApps = (() => {
     return f.weights.reduce((a, b) => (Math.abs(b - w) < Math.abs(a - w) ? b : a));
   }
 
-  return { APPS, TOOLS, BONUS, BLOCKS, MAX_ITEMS, MODES, FONTS, FONT_CATS, forDiscipline, relevant, bonusFor, blankItem, modeOf, presetsFor, bonusForMode, weightFor };
+  return { APPS, BONUS, BLOCKS, MAX_ITEMS, MODES, FONTS, FONT_CATS, forDiscipline, relevant, bonusFor, blankItem, modeOf, presetsFor, bonusForMode, weightFor };
 })();
 
 if (typeof module !== "undefined") module.exports = SuiteApps;

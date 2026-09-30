@@ -117,3 +117,42 @@ test("a lifted selection is saved back in where it is held, and the sprite itsel
   const off = P.withFloat(bmp, { px: [[3, 3, "#D"]], dx: 2, dy: 2 }, w, h);
   assert.equal(off.filter(Boolean).length, 1, "pixels held off the edge are dropped, not wrapped");
 });
+
+test("brush: a size-n dab covers n by n pixels around the pixel you point at", () => {
+  assert.deepEqual(P.brushPts(5, 5, 1), [[5, 5]]);
+  const three = P.brushPts(5, 5, 3).map((p) => p.join(",")).sort();
+  assert.equal(three.length, 9);
+  assert.ok(three.includes("4,4") && three.includes("6,6") && three.includes("5,5"));
+  assert.equal(P.brushPts(0, 0, 4).length, 16, "an even brush is still n by n");
+  assert.equal(P.brushPts(0, 0, 99).length, 256, "the brush stops at 16");
+});
+
+test("selections: invert, grow and shrink", () => {
+  const w = 5, h = 5, mask = new Uint8Array(w * h);
+  mask[2 * w + 2] = 1;
+  const inv = P.selInvert(mask);
+  assert.equal(inv[2 * w + 2], 0);
+  assert.equal(inv.reduce((a, b) => a + b, 0), 24);
+  const grown = P.selGrow(mask, w, h);
+  assert.equal(grown.reduce((a, b) => a + b, 0), 5, "one pixel becomes a plus");
+  assert.equal(P.selShrink(grown, w, h).reduce((a, b) => a + b, 0), 1, "and the plus shrinks to its middle");
+  assert.equal(P.selShrink(mask, w, h).reduce((a, b) => a + b, 0), 0, "a single pixel shrinks away");
+  const edge = new Uint8Array(w * h); edge[0] = 1;
+  assert.equal(P.selGrow(edge, w, h).reduce((a, b) => a + b, 0), 3, "growing stops at the edge of the sprite");
+});
+
+test("clipboard: a copy keeps the drawn pixels' shape and pastes where you say, clipped to the sprite", () => {
+  const w = 6, h = 6, bmp = new Array(w * h).fill(""), mask = new Uint8Array(w * h);
+  for (const [x, y, c] of [[1, 1, "#A"], [2, 1, "#B"], [1, 2, "#C"]]) bmp[y * w + x] = c;
+  for (let y = 1; y <= 3; y++) for (let x = 1; x <= 3; x++) mask[y * w + x] = 1;
+  const clip = P.clipCopy(bmp, mask, w, h);
+  assert.deepEqual([clip.w, clip.h], [3, 3], "the box of the selection, not of the drawing");
+  assert.equal(clip.px.length, 3, "only what was drawn");
+  const r = P.clipPaste(clip, w, h, [3, 3]);
+  assert.deepEqual(r.px.map((p) => p.join(",")).sort(), ["3,3,#A", "3,4,#C", "4,3,#B"]);
+  assert.equal(r.mask.reduce((a, b) => a + b, 0), 3);
+  const off = P.clipPaste(clip, w, h, [5, 5]);
+  assert.equal(off.px.length, 1, "pixels pasted off the edge are dropped");
+  assert.equal(P.clipCopy(bmp, new Uint8Array(w * h), w, h), null, "an empty selection copies nothing");
+  assert.equal(P.clipCopy(new Array(w * h).fill(""), mask, w, h), null, "a selection of empty pixels copies nothing");
+});

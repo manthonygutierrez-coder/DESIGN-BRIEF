@@ -12,7 +12,14 @@
  */
 
 const SuiteVectorEd = (() => {
-  const D = SuiteDoc, R = SuiteRender, V = SuiteVector, G = SuiteGuides, Sh = SuiteShapes, A = SuiteApps;
+  const need = (g, path) => (typeof globalThis[g] !== "undefined" ? globalThis[g] : typeof require === "function" ? require(path) : null);
+  const T = typeof SuiteTools !== "undefined" ? SuiteTools : (typeof require === "function" ? require("./tools.js") : null);
+  const D = typeof SuiteDoc !== "undefined" ? SuiteDoc : need("SuiteDoc", "./doc.js");
+  const R = typeof SuiteRender !== "undefined" ? SuiteRender : null;
+  const V = typeof SuiteVector !== "undefined" ? SuiteVector : need("SuiteVector", "./vector.js");
+  const G = typeof SuiteGuides !== "undefined" ? SuiteGuides : need("SuiteGuides", "./guides.js");
+  const Sh = typeof SuiteShapes !== "undefined" ? SuiteShapes : need("SuiteShapes", "./shapes.js");
+  const A = typeof SuiteApps !== "undefined" ? SuiteApps : need("SuiteApps", "./apps.js");
   const HANDLE = 8, HIT = 7;
   const DRAWN = ["rect", "ellipse", "path", "polygon"];
   const HANDLES = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]];
@@ -1172,12 +1179,27 @@ const SuiteVectorEd = (() => {
     if (t !== "node") ed.node = null;
     H.sound("tool");
     render(ed, H, {});
+    H.status(ed, T.hint("vector", t === "shape" ? ed.shape : t));
   }
 
   function onKey(ed, H, e) {
     const mod = e.metaKey || e.ctrlKey, k = e.key.toLowerCase();
     if (e.key === " " && !e.repeat) { ed.st.spaceDown = true; ed.st.host.classList.add("is-space"); const up = (ev) => { if (ev.key === " ") { ed.st.spaceDown = false; ed.st.host.classList.remove("is-space"); document.removeEventListener("keyup", up); } }; document.addEventListener("keyup", up); return true; }
     if (mod && k === "a") { select(ed, ed.doc.layers.filter((l) => !l.hidden && !l.locked).map((l) => l.id)); render(ed, H, {}); return true; }
+    if (mod && (k === "c" || k === "x") && ed.sel.length) {
+      const ls = chosen(ed);
+      clip = JSON.parse(JSON.stringify(ls));
+      H.status(ed, (k === "x" ? "Cut " : "Copied ") + ls.length + " layer" + (ls.length === 1 ? "" : "s") + ". Paste puts a copy on the board, here or in another document.");
+      if (k === "x") return removeSelected(ed, H);
+      return true;
+    }
+    if (mod && k === "v") {
+      if (!clip || !clip.length) { H.status(ed, "Nothing copied yet."); return true; }
+      pasted += 1;
+      H.mutate(ed, () => { const out = D.pasteLayers(ed.doc, clip, 10 * pasted); select(ed, out.map((l) => l.id)); });
+      H.sound("drop");
+      return true;
+    }
     if (mod && k === "d" && ed.sel.length) {
       H.mutate(ed, () => { const ids = []; for (const l of chosen(ed)) { const c = D.duplicate(ed.doc, l.id); if (c) ids.push(c.id); } select(ed, ids); });
       return true;
@@ -1185,11 +1207,7 @@ const SuiteVectorEd = (() => {
     if ((e.key === "Delete" || e.key === "Backspace")) {
       if (ed.tool === "node" && ed.node) return removeNode(ed, H);
       if (!ed.sel.length) return false;
-      const gone = chosen(ed).filter((l) => !l.locked);
-      if (!gone.length) { H.status(ed, "Locked layers stay put. Unlock them to delete."); return true; }
-      H.mutate(ed, () => { for (const l of gone) D.remove(ed.doc, l.id); select(ed, ed.sel.filter((id) => !gone.some((l) => l.id === id))); });
-      H.sound("close");
-      return true;
+      return removeSelected(ed, H);
     }
     if (e.key === "Enter") {
       if (ed.pen && ed.pen.nodes.length > 1) { finishPen(ed, H); return true; }
@@ -1218,6 +1236,16 @@ const SuiteVectorEd = (() => {
     if (s) { setTool(ed, H, s); return true; }
     return false;
   }
+
+  // Delete what is selected and not locked, and say so when locks stopped some of it.
+  function removeSelected(ed, H) {
+    const gone = chosen(ed).filter((l) => !l.locked);
+    if (!gone.length) { H.status(ed, "Locked layers stay put. Unlock them to delete."); return true; }
+    H.mutate(ed, () => { for (const l of gone) D.remove(ed.doc, l.id); select(ed, ed.sel.filter((id) => !gone.some((l) => l.id === id))); });
+    H.sound("close");
+    return true;
+  }
+  let clip = null, pasted = 0;        // what was last copied, shared by every document
 
   function escape(ed, H) {
     if (ed.editing) { endText(ed, H); render(ed, H, {}); return true; }
@@ -1250,7 +1278,7 @@ const SuiteVectorEd = (() => {
     el.innerHTML = doc.layers.slice().reverse().map((l) => {
       const on = ed.sel.includes(l.id);
       const name = l.type === "text" ? "“" + String(l.text).slice(0, 22) + "”" : l.type === "subject" ? l.label : l.name;
-      return '<div class="sx__ly' + (on ? " on" : "") + (l.hidden ? " off" : "") + '" data-layer="' + l.id + '" role="option" aria-selected="' + on + '" draggable="false">' +
+      return '<div class="sx__ly' + (on ? " on" : "") + (l.hidden ? " off" : "") + '" data-layer="' + l.id + '" role="option" tabindex="0" aria-selected="' + on + '" draggable="false">' +
         '<button class="sx__lb" data-eye="' + l.id + '" title="' + (l.hidden ? "Show" : "Hide") + '">' + iconSVG(l.hidden ? "eye-off" : "eye", 16) + "</button>" +
         '<button class="sx__lb" data-lock="' + l.id + '" title="' + (l.locked ? "Unlock" : "Lock") + '">' + iconSVG(l.locked ? "lock" : "unlock", 16) + "</button>" +
         '<canvas class="sx__th" width="44" height="44" data-th="' + l.id + '"></canvas>' +
@@ -1293,8 +1321,8 @@ const SuiteVectorEd = (() => {
     const b = ls.length === 1 ? ls[0] : boxOf(ls);
     const n = (p, v, label, dis) => '<label class="sx__f"><span>' + label + '</span><input type="number" step="1" data-xf="' + p + '" value="' + r2(v) + '"' + (dis ? " disabled" : "") + "></label>";
     el.innerHTML = '<div class="sx__row">' + n("x", b.x, "X") + n("y", b.y, "Y") + n("w", b.w, "W") + n("h", b.h, "H") + "</div>" +
-      (ls.length === 1 ? '<div class="sx__row">' + n("rot", ls[0].rot || 0, "ROTATE°", ls[0].type === "text" && ls[0].on) +
-        '<label class="sx__f sx__f--2"><span>OPACITY</span><input type="range" min="0" max="100" data-xf="opacity" value="' + Math.round(ls[0].opacity * 100) + '"></label></div>' : "");
+      '<div class="sx__row">' + (ls.length === 1 ? n("rot", ls[0].rot || 0, "ROTATE°", ls[0].type === "text" && ls[0].on) : "") +
+        '<label class="sx__f sx__f--2"><span>OPACITY</span><input type="range" min="0" max="100" data-xf="opacity" value="' + Math.round(ls[0].opacity * 100) + '"></label></div>';
   }
 
   /* ── the options strip ────────────────────────────────── */
@@ -1332,7 +1360,12 @@ const SuiteVectorEd = (() => {
       h += ib("mirv", "mirror", "Mirror across a vertical line (drag the diamond to move it)", mv) + ib("mirh", "mirror-h", "Mirror across a horizontal line", mh) +
         (ls.some((x) => x.mirror) ? '<button class="sx__tb" data-o="mirmerge" title="Make the mirror part of the shape">Merge</button>' : "") +
         ib("fliph", "flip-h", "Flip left to right", false, !ls.some((x) => DRAWN.includes(x.type))) + ib("flipv", "flip-v", "Flip top to bottom", false, !ls.some((x) => DRAWN.includes(x.type))) + sep;
-      if (ed.bonus.includes("align")) h += ["left", "hcenter", "right", "top", "vcenter", "bottom"].map((a) => ib("al:" + a, "al-" + a, "Align " + a + (ls.length > 1 ? " (to each other)" : " (to the artboard)"))).join("") + sep;
+      const earned = ed.bonus.includes("align"), why = earned ? "" : " (earn Align in Hustle to use this)";
+      h += ["left", "hcenter", "right", "top", "vcenter", "bottom"].map((a) => ib("al:" + a, "al-" + a, "Align " + a + (ls.length > 1 ? " (to each other)" : " (to the artboard)") + why, false, !earned)).join("") +
+        ib("dist:h", "di-h", "Space three or more evenly, left to right" + why, false, !earned || ls.length < 3) + ib("dist:v", "di-v", "Space three or more evenly, top to bottom" + why, false, !earned || ls.length < 3) + sep;
+      const allLocked = ls.every((x) => x.locked), op = Math.round(ls.reduce((n, x) => n + (x.opacity == null ? 1 : x.opacity), 0) / ls.length * 100);
+      h += slide("opacity", op, "OPACITY", 0, 100) + ib("lock", allLocked ? "lock" : "unlock", allLocked ? "Unlock the selection" : "Lock the selection so it can't be moved or deleted", allLocked) +
+        ib("ord:up", "l-up", "Bring forward ( ] )") + ib("ord:down", "l-down", "Send backward ( [ )") + sep;
     }
     if (tool === "node") h += nodeOpts(ed) + sep;
     if (tool === "pen") h += '<span class="sx__ohint">Click: corner · drag: curve · Alt: break the handle · click the first point to close · Enter: an open line</span>';
@@ -1456,6 +1489,21 @@ const SuiteVectorEd = (() => {
       if (t.dataset.xf) { xfInput(ed, t); commit(); render(ed, H, {}); }
     });
 
+    // The layers are a list you can walk: arrows move between rows and pick,
+    // Enter or Space picks (Shift adds), and Delete takes the picked layers off.
+    ed.layersEl.addEventListener("keydown", (e) => {
+      const row = e.target.closest && e.target.closest("[data-layer]");
+      if (!row || e.target.closest("button,input")) return;
+      const rows = [...ed.layersEl.querySelectorAll("[data-layer]")], i = rows.indexOf(row);
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        const next = rows[i + (e.key === "ArrowUp" ? -1 : 1)];
+        if (next) { e.preventDefault(); e.stopPropagation(); select(ed, e.shiftKey ? ed.sel.concat(next.dataset.layer) : [next.dataset.layer]); render(ed, H, {}); const again = ed.layersEl.querySelector('[data-layer="' + next.dataset.layer + '"]'); if (again) again.focus(); }
+      } else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault(); e.stopPropagation();
+        select(ed, e.shiftKey ? ed.sel.concat(row.dataset.layer) : [row.dataset.layer]); render(ed, H, {});
+        const again = ed.layersEl.querySelector('[data-layer="' + row.dataset.layer + '"]'); if (again) again.focus();
+      }
+    });
     // Right-click a row: the same menu as right-clicking the layer on the board.
     ed.layersEl.addEventListener("contextmenu", (e) => {
       const row = e.target.closest("[data-layer]");
@@ -1583,7 +1631,10 @@ const SuiteVectorEd = (() => {
     }
     if (o === "mirmerge") { mergeMirror(ed, H); return; }
     if (o === "fliph" || o === "flipv") { flip(ed, H, o === "fliph" ? "h" : "v"); return; }
-    if (o.startsWith("al:")) { H.mutate(ed, () => D.align(ed.doc, ed.sel, o.slice(3))); return; }
+    if (o.startsWith("al:")) { if (ed.bonus.includes("align")) H.mutate(ed, () => D.align(ed.doc, ed.sel, o.slice(3))); return; }
+    if (o.startsWith("dist:")) { if (ed.bonus.includes("align")) H.mutate(ed, () => D.distribute(ed.doc, ed.sel, o.slice(5))); return; }
+    if (o === "lock") { const on = !ls.every((x) => x.locked); H.mutate(ed, () => { for (const l of ls) l.locked = on; }); H.sound("layer"); return; }
+    if (o.startsWith("ord:")) { layerAct(ed, H, o.slice(4)); return; }
     if (o.startsWith("nk:")) {
       const l = one(ed);
       if (!l || !ed.node) return;
@@ -1616,6 +1667,7 @@ const SuiteVectorEd = (() => {
     if (o === "fill") { ed.fill = colour; if (ls.length) live((l) => ({ fill: typeof l.fill === "object" && l.fill ? Object.assign({}, l.fill, { a: colour }) : colour })); }
     else if (o === "stroke") { ed.stroke = colour; if (!ed.strokeW) ed.strokeW = 2; if (ls.length) live((l) => ({ stroke: colour, strokeW: l.strokeW || 2 })); }
     else if (o === "strokeW") { ed.strokeW = Math.max(0, v); if (ls.length) live((l) => ({ strokeW: Math.max(0, v), stroke: l.stroke || ed.stroke || "#14110E" })); }
+    else if (o === "opacity") { for (const l of ls) l.opacity = Math.max(0, Math.min(1, v / 100)); draw(ed); }
     else if (o === "bg") { ed.doc.bg = colour; draw(ed); }
     else if (o === "radius") { ed.radius = v; if (ls.length) live((l) => (l.type === "rect" ? { radius: v } : {})); }
     else if (o === "sides") { ed.sides = v; if (ls.length) live((l) => (l.type === "polygon" ? { sides: v } : {})); }
@@ -1713,15 +1765,12 @@ const SuiteVectorEd = (() => {
     if (!ls.length) return;
     if (a === "dup") H.mutate(ed, () => { const ids = []; for (const l of ls) { const c = D.duplicate(ed.doc, l.id); if (c) ids.push(c.id); } select(ed, ids); });
     if (a === "up" || a === "down") H.mutate(ed, () => { for (const l of (a === "up" ? ls.slice().reverse() : ls)) if (!l.locked) D.restack(ed.doc, l.id, a); });
-    if (a === "del") {
-      const gone = ls.filter((l) => !l.locked);
-      if (!gone.length) { H.status(ed, "Locked layers stay put. Unlock them to delete."); return; }
-      H.mutate(ed, () => { for (const l of gone) D.remove(ed.doc, l.id); select(ed, ed.sel.filter((id) => !gone.some((l) => l.id === id))); });
-      H.sound("close"); return;
-    }
+    if (a === "del") { removeSelected(ed, H); return; }
     if (a === "merge") { buildShapes(ed, H, ls.filter((l) => DRAWN.includes(l.type)).map((l) => l.id), false, JSON.stringify(ed.doc)); return; }
     H.sound("layer");
   }
 
   return { mount, TOOLS, SHAPES, keyOf };
 })();
+
+if (typeof module !== "undefined") module.exports = SuiteVectorEd;
