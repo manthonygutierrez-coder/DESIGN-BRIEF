@@ -967,6 +967,7 @@ const Hustle = (() => {
     const n = Object.values(G().threads).reduce((k, t) => k + unread(t), 0);
     pagerTrayEl.classList.toggle("has", n > 0);
     pagerTrayEl.querySelector(".tray__n").textContent = n ? String(n) : "";
+    setBadge("pager", n);
   }
 
   function balloon(title, text, onClick, quiet) {

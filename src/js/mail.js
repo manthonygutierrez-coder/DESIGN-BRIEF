@@ -207,6 +207,7 @@ const Mail = (() => {
     trayEl.classList.toggle("has", n > 0);
     trayEl.querySelector(".tray__n").textContent = n > 0 ? String(n) : "";
     trayEl.title = n > 0 ? n + " unread" : "Inbox";
+    setBadge("mail", n);
   }
 
   let balloonTimer = 0;

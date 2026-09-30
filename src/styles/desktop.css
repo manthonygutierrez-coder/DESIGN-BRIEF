@@ -47,21 +47,41 @@
 
 /* ── desktop ───────────────────────────────────────── */
 .desktop{position:absolute;left:0;right:0;top:0;bottom:40px;z-index:4}
-.icons{position:absolute;top:8px;left:8px;bottom:8px;display:flex;flex-direction:column;flex-wrap:wrap;
-  align-content:flex-start;gap:2px;z-index:1}
-.sc{width:88px;padding:7px 3px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;
-  border:1px dotted transparent;background:none;text-align:center;cursor:default}
+/* the icon grid: wm.js puts each .sc on a cell (left/top), so an icon can sit anywhere */
+.icons{position:absolute;top:8px;left:8px;right:8px;bottom:8px;z-index:1;pointer-events:none}
+.sc{position:absolute;width:88px;padding:7px 3px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  border:1px dotted transparent;background:none;text-align:center;cursor:default;pointer-events:auto;touch-action:none}
+.sc svg{transition:transform .08s steps(2,end)}
+.sc:hover svg{transform:translateY(-2px)}
+.sc:hover .sc__l{background:rgba(0,0,0,.45)}
+.sc:active svg{transform:translateY(1px)}
+.sc.drag{z-index:20;opacity:.85;cursor:grabbing}
+.sc.drag svg{transform:translateY(-3px);filter:drop-shadow(3px 4px 0 rgba(0,0,0,.5))}
+/* a count waiting inside: hard-edged, in the pixel face, corner of the icon */
+.sc__b{position:absolute;top:3px;right:14px;min-width:14px;height:14px;padding:0 3px;box-sizing:border-box;
+  display:grid;place-items:center;font-family:"Silkscreen",monospace;font-size:8px;line-height:1;
+  background:#D8382E;color:#fff;border:1px solid #1A0605;box-shadow:1px 1px 0 rgba(0,0,0,.6)}
+.sc__b[hidden]{display:none}
+.sc__b.up{animation:scPop .36s steps(4,end)}
+@keyframes scPop{0%{transform:translateY(0)}40%{transform:translateY(-4px)}70%{transform:translateY(1px)}100%{transform:translateY(0)}}
+/* a dot under the icon while its window is open */
+.sc__o{position:absolute;left:50%;bottom:-1px;width:6px;height:2px;margin-left:-3px;background:#7CF9C0;
+  box-shadow:0 0 0 1px rgba(0,0,0,.6);display:none}
+.sc.open .sc__o{display:block}
 .sc__l{font-size:8.5px;line-height:1.5;color:#EDFBF3;padding:1px 3px;
   text-shadow:1px 1px 0 rgba(0,0,0,.95),-1px 0 0 rgba(0,0,0,.7)}
 .sc.sel{border-color:rgba(255,255,255,.65)}
 .sc.sel .sc__l{background:var(--w-nav);color:#fff;text-shadow:none}
 .sc svg{filter:drop-shadow(1px 1px 0 rgba(0,0,0,.7))}
+@media (prefers-reduced-motion:reduce){.sc svg{transition:none}.sc__b.up{animation:none}}
 .sc:focus-visible{outline:1px dotted #fff;outline-offset:-3px}
 .deskhint{position:absolute;right:12px;bottom:10px;font-size:8.5px;letter-spacing:.1em;
   color:rgba(124,249,192,.5);text-shadow:1px 1px 0 rgba(0,0,0,.8);pointer-events:none}
 
 /* ── windows ───────────────────────────────────────── */
-.wins{position:absolute;inset:0;z-index:2}
+/* the layer is see-through to the mouse, so the icons beneath it stay clickable and draggable */
+.wins{position:absolute;inset:0;z-index:2;pointer-events:none}
+.wins>.w98{pointer-events:auto}
 .w98{position:absolute;display:flex;flex-direction:column;background:var(--w-face);padding:3px;
   min-width:250px;min-height:170px;
   border:2px solid;border-color:var(--w-hi) var(--w-dk) var(--w-dk) var(--w-hi);
@@ -236,7 +256,10 @@
   .plane::before,.g-half::before{animation:none !important}
 }
 
-/* ── context menus (ctxmenu.js) ─────────────────────── */
+/* ── context menus (ctxmenu.js) ───────────────────────
+   Hosted in #pc, outside .side--screen, so the window colours are set again here. */
+.ctx{--w-face:#C0C0C0;--w-hi:#FFFFFF;--w-lt:#DFDFDF;--w-sh:#808080;--w-dk:#0A0A0A;
+  --w-nav:#000080;--w-nav2:#1084D0;--w-in1:#7B7B7B;--w-in2:#ADADAD;--w-cli:#FFFFFF;--w-txt:#0A0A0A}
 .ctx{position:absolute;z-index:9000;min-width:168px;max-width:280px;padding:2px;display:flex;flex-direction:column;
   background:var(--w-face);border:2px solid;border-color:var(--w-hi) var(--w-dk) var(--w-dk) var(--w-hi);
   box-shadow:inset 1px 1px 0 var(--w-lt),inset -1px -1px 0 var(--w-sh),3px 3px 0 rgba(0,0,0,.28);
