@@ -162,3 +162,52 @@ test("blocks: moveBlockTo puts a block at an index, and refuses a move that goes
   assert.equal(D.moveBlockTo(doc, 0, 3), false);
   assert.equal(D.moveBlockTo(doc, -1, 0), false);
 });
+
+test("doc: frames, a copy at a time, and the picture is always the frame being drawn", () => {
+  const doc = D.create({ mode: "pixel", w: 4, h: 4 });
+  assert.equal(doc.frames, null, "one frame is no frames");
+  D.setPx(doc, 0, 0, "#AA0000");
+  assert.ok(D.addFrame(doc));
+  assert.equal(doc.frames.length, 2);
+  assert.equal(doc.frame, 1, "the new frame is the one you're on");
+  assert.equal(D.getPx(doc, 0, 0), "#AA0000", "and it starts as a copy");
+  D.setPx(doc, 1, 1, "#00AA00");
+  assert.equal(doc.frames[0].px[1 * 4 + 1], "", "drawing on it leaves the first alone");
+  D.goFrame(doc, 0);
+  assert.equal(D.getPx(doc, 1, 1), "", "back on the first");
+  assert.deepEqual(D.colours(doc).sort(), ["#00AA00", "#AA0000"], "colours count every frame");
+  D.goFrame(doc, 1);
+  assert.ok(D.moveFrame(doc, -1));
+  assert.equal(doc.frame, 0);
+  assert.equal(D.getPx(doc, 1, 1), "#00AA00", "a frame moved keeps its pixels");
+  assert.ok(D.frameMs(doc, 10));
+  assert.equal(doc.frames[0].ms, D.FRAME_MS.min, "no frame is shorter than a blink");
+  assert.ok(D.removeFrame(doc));
+  assert.equal(doc.frames, null, "back to one: back to no frames");
+  assert.equal(D.getPx(doc, 0, 0), "#AA0000");
+});
+
+test("doc: frames survive saving, undo and a resize", () => {
+  const doc = D.create({ mode: "pixel", w: 4, h: 4 });
+  D.addFrame(doc); D.setPx(doc, 2, 2, "#0000AA"); D.addFrame(doc);
+  // A tool that swaps the bitmap for a new array: the frame still gets it.
+  doc.bitmap = doc.bitmap.slice(); doc.bitmap[0] = "#FFFFFF";
+  const back = D.parse(D.serialize(doc));
+  assert.equal(back.frames.length, 3);
+  assert.equal(back.frame, 2);
+  assert.equal(back.bitmap, back.frames[2].px, "the picture is the frame, the same array");
+  assert.equal(back.bitmap[0], "#FFFFFF", "the bitmap as saved wins");
+  const hist = D.history();
+  hist.record(doc);
+  D.goFrame(doc, 1); D.setPx(doc, 3, 3, "#AA00AA");
+  const before = D.normalize(hist.undo(doc));
+  assert.equal(before.frames[1].px[15], "", "undo brings the frames back as they were");
+  const big = D.parse(D.serialize(doc));
+  D.resize(big, 6, 6);
+  assert.ok(big.frames.every((f) => f.px.length === 36), "every frame is resized");
+  assert.equal(big.frames[1].px[3 * 6 + 3], "#0000AA", "and keeps its drawing, centred");
+  assert.equal(big.bitmap, big.frames[big.frame].px);
+  const junk = D.normalize({ mode: "pixel", w: 2, h: 2, bitmap: ["", "", "", ""], frames: [{ px: ["#AA0000", "", "", ""], ms: 99999 }, { px: ["x"] }, { px: ["", "", "", ""] }] });
+  assert.equal(junk.frames.length, 2, "a frame of the wrong size is dropped");
+  assert.equal(junk.frames[0].ms, D.FRAME_MS.max);
+});

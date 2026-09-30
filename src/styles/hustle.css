@@ -547,3 +547,32 @@
 /* Your camera floats over your own windows, the way a self-view does. It is
    still inside the window layer, so the Start menu and balloons stay above it. */
 .w98--camguide{z-index:100000 !important}
+
+/* ── research games: the frame (minigame.js) ─────────────
+   A pixel screen scaled by whole numbers, and a strip for who's talking and
+   what you can do. */
+.w98--game .client{background:var(--w-face)}
+.mg{display:flex;flex-direction:column;height:100%;min-height:0}
+.mg__screen{flex:1 1 auto;display:grid;place-items:center;min-height:0;overflow:hidden;padding:8px;background:#0E0716;border-bottom:1px solid var(--w-sh)}
+.mg__cv{display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+/* a steady height, so the picture doesn't jump as the choices change */
+.mg__talk{flex:0 0 auto;display:flex;flex-direction:column;gap:8px;min-height:188px;padding:8px 10px 10px}
+.mg__say{margin:0;min-height:40px;font-family:"VT323",monospace;font-size:19px;line-height:1.05;color:var(--w-txt)}
+.mg__choices{display:flex;flex-wrap:wrap;gap:6px}
+.mg__choices:empty{display:none}
+.mg__c{min-height:24px;padding:3px 10px;white-space:normal;text-align:left;max-width:100%}
+.mg__c--go{font-weight:700}
+
+/* Dennis's pop-up: about 2004, and proud of it */
+.w98--popad .client{padding:0}
+.popad{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px;text-align:center;
+  background:repeating-linear-gradient(45deg,#2A1240 0 10px,#331650 10px 20px);color:#FFF4D6;font-family:Papyrus,"Comic Sans MS",fantasy}
+.popad__h{margin:0;font-size:22px;line-height:1.1;color:#FFD86B;text-shadow:2px 2px 0 #6B2FA0}
+.popad__p{margin:0;font-size:14px;line-height:1.25}
+.popad__blink{color:#FF7FBF;animation:popBlink 1s steps(1) infinite}
+@keyframes popBlink{50%{visibility:hidden}}
+.popad__b{display:flex;gap:8px}
+.popad__f{margin:0;font-family:"VT323",monospace;font-size:15px;color:#C9B3E0}
+@media (prefers-reduced-motion:reduce){.popad__blink{animation:none}}
+.hx-tb--game{background:#3B1D57;color:#FFD86B}
+.theme-dark .hx-tb--game{background:#3B1D57;color:#FFD86B}

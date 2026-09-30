@@ -24,6 +24,7 @@ const HustleLessons = (() => {
   const Cards = typeof SuiteCards !== "undefined" ? SuiteCards : need("SuiteCards", "../suite/cards.js");
   const Guides = typeof SuiteGuides !== "undefined" ? SuiteGuides : need("SuiteGuides", "../suite/guides.js");
   const Apps = typeof SuiteApps !== "undefined" ? SuiteApps : need("SuiteApps", "../suite/apps.js");
+  const Polish = typeof SuitePolish !== "undefined" ? SuitePolish : need("SuitePolish", "../suite/polish.js");
 
   /* ── what a step can point at ──────────────────────────── */
   const CONTROLS = {
@@ -32,7 +33,7 @@ const HustleLessons = (() => {
     opt: ["fill", "nofill", "stroke", "strokeW", "radius", "sides", "star", "inner", "fontmenu", "size", "weight", "italic", "track",
       "bend", "offset", "detach", "mirv", "mirh", "mirmerge", "fliph", "flipv", "fg", "filled", "outline", "mx", "my",
       "tagline", "frame", "brand", "head", "visit"],
-    view: ["grid", "smart", "snap", "clearguides"],
+    view: ["grid", "smart", "snap", "clearguides", "polish"],
     drawer: ["cards", "swatch", "cutout", "lesson"],
     mode: ["vector", "pixel", "layout"],
     blk: Object.keys(Apps.BLOCKS),
@@ -70,6 +71,8 @@ const HustleLessons = (() => {
     bend: (v, c) => texts(c).some((l) => Math.abs(l.bend || 0) >= 10),
     onPath: (v, c) => texts(c).some((l) => l.on && c.doc.layers.some((x) => x.id === l.on)),
     drawn: (n, c) => ((c.doc && c.doc.bitmap) || []).filter(Boolean).length >= n,
+    // Something drawn, with no more than n things left for Polish to ring.
+    polish: (n, c) => !!(c.doc && c.doc.bitmap && c.doc.bitmap.some(Boolean)) && Polish.find(c.doc.bitmap, c.doc.w, c.doc.h).total <= n,
     palette: (n, c) => ((c.doc && c.doc.palette) || []).length >= n,
     block: (t, c) => ((c.doc && c.doc.blocks) || []).some((b) => b.t === t),
     blocks: (n, c) => ((c.doc && c.doc.blocks) || []).length >= n,

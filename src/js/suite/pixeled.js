@@ -16,6 +16,7 @@ const SuitePixelEd = (() => {
   const Sh = typeof SuiteShapes !== "undefined" ? SuiteShapes : need("SuiteShapes", "./shapes.js");
   const R = typeof SuiteRender !== "undefined" ? SuiteRender : null;
   const T = typeof SuiteTools !== "undefined" ? SuiteTools : need("SuiteTools", "./tools.js");
+  const P = typeof SuitePolish !== "undefined" ? SuitePolish : need("SuitePolish", "./polish.js");
   const TOOLS = [
     { id: "pencil", icon: "t-pencil", label: "Pencil (Shift-click: a line from the last pixel; Alt-click: pick a colour)", key: "b" },
     { id: "erase", icon: "t-erase", label: "Eraser (Shift-click: a line from the last pixel)", key: "e" },
@@ -39,6 +40,34 @@ const SuitePixelEd = (() => {
     ["tile", "v-tile", "Tiled three by three: does it repeat without seams?"],
   ];
   const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+
+  /* ── the pro inks (Hustle earns them; Studio has them) ─── */
+  // Dither patterns, fixed to the sprite's own grid so strokes and fills mesh.
+  const DITHERS = {
+    50: (x, y) => (x + y) % 2 === 0,
+    25: (x, y) => x % 2 === 0 && y % 2 === 0,
+  };
+  const luma = (hex) => { const n = parseInt(String(hex).slice(1, 7), 16) || 0; return 0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255); };
+  // The ramp shading steps along: the palette, darkest to lightest, or the
+  // colours in the sprite when there is no palette to speak of.
+  function rampOf(palette, used) {
+    const pal = [...new Set((palette || []).filter(Boolean))];
+    const src = pal.length > 1 ? pal : [...new Set((used || []).filter(Boolean))];
+    return src.sort((a, b) => luma(a) - luma(b));
+  }
+  // One step along the ramp from colour c: dir -1 darker, +1 lighter. A colour
+  // not on the ramp steps from the nearest one on it; the ends stay put.
+  function shadeStep(ramp, c, dir) {
+    if (!c || !ramp.length) return c;
+    let i = ramp.indexOf(c);
+    if (i < 0) {
+      const rgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+      const [r, g, b] = rgb(c);
+      let best = Infinity;
+      ramp.forEach((h, k) => { const [R, G, B] = rgb(h), d = (R - r) ** 2 + (G - g) ** 2 + (B - b) ** 2; if (d < best) { best = d; i = k; } });
+    }
+    return ramp[Math.max(0, Math.min(ramp.length - 1, i + dir))];
+  }
 
   /* ── pixels a shape covers ─────────────────────────────── */
   function linePts(x0, y0, x1, y1) {
@@ -132,7 +161,18 @@ const SuitePixelEd = (() => {
       if (!inside(x, y)) continue;
       if (filled || !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1)) out.push([x, y]);
     }
-    return out;
+    if (filled) return out;
+    // Pixel-art curves have no doubled corners: where the outline turns
+    // through an L, the corner pixel goes. A square corner, both arms two or
+    // more long, stays.
+    const on = new Set(out.map(([x, y]) => x + "," + y)), has = (x, y) => on.has(x + "," + y);
+    const arm = (x, y, dx, dy) => { let n = 0; while (has(x + dx * (n + 1), y + dy * (n + 1))) n++; return n; };
+    for (const [x, y] of out) for (const ax of [-1, 1]) for (const cy of [-1, 1]) {
+      if (!has(x, y) || !has(x + ax, y) || !has(x, y + cy) || has(x + ax, y + cy) || has(x - ax, y) || has(x, y - cy)) continue;
+      if (arm(x, y, ax, 0) >= 2 && arm(x, y, 0, cy) >= 2) continue;
+      on.delete(x + "," + y);
+    }
+    return out.filter(([x, y]) => has(x, y));
   }
   // A curve as a one-pixel line: sampled finely, rounded, joined up.
   function curvePts(path) {
@@ -232,12 +272,15 @@ const SuitePixelEd = (() => {
           '<section class="sx__panel"><header class="sx__ph"><span>PREVIEW</span><span class="sx__pvv" role="group" aria-label="Ways to look">' +
             VIEWS.map(([id, icon, t]) => '<button class="sx__ib sx__ib--sm" data-pv="' + id + '" title="' + t + '" aria-pressed="false">' + iconSVG(icon, 16) + "</button>").join("") +
           '</span></header><div class="sx__pv"><canvas class="sx__pvc"></canvas></div></section>' +
+          '<section class="sx__panel sx__panel--pol" hidden><header class="sx__ph"><span>POLISH</span></header><div class="sx__pol"></div></section>' +
           '<section class="sx__panel sx__panel--grow"><header class="sx__ph"><span>COLOURS IN USE</span></header><div class="sx__used"></div></section>' +
         "</div>" +
-      "</div>";
+      "</div>" +
+      '<div class="sx__time" role="toolbar" aria-label="Frames" hidden></div>';
     Object.assign(ed, {
       tool: ed.tool || "pencil", fg: ed.fg || "#0A0A0A", filled: !!ed.filled, mx: !!ed.mx, my: !!ed.my, face: ed.face || 0, perfect: ed.perfect !== false, size: ed.size || 1, fillAll: !!ed.fillAll,
-      drag: null, pen: null, mask: null, float: null, stamp: null, grid: ed.grid !== false,
+      drag: null, pen: null, mask: null, float: null, stamp: null, grid: ed.grid !== false, polish: !!ed.polish, pol: null,
+      shade: !!ed.shade, dither: ed.dither || 0, lockAlpha: !!ed.lockAlpha, onion: !!ed.onion, playing: false, pvFrame: 0,
     });
     ed.opts = ed.body.querySelector(".sx__opts");
     ed.rail = ed.body.querySelector(".sx__rail");
@@ -264,7 +307,7 @@ const SuitePixelEd = (() => {
     ed.place = (src, name) => pixelate(ed, H, src, name);
     ed.selectedImage = () => null;
     ed.wand = (x, y, tol, add) => wandAt(ed, H, x, y, tol, add);
-    ed.unmount = () => { commitFloat(ed, H); finishPen(ed, H, true); };
+    ed.unmount = () => { commitFloat(ed, H); finishPen(ed, H, true); stopPlay(ed); };
     // History hooks (suite.js): put a lifted selection down before undo, redo or a
     // new document, forget a selection that no longer fits, and let autosave see
     // the sprite with whatever is lifted off it laid back in.
@@ -278,6 +321,7 @@ const SuitePixelEd = (() => {
     ed.viewClick = (o) => {
       if (o === "grid") { ed.grid = !ed.grid; render(ed, H, {}); }
       if (o === "clearguides") { H.mutate(ed, () => { ed.doc.guides = { v: [], h: [] }; }); H.status(ed, "Guides cleared."); }
+      if (o === "polish") { ed.polish = !ed.polish; render(ed, H, {}); H.sound(ed.polish ? "grid" : "tuck"); H.status(ed, ed.polish ? polishLine(ed) : ""); }
     };
     wirePointer(ed, H);
     wirePanels(ed, H);
@@ -303,20 +347,37 @@ const SuitePixelEd = (() => {
   }
   // Points as the brush lays them: each one a dab of the brush's size.
   const dab = (ed, pts) => (ed.size > 1 ? pts.flatMap(([x, y]) => brushPts(x, y, ed.size)) : pts);
-  function paintPts(ed, pts, colour) { for (const [x, y] of mirrored(ed, pts)) D.setPx(ed.doc, x, y, colour); }
+  function paintPts(ed, pts, colour, dithered) { for (const [x, y] of mirrored(ed, pts)) if (lands(ed, x, y, colour, dithered)) D.setPx(ed.doc, x, y, colour); }
   // A freehand stroke, pixel by pixel. It remembers what it painted over, so
   // with pixel-perfect on, an L-shaped corner can go back to what it was.
-  function strokeTo(ed, d, pts) {
+  // Each pixel that changes plucks a note: its colour's step in the ramp, so
+  // shading down a ramp plays a scale.
+  function strokeTo(ed, H, d, pts) {
     const ink = inkOf(ed), w = ed.doc.w;
+    // Shading ink: each pixel the stroke passes steps once along the ramp,
+    // darker, or lighter with the right button.
+    if (shadeOn(ed)) {
+      d.ramp = d.ramp || rampOf(ed.doc.palette, ed.doc.bitmap);
+      for (const p of pts) for (const [mx, my] of mirrored(ed, [p])) {
+        const k = my * w + mx, c = D.getPx(ed.doc, mx, my);
+        if (d.orig.has(k) || !c) continue;
+        d.orig.set(k, c);
+        const next = shadeStep(d.ramp, c, ed.rightInk ? 1 : -1);
+        if (next !== c) { D.setPx(ed.doc, mx, my, next); H.sound("px", { h: rampStep(ed.doc, next) }); }
+      }
+      return;
+    }
     for (const p of pts) {
       const l = d.trail[d.trail.length - 1];
       if (l && l[0] === p[0] && l[1] === p[1]) continue;
       // A wide brush just dabs: there are no L-shaped corners to take back.
-      if (ed.size > 1) { paintPts(ed, brushPts(p[0], p[1], ed.size), ink); d.trail.push(p); if (d.trail.length > 3) d.trail.shift(); continue; }
+      if (ed.size > 1) { paintPts(ed, brushPts(p[0], p[1], ed.size), ink, true); d.trail.push(p); if (d.trail.length > 3) d.trail.shift(); continue; }
       for (const [mx, my] of mirrored(ed, [p])) { const k = my * w + mx; if (!d.orig.has(k)) d.orig.set(k, D.getPx(ed.doc, mx, my) || ""); }
-      paintPts(ed, [p], ink);
+      const was = inDoc(ed, p[0], p[1]) ? D.getPx(ed.doc, p[0], p[1]) || "" : ink;
+      if (was !== ink && lands(ed, p[0], p[1], ink, true)) H.sound("px", { h: rampStep(ed.doc, ink || was), erase: !ink });
+      paintPts(ed, [p], ink, true);
       d.trail.push(p);
-      if (ed.perfect) {
+      if (ed.perfect && !ditherOn(ed)) {
         const i = perfectDrop(d.trail);
         if (i >= 0) {
           for (const [mx, my] of mirrored(ed, [d.trail[i]])) D.setPx(ed.doc, mx, my, d.orig.get(my * w + mx) || "");
@@ -327,11 +388,185 @@ const SuitePixelEd = (() => {
     }
   }
   const mirrorOK = (ed) => ed.bonus.includes("mirror");
+  const shadeOn = (ed) => !!ed.shade && ed.tool === "pencil" && ed.bonus.includes("shade");
+  const ditherOn = (ed) => !!ed.dither && ed.bonus.includes("dither");
+  const lockOn = (ed) => !!ed.lockAlpha && ed.bonus.includes("lockalpha");
+  // Where paint may land. Lock alpha keeps to pixels already drawn and rubs
+  // none out; the dither brush keeps to its pattern.
+  function lands(ed, x, y, colour, dithered) {
+    if (lockOn(ed) && (!colour || !D.getPx(ed.doc, x, y))) return false;
+    if (dithered && ditherOn(ed) && !DITHERS[ed.dither](x, y)) return false;
+    return true;
+  }
+
+  /* ── frames: a sprite that moves ───────────────────────── */
+  // Frame lengths on the game's own beat, so an animation keeps time with the
+  // music: a sixteenth at 96 bpm is 156 ms.
+  const STEP_MS = 60000 / 96 / 4;
+  const LENGTHS = [[1, "1/4 beat"], [2, "1/2 beat"], [3, "3/4 beat"], [4, "1 beat"], [6, "1 1/2 beats"], [8, "2 beats"]];
+  const framesOK = (ed) => ed.bonus.includes("frames");
+
+  function paintTime(ed, H) {
+    const el = ed.body.querySelector(".sx__time");
+    if (!el) return;
+    el.hidden = !framesOK(ed);
+    if (el.hidden) { stopPlay(ed); return; }
+    const doc = ed.doc, frames = D.framesOf(doc), n = frames.length, cur = doc.frames ? doc.frame : 0;
+    if (n < 2) stopPlay(ed);
+    const ms = frames[cur].ms, near = LENGTHS.find(([k]) => Math.abs(Math.round(k * STEP_MS) - ms) <= 2);
+    el.innerHTML = '<span class="sx__olab">FRAMES</span>' +
+      ib("fr:prev", "fr-prev", "Previous frame (,)", false, n < 2) +
+      ib("fr:play", ed.playing ? "fr-stop" : "fr-play", ed.playing ? "Stop the preview" : "Play it in the preview", ed.playing, n < 2) +
+      ib("fr:next", "fr-next", "Next frame (.)", false, n < 2) + '<span class="sx__osep"></span>' +
+      '<span class="sx__frs">' + frames.map((f, i) => '<button class="sx__fr' + (i === cur ? " on" : "") + '" data-fr="' + i + '" title="Frame ' + (i + 1) + ", " + f.ms + ' ms">' +
+        '<canvas width="' + doc.w + '" height="' + doc.h + '"></canvas><i>' + (i + 1) + "</i></button>").join("") + "</span>" +
+      ib("fr:add", "plus", "New frame: a copy of this one, straight after it") + '<span class="sx__osep"></span>' +
+      (n > 1
+        ? '<label class="sx__num"><span>LENGTH</span><select data-o="frms">' +
+          LENGTHS.map(([k, label]) => '<option value="' + Math.round(k * STEP_MS) + '"' + (near && near[0] === k ? " selected" : "") + ">" + label + "</option>").join("") +
+          (near ? "" : '<option selected value="' + ms + '">' + ms + " ms</option>") + "</select></label>" +
+          ib("fr:left", "fr-left", "Move this frame earlier", false, cur === 0) + ib("fr:right", "fr-right", "Move this frame later", false, cur === n - 1) +
+          ib("fr:del", "l-del", "Delete this frame") + '<span class="sx__osep"></span>' +
+          ib("fr:onion", "fr-onion", "Onion skin: the frame before shows through in red, the one after in blue", ed.onion)
+        : '<span class="sx__ohint">Add a frame to animate. Each starts as a copy of the one before.</span>');
+    el.querySelectorAll(".sx__fr canvas").forEach((c, i) => {
+      const g = c.getContext("2d");
+      g.imageSmoothingEnabled = false;
+      R.draw(g, Object.assign({}, doc, { bitmap: frames[i].px }), { scale: 1, checker: true });
+    });
+  }
+  function frameAct(ed, H, what) {
+    const doc = ed.doc;
+    commitFloat(ed, H); finishPen(ed, H, true);
+    if (what === "add") {
+      if (!H.mutate(ed, () => D.addFrame(doc))) { H.status(ed, "That's as many frames as a sprite can have."); return; }
+      H.sound("layer");
+      H.status(ed, "Frame " + (doc.frame + 1) + " of " + doc.frames.length + ", a copy of the one before: change what moves.");
+    }
+    if (what === "del") { H.mutate(ed, () => D.removeFrame(doc)); H.sound("tuck"); }
+    if (what === "left" || what === "right") { H.mutate(ed, () => D.moveFrame(doc, what === "left" ? -1 : 1)); H.sound("tool"); }
+    if ((what === "prev" || what === "next") && doc.frames) {
+      D.goFrame(doc, (doc.frame + (what === "next" ? 1 : -1) + doc.frames.length) % doc.frames.length);
+      render(ed, H, {});
+      H.sound("tool");
+      H.status(ed, "Frame " + (doc.frame + 1) + " of " + doc.frames.length + ".");
+    }
+    if (what === "play") { if (ed.playing) stopPlay(ed); else startPlay(ed); paintTime(ed, H); paintPreview(ed); }
+    if (what === "onion") { ed.onion = !ed.onion; render(ed, H, {}); H.sound("tool"); }
+  }
+  // The preview plays the frames, each for its own length, while you draw.
+  function startPlay(ed) {
+    stopPlay(ed);
+    if (!ed.doc.frames) return;
+    ed.playing = true;
+    ed.pvFrame = ed.doc.frame;
+    const step = () => {
+      if (!ed.playing || !ed.body.isConnected || !ed.doc.frames) { stopPlay(ed); return; }
+      ed.pvFrame = (ed.pvFrame + 1) % ed.doc.frames.length;
+      paintPreview(ed);
+      ed.playTimer = setTimeout(step, ed.doc.frames[ed.pvFrame].ms);
+    };
+    ed.playTimer = setTimeout(step, ed.doc.frames[ed.pvFrame].ms);
+  }
+  function stopPlay(ed) { clearTimeout(ed.playTimer); ed.playTimer = 0; ed.playing = false; }
+  // The frames either side, faint: the one before in red, the one after in blue.
+  function onion(ed, ctx) {
+    const doc = ed.doc, fr = D.framesOf(doc);
+    const tint = (px, colour) => { ctx.fillStyle = colour; for (let i = 0; i < px.length; i++) if (px[i]) ctx.fillRect(i % doc.w, Math.floor(i / doc.w), 1, 1); };
+    ctx.save();
+    ctx.globalAlpha = 0.32;
+    if (doc.frame > 0) tint(fr[doc.frame - 1].px, "#FF4040");
+    if (doc.frame < fr.length - 1) tint(fr[doc.frame + 1].px, "#3FA0FF");
+    ctx.restore();
+  }
+
+  /* ── craft sounds ──────────────────────────────────────── */
+  // Where a colour sits in the sprite's ramp, 0 (darkest) to 1 (lightest):
+  // its place in the palette when it's there, otherwise just how light it is.
+  function rampStep(doc, c) {
+    if (!c) return 0;
+    const pal = (doc.palette || []).filter(Boolean);
+    if (pal.length > 1 && pal.includes(c)) { const s = pal.slice().sort((a, b) => P.luma(a) - P.luma(b)); return s.indexOf(c) / (s.length - 1); }
+    return P.luma(c) / 255;
+  }
+  // A line's runs, in order: how many pixels go along before each step.
+  function runsOf(pts) {
+    if (pts.length < 2) return [pts.length];
+    const [x0, y0] = pts[0], [x1, y1] = pts[pts.length - 1], k = Math.abs(x1 - x0) >= Math.abs(y1 - y0) ? 1 : 0;
+    const out = [];
+    let n = 0, last = null;
+    for (const p of pts) { if (last !== null && p[k] !== last) { out.push(n); n = 0; } n++; last = p[k]; }
+    out.push(n);
+    return out;
+  }
+  // A small burst over each thing just tidied, and one of Tori's gold stars
+  // when nothing's left. Over the canvas, never on it; not with reduced motion.
+  function pops(ed, H, cells, star) {
+    if (H.reduced()) return;
+    const cv = ed.st.cv, host = cv.parentNode;
+    const put = (cls, x, y, html) => {
+      const el = document.createElement("i");
+      el.className = cls; el.setAttribute("aria-hidden", "true");
+      el.style.left = cv.offsetLeft + x + "px"; el.style.top = cv.offsetTop + y + "px";
+      if (html) el.innerHTML = html;
+      host.appendChild(el);
+      el.addEventListener("animationend", () => el.remove());
+      setTimeout(() => el.remove(), 2000);
+    };
+    for (const [x, y] of cells.slice(0, 10)) { const p = ed.st.toView(x + 0.5, y + 0.5); put("sx__pop", p.x, p.y); }
+    if (star) { const m = ed.st.toView(ed.doc.w / 2, ed.doc.h / 2); put("sx__star", m.x, m.y, iconSVG("star", 64)); }
+  }
+
+  /* ── Polish ────────────────────────────────────────────── */
+  // What's left to tidy, found again after every change. While Polish is on,
+  // each thing tidied chimes, and the last one plays a little run.
+  function polishCheck(ed, H) {
+    if (!P || !ed.doc.bitmap) return;
+    const before = ed.pol, was = before ? before.total : null;
+    ed.pol = P.find(ed.doc.bitmap, ed.doc.w, ed.doc.h);
+    if (!ed.polish || was === null || ed.pol.total === was) return;
+    // The status line keeps count, unless it's saying something else.
+    const said = String((ed.win && ed.win.status) || "");
+    if (!said || /^(Polish|Clean|Gold)/.test(said)) H.status(ed, ed.pol.total ? polishLine(ed) : "Gold star: clean. Nothing left for Polish to ring.");
+    if (ed.pol.total > was) return;
+    const still = new Set(ed.pol.marks.map((m) => m.x + "," + m.y));
+    pops(ed, H, before.marks.filter((m) => !still.has(m.x + "," + m.y)).map((m) => [m.x, m.y]), !ed.pol.total);
+    H.sound(ed.pol.total ? "polish-fix" : "polish-clean");
+  }
+  // "Polish rings 3 lone pixels and 1 doubled corner."
+  function polishLine(ed) {
+    const pol = ed.pol;
+    if (!pol || !pol.total) return ed.doc.bitmap.some(Boolean) ? "Polish: nothing to tidy. It's clean." : "Polish rings what's worth tidying, once there's something drawn.";
+    const parts = P.KINDS.filter((k) => pol.counts[k.id]).map((k) => P.say(k.id, pol.counts[k.id]));
+    return "Polish rings " + (parts.length > 1 ? parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1] : parts[0]) + ".";
+  }
+  // What each ring means, and what to do about the first kind still showing.
+  const POLISH_TIPS = {
+    stray: "A lone pixel is noise, unless it's a glint you meant. A pinhole wants filling.",
+    double: "A doubled corner: take the pixel at the corner of the L out.",
+    step: "An uneven step: even the run out with the ones round it, or redraw with Line and Shift.",
+  };
+  function paintPolish(ed, ctx, b, z) {
+    const colour = Object.fromEntries(P.KINDS.map((k) => [k.id, k.colour]));
+    ctx.save();
+    for (const m of ed.pol.marks.slice(0, 5000)) {
+      const x = b.x + m.x * z, y = b.y + m.y * z;
+      ctx.beginPath();
+      if (z >= 8) ctx.rect(Math.round(x) + 1.5, Math.round(y) + 1.5, Math.max(1, Math.round(z) - 3), Math.max(1, Math.round(z) - 3));
+      else ctx.arc(x + z / 2, y + z / 2, Math.max(3, z * 0.9), 0, Math.PI * 2);
+      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(0,0,0,.55)"; ctx.stroke();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = colour[m.kind]; ctx.stroke();
+    }
+    ctx.restore();
+  }
 
   /* ── drawing ───────────────────────────────────────────── */
   function render(ed, H, o) {
     if (!ed.body.isConnected) return;
+    D.syncFrame(ed.doc);
+    polishCheck(ed, H);
     draw(ed);
+    paintTime(ed, H);
     if (o.panels !== false) { paintOpts(ed, H); paintSide(ed); }
     paintRail(ed, H);
     if (H.painted) H.painted(ed);
@@ -345,6 +580,7 @@ const SuitePixelEd = (() => {
     st.board(ctx, doc);
     ctx.imageSmoothingEnabled = false;
     st.docTransform(ctx);
+    if (ed.onion && framesOK(ed) && doc.frames) onion(ed, ctx);
     R.draw(ctx, doc, { scale: 1, checker: false });
     st.viewTransform(ctx);
     const z = st.zoom, b = st.toView(0, 0), cw = doc.w * z, ch = doc.h * z;
@@ -359,6 +595,7 @@ const SuitePixelEd = (() => {
     if (ed.grid && f) st.grid(ctx, doc, f);
     st.guides(ctx, doc, null);
     if (ed.ghost) st.ghostGuide(ctx, ed.ghost.axis, ed.ghost.v);
+    if (ed.polish && ed.pol && ed.pol.total && !ed.drag) paintPolish(ed, ctx, b, z);
     const look = st.look;
     ctx.save(); ctx.strokeStyle = look.smart; ctx.setLineDash([5, 4]);
     if (ed.mx) { ctx.beginPath(); ctx.moveTo(b.x + cw / 2, b.y - 8); ctx.lineTo(b.x + cw / 2, b.y + ch + 8); ctx.stroke(); }
@@ -423,6 +660,8 @@ const SuitePixelEd = (() => {
   function paintPreview(ed) {
     const c = ed.body.querySelector(".sx__pvc");
     if (!c) return;
+    const frames = D.framesOf(ed.doc);
+    const doc = ed.playing && frames.length > 1 ? Object.assign({}, ed.doc, { bitmap: frames[ed.pvFrame % frames.length].px }) : ed.doc;
     const v = ed.looks || {}, n = v.tile ? 3 : 1;
     const k = Math.max(1, Math.floor(Math.min(112 / (ed.doc.w * n), 112 / (ed.doc.h * n))));
     const one = document.createElement("canvas");
@@ -430,7 +669,7 @@ const SuitePixelEd = (() => {
     const g = one.getContext("2d");
     g.imageSmoothingEnabled = false;
     // Every drawn pixel in one dark ink, on plain ground: the shape alone.
-    R.draw(g, v.sil ? Object.assign({}, ed.doc, { bg: null }) : ed.doc, { scale: k, checker: !v.sil });
+    R.draw(g, v.sil ? Object.assign({}, doc, { bg: null }) : doc, { scale: k, checker: !v.sil });
     if (v.sil) { g.globalCompositeOperation = "source-in"; g.fillStyle = "#0A0A0A"; g.fillRect(0, 0, one.width, one.height); }
     c.width = one.width * n; c.height = one.height * n;
     const ctx = c.getContext("2d");
@@ -441,6 +680,15 @@ const SuitePixelEd = (() => {
     ed.body.querySelectorAll("[data-pv]").forEach((b) => { const on = !!v[b.dataset.pv]; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); });
   }
   function paintSide(ed) {
+    const sec = ed.body.querySelector(".sx__panel--pol");
+    if (sec && P) {
+      sec.hidden = !ed.polish;
+      const pol = ed.pol || { total: 0, counts: {} }, first = P.KINDS.find((k) => pol.counts[k.id]);
+      if (ed.polish) sec.querySelector(".sx__pol").innerHTML = pol.total
+        ? P.KINDS.filter((k) => pol.counts[k.id]).map((k) => '<p class="sx__polk"><i style="border-color:' + k.colour + '"></i>' + esc(P.say(k.id, pol.counts[k.id])) + "</p>").join("") +
+          '<p class="sx__hint">' + esc(POLISH_TIPS[first.id]) + "</p>"
+        : '<p class="sx__polk sx__polk--ok">' + (ed.doc.bitmap.some(Boolean) ? "Clean. Nothing to tidy." : "Nothing drawn yet.") + "</p>";
+    }
     const used = [...new Set(ed.doc.bitmap.filter(Boolean))];
     ed.body.querySelector(".sx__used").innerHTML = used.length
       ? used.map((c) => '<button class="sx__chip" data-pal="' + c + '" style="background:' + c + '" title="' + c + ' — draw with it"></button>').join("") +
@@ -488,6 +736,19 @@ const SuitePixelEd = (() => {
     H.status(ed, "Every " + (f.was || "empty") + " pixel is " + (f.ink || "empty") + " now, all over the sprite.");
   }
   const cell = (ed, e) => { const p = ed.st.toDoc(e); return [Math.floor(p.x), Math.floor(p.y)]; };
+  // The pixels a fill from x, y would cover (4-connected, one colour).
+  function region(doc, x, y) {
+    const target = D.getPx(doc, x, y), out = [], seen = new Uint8Array(doc.w * doc.h), stack = [[x, y]];
+    if (target === null) return out;
+    while (stack.length) {
+      const [px, py] = stack.pop();
+      if (px < 0 || py < 0 || px >= doc.w || py >= doc.h || seen[py * doc.w + px] || D.getPx(doc, px, py) !== target) continue;
+      seen[py * doc.w + px] = 1;
+      out.push([px, py]);
+      stack.push([px + 1, py], [px - 1, py], [px, py + 1], [px, py - 1]);
+    }
+    return out;
+  }
 
   function down(ed, H, e) {
     const [x, y] = cell(ed, e), doc = ed.doc, pre = JSON.stringify(doc);
@@ -503,19 +764,25 @@ const SuitePixelEd = (() => {
       const f = ed.lastFill;
       if (f && f.x === x && f.y === y && Date.now() - f.at < 500) return;
       ed.lastFill = { x, y, was: D.getPx(doc, x, y) || "", ink: inkOf(ed), at: Date.now() };
-      if (ed.fillAll) { ed.lastFill.at = 0; swapColour(ed, ed.lastFill.was, inkOf(ed)); H.record(ed, pre); render(ed, H, {}); return; }
-      for (const [px, py] of mirrored(ed, [[x, y]])) D.fill(doc, px, py, inkOf(ed));
-      H.record(ed, pre); render(ed, H, {}); return;
+      if (ed.fillAll && !ditherOn(ed) && lands(ed, x, y, inkOf(ed), false)) { ed.lastFill.at = 0; swapColour(ed, ed.lastFill.was, inkOf(ed)); H.record(ed, pre); H.sound("layer"); render(ed, H, {}); return; }
+      for (const [px, py] of mirrored(ed, [[x, y]])) {
+        if (!lands(ed, px, py, inkOf(ed), false)) continue;
+        if (ditherOn(ed)) { for (const [qx, qy] of region(doc, px, py)) if (DITHERS[ed.dither](qx, qy)) D.setPx(doc, qx, qy, inkOf(ed)); }
+        else D.fill(doc, px, py, inkOf(ed));
+      }
+      H.record(ed, pre); H.sound("layer"); render(ed, H, {}); return;
     }
     if (t === "pencil" || t === "erase") {
       // Shift-click: a straight line on from where the last stroke ended.
       if (e.shiftKey && ed.lastPx && inDoc(ed, ed.lastPx[0], ed.lastPx[1])) {
-        paintPts(ed, dab(ed, linePts(ed.lastPx[0], ed.lastPx[1], x, y)), inkOf(ed));
+        const pts = linePts(ed.lastPx[0], ed.lastPx[1], x, y);
+        paintPts(ed, dab(ed, pts), inkOf(ed));
+        H.sound("px-line", { runs: runsOf(pts), h: rampStep(ed.doc, inkOf(ed)) });
         ed.lastPx = [x, y]; ed.rightInk = false;
         H.record(ed, pre); render(ed, H, {}); return;
       }
       ed.drag = { mode: "paint", pre, last: [x, y], trail: [], orig: new Map() };
-      strokeTo(ed, ed.drag, [[x, y]]);
+      strokeTo(ed, H, ed.drag, [[x, y]]);
       draw(ed); return;
     }
     if (["line", "rect", "ellipse"].includes(t)) { ed.drag = { mode: "shape", pre, from: [x, y], to: [x, y] }; draw(ed); return; }
@@ -547,7 +814,7 @@ const SuitePixelEd = (() => {
     const d = ed.drag, [x, y] = cell(ed, e);
     if (ed.tool === "pen" && ed.pen && !d) return;
     if (!d) { ed.st.cv.style.cursor = T.cursor(ed.tool, { overSel: ed.tool === "select" && !!ed.mask && inMask(ed, x - (ed.float ? ed.float.dx : 0), y - (ed.float ? ed.float.dy : 0)) }); return; }
-    if (d.mode === "paint") { strokeTo(ed, d, linePts(d.last[0], d.last[1], x, y).slice(1)); d.last = [x, y]; draw(ed); return; }
+    if (d.mode === "paint") { strokeTo(ed, H, d, linePts(d.last[0], d.last[1], x, y).slice(1)); d.last = [x, y]; draw(ed); return; }
     if (d.mode === "shape") {
       let [x1, y1] = [x, y];
       if (e.shiftKey && ed.tool !== "line") { const m = Math.max(Math.abs(x1 - d.from[0]), Math.abs(y1 - d.from[1])); x1 = d.from[0] + Math.sign(x1 - d.from[0] || 1) * m; y1 = d.from[1] + Math.sign(y1 - d.from[1] || 1) * m; }
@@ -572,7 +839,12 @@ const SuitePixelEd = (() => {
     ed.drag = null;
     if (!d) return;
     if (d.mode === "paint") { ed.lastPx = d.last; ed.rightInk = false; H.record(ed, d.pre); render(ed, H, {}); return; }
-    if (d.mode === "shape") { paintPts(ed, previewPts(Object.assign({}, ed, { drag: d, pen: null, stamp: null })), inkOf(ed)); ed.rightInk = false; H.record(ed, d.pre); H.sound("layer"); render(ed, H, {}); return; }
+    if (d.mode === "shape") {
+      const pts = previewPts(Object.assign({}, ed, { drag: d, pen: null, stamp: null })), ink = inkOf(ed);
+      paintPts(ed, pts, ink, ed.filled && ed.tool !== "line"); ed.rightInk = false; H.record(ed, d.pre);
+      if (ed.tool === "line") H.sound("px-line", { runs: runsOf(pts), h: rampStep(ed.doc, ink) }); else H.sound("layer");
+      render(ed, H, {}); return;
+    }
     if (d.mode === "marquee") {
       const [x0, y0, x1, y1] = d.box, w = ed.doc.w;
       const m = (d.add || d.sub) && ed.mask ? ed.mask : new Uint8Array(w * ed.doc.h);
@@ -772,6 +1044,7 @@ const SuitePixelEd = (() => {
     if (mod && k === "v") { return pasteSel(ed, H); }
     if (e.shiftKey && !mod && ed.mask && ["h", "v", "r"].includes(k)) { selectionAct(ed, H, { h: "fliph", v: "flipv", r: "rotate" }[k]); return true; }
     if (mod || e.altKey) return false;
+    if ((e.key === "," || e.key === ".") && framesOK(ed) && ed.doc.frames) { frameAct(ed, H, e.key === "." ? "next" : "prev"); return true; }
     if (k === "x" && mirrorOK(ed)) { ed.mx = !ed.mx; render(ed, H, {}); return true; }
     const id = T.keyMap("pixel", TOOLS)[k];
     if (id) { setTool(ed, H, id); return true; }
@@ -832,15 +1105,27 @@ const SuitePixelEd = (() => {
       '<button class="sx__tb' + (ed.fillAll ? " on" : "") + '" data-o="fill:all" aria-pressed="' + ed.fillAll + '" title="Swap that colour everywhere in the sprite (also: double-click)">Every pixel</button><span class="sx__osep"></span>';
     if (ed.tool === "wand") h += '<label class="sx__num"><span>TOLERANCE</span><input type="number" data-o="tol" min="0" max="255" step="4" value="' + tolerance(ed) + '"></label><span class="sx__osep"></span>';
     if ((ed.tool === "select" || ed.tool === "wand") && !ed.mask) h += '<span class="sx__olab">SELECTION</span>' + ib("sel:all", "f-rect", "Select everything (⌘A)") + '<span class="sx__osep"></span>';
+    // The pro inks, once earned: shading and dither for the brush, lock alpha
+    // for everything that paints.
+    const inks = [];
+    if (ed.tool === "pencil" && ed.bonus.includes("shade")) inks.push(ib("shade", "ink-shade", "Shading ink: each pixel you pass steps one along the ramp, darker (right button: lighter)", ed.shade));
+    if (["pencil", "erase", "fill", "rect", "ellipse"].includes(ed.tool) && ed.bonus.includes("dither"))
+      inks.push(ib("dither", "ink-dither", "Dither: paint a checker, " + (ed.dither ? ed.dither + "% now; click for " + (ed.dither === 50 ? "25%" : "off") : "50%; click again for 25%") + (["rect", "ellipse"].includes(ed.tool) ? " (filled shapes)" : ""), !!ed.dither)
+        .replace("</button>", ed.dither ? '<b class="sx__badge sx__badge--ink">' + ed.dither + "</b></button>" : "</button>"));
+    if (["pencil", "erase", "fill", "line", "rect", "ellipse", "pen", "text"].includes(ed.tool) && ed.bonus.includes("lockalpha"))
+      inks.push(ib("lockalpha", "lock-alpha", "Lock alpha: paint lands only on pixels already drawn, and nothing is rubbed out", ed.lockAlpha));
+    if (inks.length) h += '<span class="sx__olab">INK</span>' + inks.join("") + '<span class="sx__osep"></span>';
     if (ed.mask) h += '<span class="sx__olab">SELECTION</span>' + ib("sel:paint", "t-fill", "Recolour what's drawn in it") + ib("sel:fillsel", "f-rect", "Fill it") +
       ib("sel:fliph", "flip-h", "Flip it left to right (Shift+H)") + ib("sel:flipv", "flip-v", "Flip it top to bottom (Shift+V)") + ib("sel:rotate", "rot90", "Turn it a quarter clockwise (Shift+R)") +
       ib("sel:outline", "s-outline", "Outline what's in it, one pixel, in the drawing colour") +
       ib("sel:invert", "c-invert", "Select everything else (⌘I)") + ib("sel:grow", "plus", "Grow it by a pixel") + ib("sel:shrink", "l-del", "Shrink it by a pixel") +
       ib("sel:clear", "l-del", "Clear it (Del)") + ib("sel:card", "card", "Make it a card") + ib("sel:none", "none", "Deselect (Esc)") + '<span class="sx__osep"></span>';
     if (mirrorOK(ed)) h += ib("mx", "mirror", "Mirror left to right (X)", ed.mx) + ib("my", "mirror-h", "Mirror top to bottom", ed.my) + '<span class="sx__osep"></span>';
-    const f = ed.st.focus();
+    const f = ed.st.focus(), left = ed.pol ? ed.pol.total : 0;
     H.viewBar(ed, ib("grid", "grid", f ? "Tile grid " + Math.round(f.px) + " × " + Math.round(f.py) + " px" : "Tile grid: pull two guides down and two across", ed.grid && !!f, !f).replace('data-o="', 'data-v="') +
-      ib("clearguides", "guides-x", "Clear all guides", false, !(ed.doc.guides && (ed.doc.guides.v.length || ed.doc.guides.h.length))).replace('data-o="', 'data-v="'));
+      ib("clearguides", "guides-x", "Clear all guides", false, !(ed.doc.guides && (ed.doc.guides.v.length || ed.doc.guides.h.length))).replace('data-o="', 'data-v="') +
+      ib("polish", "polish", "Polish: ring what a pixel artist would tidy: lone pixels, doubled corners, uneven steps", ed.polish).replace('data-o="', 'data-v="')
+        .replace("</button>", ed.polish ? '<b class="sx__badge' + (left ? "" : " sx__badge--ok") + '">' + (left > 99 ? "99+" : left) + "</b></button>" : "</button>"));
     h += '<span class="sx__ospace"></span>' +
       '<span class="sx__pal">' + ed.doc.palette.map((c) => '<button class="sx__chip' + (c === ed.fg ? " on" : "") + '" data-pal="' + c + '" style="background:' + c + '" title="' + c + ' — Alt-click to remove"></button>').join("") +
       '<button class="sx__chip sx__chip--add" data-o="addpal" title="Add the drawing colour">+</button></span>';
@@ -862,12 +1147,25 @@ const SuitePixelEd = (() => {
       if (o === "outline" || o === "filled") { ed.filled = o === "filled"; paintOpts(ed, H); }
       if (o === "perfect") { ed.perfect = !ed.perfect; H.remember(ed); paintOpts(ed, H); H.sound("tool"); }
       if (o === "fill:joined" || o === "fill:all") { ed.fillAll = o === "fill:all"; H.remember(ed); paintOpts(ed, H); H.sound("tool"); }
+      if (o === "shade") { ed.shade = !ed.shade; paintOpts(ed, H); H.sound("tool"); H.status(ed, ed.shade ? "Shading ink: drag over pixels to step them darker along the ramp; the right button steps them lighter." : ""); }
+      if (o === "dither") { ed.dither = ed.dither === 50 ? 25 : ed.dither === 25 ? 0 : 50; paintOpts(ed, H); H.sound("tool"); H.status(ed, ed.dither ? "Dither: a " + ed.dither + "% checker, fixed to the sprite's grid so strokes and fills mesh." : ""); }
+      if (o === "lockalpha") { ed.lockAlpha = !ed.lockAlpha; paintOpts(ed, H); H.sound("tool"); H.status(ed, ed.lockAlpha ? "Lock alpha: only pixels already drawn take paint, and none are rubbed out." : ""); }
       if (o === "mx") { ed.mx = !ed.mx; render(ed, H, {}); }
       if (o === "my") { ed.my = !ed.my; render(ed, H, {}); }
       if (o === "grid") { ed.grid = !ed.grid; render(ed, H, {}); }
       if (o === "stamp") commitStamp(ed, H);
       if (o === "addpal") H.mutate(ed, () => { if (!ed.doc.palette.includes(ed.fg)) ed.doc.palette.push(ed.fg); });
       if (o && o.startsWith("sel:")) selectionAct(ed, H, o.slice(4));
+      if (o && o.startsWith("fr:")) frameAct(ed, H, o.slice(3));
+    });
+    ed.body.addEventListener("click", (e) => {
+      const f = e.target.closest("[data-fr]");
+      if (!f || !ed.doc.frames) return;
+      commitFloat(ed, H); finishPen(ed, H, true);
+      D.goFrame(ed.doc, Number(f.dataset.fr));
+      render(ed, H, {});
+      H.sound("tool");
+      H.status(ed, "Frame " + (ed.doc.frame + 1) + " of " + ed.doc.frames.length + ".");
     });
     ed.body.addEventListener("input", (e) => {
       const t = e.target;
@@ -884,6 +1182,7 @@ const SuitePixelEd = (() => {
         if (ed.win && ed.win.cut) { ed.win.cut.tol = v; if (ed.win.drawers && ed.win.drawers.repaint) ed.win.drawers.repaint("cutout"); }
         paintOpts(ed, H); return;
       }
+      if (e.target.dataset.o === "frms") { H.mutate(ed, () => D.frameMs(ed.doc, Number(e.target.value))); return; }
       if (e.target.dataset.o === "face") {
         ed.face = Number(e.target.value) || 0;
         if (ed.stamp) { const [face, size, weight] = FACES[ed.face]; ed.stamp.pts = textPts(ed.stamp.text, face, size, weight); draw(ed); }
@@ -899,7 +1198,7 @@ const SuitePixelEd = (() => {
     });
   }
 
-  return { mount, TOOLS, brushPts, selInvert, selGrow, selShrink, clipCopy, clipPaste, linePts, rectPts, ellipsePts, curvePts, perfectDrop, cleanLine, selTransform, selOutline, withFloat };
+  return { mount, TOOLS, DITHERS, brushPts, selInvert, selGrow, selShrink, clipCopy, clipPaste, linePts, rectPts, ellipsePts, curvePts, perfectDrop, cleanLine, selTransform, selOutline, withFloat, rampOf, shadeStep };
 })();
 
 if (typeof module !== "undefined") module.exports = SuitePixelEd;
