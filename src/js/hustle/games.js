@@ -25,6 +25,7 @@ const HustleGames = (() => {
   const ENGINES = {
     cards: "HustleCardGame",
     walk: "HustleWalk",
+    micro: "HustleMicro",
   };
 
   /* ── the Millbrook market's people ───────────────────────
@@ -225,6 +226,82 @@ const HustleGames = (() => {
           talk: { start: { say: "you came!! ok. it was here. right here. talk to everyone, they all saw it. well. most of them." } } },
       ],
       things: {},
+    },
+
+    // Nell made a fan game. Of course she did. It's about the relay.
+    "otp-banner": {
+      engine: "micro", id: "relay", site: "thebatonpass.net", scene: "track",
+      title: "RELAY RUN — The Baton Pass", name: "RELAY RUN", button: "Relay Run", icon: "gamepad",
+      ink: { bg: "#1E1430", panel: "#2A1C40", fg: "#FFF1E0", dim: "#B89AC8", hi: "#F07A1C", lo: "#140C22" },
+      blurb: "Nell's fan game: a run of tiny relay games, a few seconds each. The research clock stops while you play.",
+      intro: "RELAY RUN!! a fan game i made. one word, then do it before the fuse burns out. Space or click. arrows to move.",
+      go: "GO GO GO",
+      more: "there's more lore in it if u keep going!!",
+      done: "that's all the lore i hid in it lol",
+      grants: ["sweatband", "fringe", "ep12"],
+      cast: { runner: { skin: "#F2C9A8", hair: "#5A2E1E", top: "#F07A1C", legs: "#1B2A4A" } },
+      games: [
+        { kind: "mash", cmd: "RUN!", art: "run", need: 12, color: "#F07A1C", hint: "SPACE SPACE SPACE" },
+        { kind: "catch", cmd: "CATCH!", good: "band", bad: "bottle", need: 2, catcher: "hands", color: "#F07A1C", hint: "THE ORANGE BAND",
+          grant: "sweatband", say: "Toma's orange sweatband. He never races without it. It's in every episode's key art, if you look." },
+        { kind: "pick", cmd: "FIND KIYOSHI!", hint: "FRINGE OVER HIS LEFT EYE", answer: 0, options: [
+          { head: { skin: "#F7DCC2", hair: "#1B1512", top: "#1B2A4A", fringe: "left" } },
+          { head: { skin: "#F7DCC2", hair: "#1B1512", top: "#1B2A4A", fringe: "right" } },
+          { head: { skin: "#F2C9A8", hair: "#5A2E1E", top: "#F07A1C", band: "#F07A1C", cowlick: true } },
+        ], grant: "fringe", say: "Kiyoshi's fringe always covers his left eye. Always. The forum keeps a list of the three frames where it doesn't." },
+        { kind: "timing", cmd: "ZIP UP!", art: "zip", zone: [0.84, 0.97], v: 0.95, color: "#4A5E96", hint: "RIGHT TO THE TOP" },
+        { kind: "dodge", cmd: "DODGE!", items: ["cam", "bottle"], hint: "NO PHOTOS", cast: "runner" },
+        { kind: "mash", cmd: "FINISH!", art: "run", need: 14, color: "#E8805A", hint: "THE FINAL, AT DUSK",
+          grant: "ep12", say: "Episode 12: the relay final, run at dusk. Nell cried. Nell says everyone cried." },
+      ],
+    },
+
+    // The crew training on the Burger Baron site, which Dwayne found and does not mention.
+    "baron-burrito": {
+      engine: "micro", id: "drivethru", site: "burgerbaron.com", scene: "drive",
+      title: "DRIVE-THRU — Burger Baron #214", name: "DRIVE-THRU", button: "Work the window", icon: "gamepad",
+      ink: { bg: "#2A1010", panel: "#3A1616", fg: "#FFF4D6", dim: "#E0A89A", hi: "#FFC72C", lo: "#1C0A0A" },
+      blurb: "The crew training game on the Burger Baron site: a shift at the window, a few seconds a job. The research clock stops while you play.",
+      intro: "CREW TRAINING, STORE #214. Do what the word says before the fuse burns out. Space or click; arrows to move.",
+      go: "Your shift starts now.",
+      more: "Keep going. The training has more to teach.",
+      done: "Training complete. The Baron salutes you. He is not holding anything.",
+      grants: ["crownrule", "bestword", "opens"],
+      cast: { dodger: { skin: "#F2C9A8", hair: "#FFC72C", top: "#C8102E", legs: "#3A1A10", style: "cap", hat: "#FFC72C" } },
+      games: [
+        { kind: "mash", cmd: "WRAP!", art: "wrap", need: 11, color: "#FFC72C", hint: "ONE BURRITO" },
+        { kind: "balance", cmd: "LEVEL!", hint: "KEEP THE CROWN STRAIGHT",
+          grant: "crownrule", say: "Brand standards: the crown is never tilted and never cropped. Not by a degree. Not for a burrito." },
+        { kind: "pick", cmd: "PICK ONE!", hint: "WHAT CAN WE PRINT?", answer: 0, options: [
+          { text: "A BREAKFAST\nBURRITO" }, { text: "THE BEST\nBURRITO" }, { text: "BEST IN\nTOWN" },
+        ], grant: "bestword", say: "Never use the word best. Legal has asked twice. Dwayne printed both emails." },
+        { kind: "catch", cmd: "CATCH!", good: "hash", bad: "drink", need: 2, catcher: "tray", hint: "HASH BROWNS ONLY" },
+        { kind: "timing", cmd: "OPEN UP!", art: "clock", zone: [0.74, 0.84], v: 0.8, color: "#3E8A3A", hint: "AT SIX SHARP",
+          grant: "opens", say: "Store #214 opens at 6am, every day of the year. Dwayne is in at half past four." },
+        { kind: "dodge", cmd: "HANDS OFF!", hint: "THE BARON HOLDS NOTHING" },
+      ],
+    },
+
+    // Friday night, soup for the morning; Tori narrates.
+    "tori-mark": {
+      engine: "micro", id: "kitchen", site: "torisladle.com", scene: "kitchen",
+      title: "SOUP'S ON — Tori's kitchen", name: "SOUP'S ON", button: "Help in the kitchen", icon: "gamepad",
+      ink: { bg: "#2A1810", panel: "#3A2216", fg: "#FBF4E6", dim: "#D8B89A", hi: "#D9482B", lo: "#1C100A" },
+      blurb: "Friday night in Tori's kitchen, making the morning's soup, a few seconds a job. The research clock stops while you play.",
+      intro: "Friday night, soup for the morning. One word, then do it before the fuse burns down. Space or click; arrows to move.",
+      go: "Aprons on!",
+      more: "Keep going! There's more to learn in here. There's always more to learn.",
+      done: "That's everything my kitchen can teach you. Gold star.",
+      grants: ["parsley", "hat"],
+      games: [
+        { kind: "mash", cmd: "STIR!", art: "stir", need: 12, color: "#D9482B", hint: "ROUND AND ROUND" },
+        { kind: "drop", cmd: "GARNISH!", hint: "ON THE SOUP",
+          grant: "parsley", say: "A little parsley green on top. A little. Never a lot. That's the whole look of it." },
+        { kind: "pick", cmd: "SPOT THE SPOON!", hint: "IT'S WEARING A HAT", answer: 0, options: [{ art: "spoonhat" }, { art: "spoon" }, { art: "hat" }],
+          grant: "hat", say: "That's my old logo! Milo drew it when he was six. Everyone says it looks like a spoon wearing a hat. It's a ladle." },
+        { kind: "catch", cmd: "CATCH!", good: "carrot", bad: "sock", need: 2, catcher: "bowl", hint: "CARROTS, NOT SOCKS" },
+        { kind: "timing", cmd: "LADLE!", art: "ladle", zone: [0.42, 0.58], v: 1, color: "#D9482B", hint: "INTO THE CUP" },
+      ],
     },
   };
 
