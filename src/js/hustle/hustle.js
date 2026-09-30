@@ -25,7 +25,8 @@ const Hustle = (() => {
   const SYSTEM = "gigslist";
   const CLIP_MISS = 5, GAP_MISS = 30, GAP_TRIES = 2;
   // The pen is a core tool now: drawing characters by eye needs it from day one.
-  const UNLOCKS = [[5, "snap", "Snap to grid"], [10, "align", "Align"], [16, "gradient", "Gradients"], [24, "mirror", "Mirror drawing"]];
+  const UNLOCKS = [[5, "snap", "Snap to grid"], [8, "shade", "Shading ink, in Pixel"], [10, "align", "Align"], [13, "dither", "The dither brush, in Pixel"],
+    [16, "gradient", "Gradients"], [20, "lockalpha", "Lock alpha, in Pixel"], [24, "mirror", "Mirror drawing"], [28, "frames", "Frames: animation, in Pixel"]];
 
   let state = null;
   let clipping = true;
@@ -81,6 +82,8 @@ const Hustle = (() => {
     };
     // A call does not survive a restart: nobody is still on the line.
     for (const gs of Object.values(state.hustle.gigs)) if (gs && gs.line) gs.line = false;
+    // Tools added to the ladder since a save passed their standing come now.
+    for (const [min, tool] of UNLOCKS) if (state.hustle.rep >= min && typeof Suite !== "undefined" && Suite.unlock) Suite.unlock(tool);
     if (typeof Camera !== "undefined" && Camera.init) Camera.init({ get: () => G().me, set: (m) => { G().me = m; save(); }, done: (go) => welcome(go) });
     tune({ fullness: repFullness() });                // an unknown hears a sparse band
 
@@ -719,7 +722,7 @@ const Hustle = (() => {
       const gs = G().gigs[id];
       if (!gs) continue;
       if (gs.stage === "research") {
-        gs.research.left = Math.max(0, gs.research.left - 1);
+        if (!gameOn(id)) gs.research.left = Math.max(0, gs.research.left - 1);
         if (gs.research.left <= 0) endResearch(id, "time");
       } else if (gs.stage === "production") {
         gs.production.used += 1;
@@ -758,7 +761,7 @@ const Hustle = (() => {
   function timerText(id) {
     const gig = gigOf(id), gs = G().gigs[id];
     if (!gig || !gs) return "";
-    if (gs.stage === "research") return "research " + clock(gs.research.left);
+    if (gs.stage === "research") return "research " + clock(gs.research.left) + (gameOn(id) ? " (stopped)" : "");
     if (gs.stage === "production") {
       const left = gig.deadline - gs.production.used;
       return left >= 0 ? "due in " + clock(left) : "late " + clock(-left);
@@ -778,6 +781,8 @@ const Hustle = (() => {
         parts.push('<span class="hx-tb__gig"><b>' + esc(gig.short) + '</b> <span class="hx-tb__t" data-hx-timer="' + rid + '">' + timerText(rid) + "</span></span>");
         parts.push('<button class="w98btn w98btn--i" data-hx="ticket" data-gig="' + rid + '" title="The brief, what you have found, and delivery">' + iconSVG("ticket", 16) + "<span>Ticket</span></button>");
         parts.push('<button class="w98btn w98btn--i" data-hx="compare" data-gig="' + rid + '" title="Compare rivals: the row nobody does is the gap">' + iconSVG("compare", 16) + "<span>Compare</span></button>");
+        const game = GAMES[rid];
+        if (game && host === game.site) parts.push('<button class="w98btn w98btn--i hx-tb--game" data-hx="game" data-gig="' + rid + '" title="' + esc(game.blurb) + '">' + iconSVG("cards", 16) + "<span>" + esc(game.button) + "</span></button>");
         const here = foundHere(rid, host);
         if (here) {
           parts.push('<span class="hx-tb__here' + (here.total && here.got === here.total ? " done" : "") + '" title="What this site holds for ' + esc(gig.short) + '">' +
@@ -803,6 +808,7 @@ const Hustle = (() => {
       if (a === "pitch") pitch(id);
       if (a === "call") openCall(id);
       if (a === "retry") confirmRetry(el, id);
+      if (a === "game") playGame(id);
       if (a === "cut" && extra) {
         const tags = tagsForQuery(extra.q);
         Suite.cutoutFrom({ src: extra.src, label: extra.q, tags }, researchGig() || activeGigs()[0]);
@@ -831,6 +837,7 @@ const Hustle = (() => {
 
   function onNavigate(page) {
     const host = hostOf(page.url);
+    offerGame(host);
     const pid = Object.keys(H.gigs).find((k) => H.gigs[k].kind === "prospect" && H.gigs[k].site === host);
     if (pid && !G().prospects[host]) {
       G().prospects[host] = { discovered: now() };
@@ -839,6 +846,99 @@ const Hustle = (() => {
       save();
       Web.refreshTools();
     }
+  }
+
+  /* ── research games ──────────────────────────────────────
+   * Some clients' worlds hide a game: Dennis's site, untouched since about
+   * 2004, pops up a card trick. Playing is never needed, since everything a
+   * need rests on is on the pages. It costs nothing but time: the research
+   * clock stops while its window is up, and a wrong call costs a few seconds.
+   * What it wins comes through the usual pipes, once a gig: cards in the
+   * tray, and a bonus tool lent for that job alone. You can play again for
+   * the fun of it. The game itself: cardtrick.js (the rules) and cardgame.js
+   * (the show).
+   */
+  const GAMES = {
+    "dennis-wordmark": {
+      id: "cardtrick", site: "improbabledennis.com", button: "Pick a card",
+      blurb: "Dennis's card trick. The research clock stops while you play.",
+      prize: {
+        cards: [
+          { kind: "fact", label: "His signature card: the King of Spades, in black and gold", value: "Dennis ends every card trick on the King of Spades, from a black-and-gold deck. \"Black and gold, like the act.\"", tags: ["signature"] },
+          { kind: "colour", label: "Card-back black", value: "#141414", tags: ["black"] },
+          { kind: "colour", label: "Deck gold", value: "#D4AF37", tags: ["gold"] },
+        ],
+        loan: "align",
+        note: "His signature card and his black and gold are on cards in your tray, and he's lent you Align for this job.",
+        says: "It's on a card in your tray, with my black and gold. And borrow my Align, for this job only.",
+      },
+    },
+  };
+  const GAME_MISS = 5;                               // seconds a wrong call costs
+  const gameKey = (id) => "game:" + id, popKey = (id) => "popup:" + id;
+  const gameOn = (id) => { const w = GAMES[id] && getWin(gameKey(id)); return !!(w && !w.el.classList.contains("min")); };
+  const gameState = (id) => { const gs = gsOf(id); gs.games = gs.games || {}; return gs.games[GAMES[id].id] || (gs.games[GAMES[id].id] = { goes: 0 }); };
+
+  // A 2004 site: of course there's a pop-up. Only while its gig is being
+  // researched, not once you've caught the trick or said no thanks; the
+  // research bar keeps a way back to it either way.
+  function offerGame(host) {
+    const id = Object.keys(GAMES).find((k) => GAMES[k].site === host && stageOf(k) === "research");
+    if (!id) return;
+    const g = gameState(id);
+    if (g.won || g.nope || getWin(gameKey(id)) || getWin(popKey(id))) return;
+    setTimeout(() => { if (stageOf(id) === "research" && hostOf(Web.currentURL() || "") === host && !getWin(popKey(id))) popUp(id); }, 900);
+  }
+  function popUp(id) {
+    const w = createWindow({ key: popKey(id), title: "*** PICK A CARD!!! ***", iconId: "cards", w: 300, h: 236, minW: 280, minH: 220, className: "w98--popad" });
+    w.client.innerHTML = '<div class="popad"><p class="popad__h">Think of a card.<br>ANY card!</p>' +
+      '<p class="popad__p">The Improbable Dennis will make it <b class="popad__blink">VANISH</b> before your very eyes!</p>' +
+      '<div class="popad__b"><button class="w98btn" data-pop="play">Play now!</button><button class="w98btn" data-pop="no">No thanks</button></div>' +
+      '<p class="popad__f">Your research clock stops while you play.</p></div>';
+    w.client.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-pop]");
+      if (!b) return;
+      closeWin(w);
+      if (b.dataset.pop === "play") playGame(id);
+      else { gameState(id).nope = true; save(); }
+    });
+  }
+  function playGame(id) {
+    if (!GAMES[id] || typeof HustleCardGame === "undefined") return;
+    const pop = getWin(popKey(id));
+    if (pop) closeWin(pop);
+    const g = gameState(id), seed = (gsOf(id).run && gsOf(id).run.seed) || 1;
+    HustleCardGame.play({
+      key: gameKey(id),
+      seedFor: () => HustleCardTrick.seedFor(seed, g.goes || 0),
+      onResult: (kind) => gameResult(id, kind),
+      onClose: () => { save(); paintTray(); Web.refreshTools(); renderTicket(id); },
+    });
+    Web.refreshTools();
+  }
+  // Each go's result: a wrong call costs seconds, and the first catch wins
+  // the prize. Returns what Dennis should add about it.
+  function gameResult(id, kind) {
+    const spec = GAMES[id], gs = gsOf(id), g = gameState(id), gig = gigOf(id);
+    g.goes = (g.goes || 0) + 1;
+    let line = "";
+    if (kind === "wrong" && gs.stage === "research") {
+      gs.research.left = Math.max(0, gs.research.left - GAME_MISS);
+      line = "(−" + GAME_MISS + "s)";
+    }
+    if (kind === "caught" && !g.won) {
+      g.won = true;
+      Suite.addCards(spec.prize.cards.map((c) => Object.assign({}, c, { source: { url: "http://" + spec.site + "/", ref: "game:" + spec.id + ":" + c.label } })));
+      if (spec.prize.loan) gs.loans = [...new Set((gs.loans || []).concat(spec.prize.loan))];
+      if (Suite.refreshBonus) Suite.refreshBonus();
+      post(gig.poster.handle, "sys", "You caught the card trick. " + spec.prize.note, { gig: id, cta: "ticket" });
+      line = spec.prize.says;
+    } else if (kind === "caught") line = "You had my card already. Still, well spotted.";
+    save();
+    renderTicket(id);
+    paintTray();
+    if (gs.stage === "research" && gs.research.left <= 0) endResearch(id, "time");
+    return line;
   }
 
   /* ── gigslist ──────────────────────────────────────────── */
@@ -967,6 +1067,7 @@ const Hustle = (() => {
     const n = Object.values(G().threads).reduce((k, t) => k + unread(t), 0);
     pagerTrayEl.classList.toggle("has", n > 0);
     pagerTrayEl.querySelector(".tray__n").textContent = n ? String(n) : "";
+    setBadge("pager", n);
   }
 
   function balloon(title, text, onClick, quiet) {
@@ -997,7 +1098,7 @@ const Hustle = (() => {
   function openPager() {
     let w = getWin("pager");
     if (!w) {
-      w = createWindow({ key: "pager", title: "PAGER", iconId: "pager", w: 620, h: 460, minW: 440, minH: 320, className: "w98--pager" });
+      w = createWindow({ key: "pager", title: "PAGER", iconId: "pager", w: 620, h: 460, minW: 440, minH: 320, className: "w98--pager", frame: "ghost" });
       w.client.classList.add("client--flush");
       w.client.addEventListener("click", onPagerClick);
       pagerMini = false;
@@ -1174,7 +1275,7 @@ const Hustle = (() => {
     if (!w) {
       w = createWindow({
         key: callKey(id), title: "CALL — " + String(who.co || gig.poster.name).toUpperCase(),
-        iconId: "pager", w: DOCK_W, h: 700, minW: 240, minH: 420, className: "w98--call",
+        iconId: "pager", w: DOCK_W, h: 700, minW: 240, minH: 420, className: "w98--call", frame: "ghost",
         onClose: () => hangUp(id),
       });
       w.client.classList.add("client--flush");
@@ -1530,7 +1631,7 @@ const Hustle = (() => {
     if (!w && !open) return;
     const gig = gigOf(id), gs = gsOf(id);
     if (!w) {
-      w = createWindow({ key, title: "TICKET — " + gig.short, iconId: "ticket", w: 620, h: 520, minW: 460, minH: 360, className: "w98--ticket" });
+      w = createWindow({ key, title: "TICKET — " + gig.short, iconId: "ticket", w: 620, h: 520, minW: 460, minH: 360, className: "w98--ticket", frame: "ghost" });
       w.client.classList.add("client--flush");
       w.client.addEventListener("click", (e) => {
         const b = e.target.closest("[data-tk]");
@@ -1614,7 +1715,7 @@ const Hustle = (() => {
     if (!w && !open) return;
     const gig = gigOf(id), gs = gsOf(id);
     if (!w) {
-      w = createWindow({ key, title: "COMPARE — " + gig.short, iconId: "ticket", w: 560, h: 380, minW: 420, minH: 280, className: "w98--compare" });
+      w = createWindow({ key, title: "COMPARE — " + gig.short, iconId: "ticket", w: 560, h: 380, minW: 420, minH: 280, className: "w98--compare", frame: "ghost" });
       w.client.classList.add("client--flush");
       w.client.addEventListener("click", (e) => {
         const b = e.target.closest("[data-gap]");
@@ -1645,6 +1746,8 @@ const Hustle = (() => {
     // The gig as this save plays it (its run), for anything else that reads a
     // brief: the Brief panel should see the same run as the scorer.
     gig: (id) => gigOf(id),
+    // Bonus tools lent for one job (a research game's prize): the suite adds them.
+    loans: (id) => (state && state.hustle && state.hustle.gigs[id] && state.hustle.gigs[id].loans) || [],
     board: () => Web.visit(GL("/")),
     rep: () => (state ? G().rep : 0),
     // For testing and for the content pipeline: the whole game state.

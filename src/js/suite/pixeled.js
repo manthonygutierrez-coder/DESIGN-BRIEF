@@ -15,6 +15,9 @@ const SuitePixelEd = (() => {
   const X = typeof SuiteCutout !== "undefined" ? SuiteCutout : need("SuiteCutout", "./cutout.js");
   const Sh = typeof SuiteShapes !== "undefined" ? SuiteShapes : need("SuiteShapes", "./shapes.js");
   const R = typeof SuiteRender !== "undefined" ? SuiteRender : null;
+  const T = typeof SuiteTools !== "undefined" ? SuiteTools : need("SuiteTools", "./tools.js");
+  const F = typeof SuiteFrames !== "undefined" ? SuiteFrames : need("SuiteFrames", "./frames.js");
+  const P = typeof SuitePolish !== "undefined" ? SuitePolish : need("SuitePolish", "./polish.js");
   const TOOLS = [
     { id: "pencil", icon: "t-pencil", label: "Pencil (Shift-click: a line from the last pixel; Alt-click: pick a colour)", key: "b" },
     { id: "erase", icon: "t-erase", label: "Eraser (Shift-click: a line from the last pixel)", key: "e" },
@@ -25,7 +28,8 @@ const SuitePixelEd = (() => {
     { id: "ellipse", icon: "t-ellipse", label: "Ellipse (Shift: circle)", key: "o" },
     { id: "pen", icon: "t-pen", label: "Pen: click and drag a curve, Enter lays it down in pixels", key: "p" },
     { id: "text", icon: "t-text", label: "Type, stamped in a pixel face", key: "t" },
-    { id: "select", icon: "t-marquee", label: "Select: drag a box, then drag inside it to move", key: "m" },
+    { id: "select", icon: "t-marquee", label: "Select: drag a box, then drag inside it to move (Shift adds, Alt takes away)", key: "m" },
+    { id: "wand", icon: "c-wand", label: "Magic wand: click a colour to select it (Shift adds, Alt takes away)", key: "w" },
     { id: "hand", icon: "t-hand", label: "Hand (or hold Space)", key: "h" },
   ];
   const FACES = [["Silkscreen", 8, 400], ["Silkscreen", 16, 400], ["VT323", 16, 400], ["Silkscreen", 8, 700]];
@@ -34,9 +38,42 @@ const SuitePixelEd = (() => {
   const VIEWS = [
     ["sil", "v-sil", "Silhouette: does it read as a shape?"],
     ["grey", "v-grey", "Greyscale: are the lights and darks right?"],
-    ["tile", "v-tile", "Tiled three by three: does it repeat without seams?"],
+    ["tile", "v-tile", "Tiled: does it repeat without seams? (size and seam marks are under the picture)"],
+    ["walk", "v-walk", "Walk: the sprite over ground that slides by one step a frame: does it slip?"],
   ];
+  const TAG_COLOURS = ["#E0442B", "#3FA7E8", "#F0B429", "#4CAF50", "#B05FE0", "#FF7A9C", "#2FB3A6", "#9A9A9A"];
+  const GROUNDS = [["checker", "Checker"], ["dark", "Dark"], ["light", "Light"], ["grass", "Green"]];
+  const GROUND_FILL = { dark: "#1A1C22", light: "#EDEAE0", grass: "#3E7A4B" };
+  const SPEEDS = [0.25, 0.5, 1, 2, 4];
   const esc = (s) => String(s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+
+  /* ── the pro inks (Hustle earns them; Studio has them) ─── */
+  // Dither patterns, fixed to the sprite's own grid so strokes and fills mesh.
+  const DITHERS = {
+    50: (x, y) => (x + y) % 2 === 0,
+    25: (x, y) => x % 2 === 0 && y % 2 === 0,
+  };
+  const luma = (hex) => { const n = parseInt(String(hex).slice(1, 7), 16) || 0; return 0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255); };
+  // The ramp shading steps along: the palette, darkest to lightest, or the
+  // colours in the sprite when there is no palette to speak of.
+  function rampOf(palette, used) {
+    const pal = [...new Set((palette || []).filter(Boolean))];
+    const src = pal.length > 1 ? pal : [...new Set((used || []).filter(Boolean))];
+    return src.sort((a, b) => luma(a) - luma(b));
+  }
+  // One step along the ramp from colour c: dir -1 darker, +1 lighter. A colour
+  // not on the ramp steps from the nearest one on it; the ends stay put.
+  function shadeStep(ramp, c, dir) {
+    if (!c || !ramp.length) return c;
+    let i = ramp.indexOf(c);
+    if (i < 0) {
+      const rgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+      const [r, g, b] = rgb(c);
+      let best = Infinity;
+      ramp.forEach((h, k) => { const [R, G, B] = rgb(h), d = (R - r) ** 2 + (G - g) ** 2 + (B - b) ** 2; if (d < best) { best = d; i = k; } });
+    }
+    return ramp[Math.max(0, Math.min(ramp.length - 1, i + dir))];
+  }
 
   /* ── pixels a shape covers ─────────────────────────────── */
   function linePts(x0, y0, x1, y1) {
@@ -130,7 +167,18 @@ const SuitePixelEd = (() => {
       if (!inside(x, y)) continue;
       if (filled || !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1)) out.push([x, y]);
     }
-    return out;
+    if (filled) return out;
+    // Pixel-art curves have no doubled corners: where the outline turns
+    // through an L, the corner pixel goes. A square corner, both arms two or
+    // more long, stays.
+    const on = new Set(out.map(([x, y]) => x + "," + y)), has = (x, y) => on.has(x + "," + y);
+    const arm = (x, y, dx, dy) => { let n = 0; while (has(x + dx * (n + 1), y + dy * (n + 1))) n++; return n; };
+    for (const [x, y] of out) for (const ax of [-1, 1]) for (const cy of [-1, 1]) {
+      if (!has(x, y) || !has(x + ax, y) || !has(x, y + cy) || has(x + ax, y + cy) || has(x - ax, y) || has(x, y - cy)) continue;
+      if (arm(x, y, ax, 0) >= 2 && arm(x, y, 0, cy) >= 2) continue;
+      on.delete(x + "," + y);
+    }
+    return out.filter(([x, y]) => has(x, y));
   }
   // A curve as a one-pixel line: sampled finely, rounded, joined up.
   function curvePts(path) {
@@ -171,6 +219,54 @@ const SuitePixelEd = (() => {
     return out;
   }
 
+  // Every pixel a square brush of `size` covers when dabbed at (x, y).
+  function brushPts(x, y, size) {
+    const n = Math.max(1, Math.min(16, Math.round(size) || 1)), o = Math.floor((n - 1) / 2), out = [];
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) out.push([x - o + i, y - o + j]);
+    return out;
+  }
+  // Selections as masks (one byte a pixel): the other way round, one pixel
+  // bigger all round, one smaller.
+  const selInvert = (mask) => { const m = new Uint8Array(mask.length); for (let i = 0; i < mask.length; i++) m[i] = mask[i] ? 0 : 1; return m; };
+  function selGrow(mask, w, h) {
+    const m = Uint8Array.from(mask);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (mask[y * w + x]) continue;
+      if ((x > 0 && mask[y * w + x - 1]) || (x < w - 1 && mask[y * w + x + 1]) || (y > 0 && mask[(y - 1) * w + x]) || (y < h - 1 && mask[(y + 1) * w + x])) m[y * w + x] = 1;
+    }
+    return m;
+  }
+  function selShrink(mask, w, h) {
+    const m = new Uint8Array(mask.length);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (!mask[y * w + x]) continue;
+      const on = (a, b) => a >= 0 && b >= 0 && a < w && b < h && mask[b * w + a];
+      if (on(x - 1, y) && on(x + 1, y) && on(x, y - 1) && on(x, y + 1)) m[y * w + x] = 1;
+    }
+    return m;
+  }
+  // Copy what is drawn inside a selection, keeping its shape: { w, h, px:[[x, y, colour]] }
+  // relative to the selection's own top-left, or null when nothing drawn is in it.
+  function clipCopy(bitmap, mask, w, h) {
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let i = 0; i < mask.length; i++) if (mask[i]) { const x = i % w, y = (i / w) | 0; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    if (x1 < 0) return null;
+    const px = [];
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (mask[y * w + x] && bitmap[y * w + x]) px.push([x - x0, y - y0, bitmap[y * w + x]]);
+    return px.length ? { w: x1 - x0 + 1, h: y1 - y0 + 1, px } : null;
+  }
+  // A copy set down with its top-left at `at`: the pixels, and a selection over them.
+  function clipPaste(clip, w, h, at = [0, 0]) {
+    const px = [], mask = new Uint8Array(w * h);
+    for (const [x, y, c] of clip.px) {
+      const px1 = x + at[0], py1 = y + at[1];
+      if (px1 < 0 || py1 < 0 || px1 >= w || py1 >= h) continue;
+      px.push([px1, py1, c]); mask[py1 * w + px1] = 1;
+    }
+    return { px, mask };
+  }
+  let clip = null;                    // what was last copied, shared by every sprite
+
   /* ── mount ─────────────────────────────────────────────── */
   function mount(ed, H) {
     ed.body.innerHTML =
@@ -181,13 +277,18 @@ const SuitePixelEd = (() => {
         '<div class="sx__side sx__side--pixel">' +
           '<section class="sx__panel"><header class="sx__ph"><span>PREVIEW</span><span class="sx__pvv" role="group" aria-label="Ways to look">' +
             VIEWS.map(([id, icon, t]) => '<button class="sx__ib sx__ib--sm" data-pv="' + id + '" title="' + t + '" aria-pressed="false">' + iconSVG(icon, 16) + "</button>").join("") +
-          '</span></header><div class="sx__pv"><canvas class="sx__pvc"></canvas></div></section>' +
+          '</span></header><div class="sx__pv"><canvas class="sx__pvc"></canvas></div><div class="sx__pvo"></div></section>' +
+          '<section class="sx__panel sx__panel--pol" hidden><header class="sx__ph"><span>POLISH</span></header><div class="sx__pol"></div></section>' +
           '<section class="sx__panel sx__panel--grow"><header class="sx__ph"><span>COLOURS IN USE</span></header><div class="sx__used"></div></section>' +
         "</div>" +
-      "</div>";
+      "</div>" +
+      '<div class="sx__time" role="toolbar" aria-label="Frames" hidden></div>';
     Object.assign(ed, {
-      tool: ed.tool || "pencil", fg: ed.fg || "#0A0A0A", filled: !!ed.filled, mx: !!ed.mx, my: !!ed.my, face: ed.face || 0, perfect: ed.perfect !== false,
-      drag: null, pen: null, mask: null, float: null, stamp: null, grid: ed.grid !== false,
+      tool: ed.tool || "pencil", fg: ed.fg || "#0A0A0A", filled: !!ed.filled, mx: !!ed.mx, my: !!ed.my, face: ed.face || 0, perfect: ed.perfect !== false, size: ed.size || 1, fillAll: !!ed.fillAll,
+      drag: null, pen: null, mask: null, float: null, stamp: null, grid: ed.grid !== false, polish: !!ed.polish, pol: null,
+      shade: !!ed.shade, dither: ed.dither || 0, lockAlpha: !!ed.lockAlpha, onion: !!ed.onion, playing: false, pvFrame: 0,
+      onB: ed.onB == null ? 1 : ed.onB, onA: ed.onA == null ? 1 : ed.onA, tagSel: null, loopMode: ed.loopMode || "forward", speed: ed.speed || 1,
+      tiles: ed.tiles || 3, seam: !!ed.seam, pvBg: ed.pvBg || "checker", walkPx: ed.walkPx || 2, walkX: 0, pvPos: 0,
     });
     ed.opts = ed.body.querySelector(".sx__opts");
     ed.rail = ed.body.querySelector(".sx__rail");
@@ -214,11 +315,21 @@ const SuitePixelEd = (() => {
     ed.place = (src, name) => pixelate(ed, H, src, name);
     ed.selectedImage = () => null;
     ed.wand = (x, y, tol, add) => wandAt(ed, H, x, y, tol, add);
-    ed.unmount = () => { commitFloat(ed, H); finishPen(ed, H, true); };
+    ed.unmount = () => { commitFloat(ed, H); finishPen(ed, H, true); stopPlay(ed); };
+    // History hooks (suite.js): put a lifted selection down before undo, redo or a
+    // new document, forget a selection that no longer fits, and let autosave see
+    // the sprite with whatever is lifted off it laid back in.
+    ed.beforeHistory = () => { commitFloat(ed, H); };
+    ed.afterHistory = () => {
+      ed.float = null; ed.drag = null; ed.stamp = null;
+      if (ed.mask && ed.mask.length !== ed.doc.w * ed.doc.h) ed.mask = null;
+    };
+    ed.snapshotDoc = () => (ed.float ? Object.assign({}, ed.doc, { bitmap: withFloat(ed.doc.bitmap, ed.float, ed.doc.w, ed.doc.h) }) : ed.doc);
     ed.relook = () => { ed.st.look = SuiteStage.LOOKS[H.look()] || SuiteStage.LOOKS.graphite; draw(ed); };
     ed.viewClick = (o) => {
       if (o === "grid") { ed.grid = !ed.grid; render(ed, H, {}); }
       if (o === "clearguides") { H.mutate(ed, () => { ed.doc.guides = { v: [], h: [] }; }); H.status(ed, "Guides cleared."); }
+      if (o === "polish") { ed.polish = !ed.polish; render(ed, H, {}); H.sound(ed.polish ? "grid" : "tuck"); H.status(ed, ed.polish ? polishLine(ed) : ""); }
     };
     wirePointer(ed, H);
     wirePanels(ed, H);
@@ -242,18 +353,39 @@ const SuitePixelEd = (() => {
     }
     return out;
   }
-  function paintPts(ed, pts, colour) { for (const [x, y] of mirrored(ed, pts)) D.setPx(ed.doc, x, y, colour); }
+  // Points as the brush lays them: each one a dab of the brush's size.
+  const dab = (ed, pts) => (ed.size > 1 ? pts.flatMap(([x, y]) => brushPts(x, y, ed.size)) : pts);
+  function paintPts(ed, pts, colour, dithered) { for (const [x, y] of mirrored(ed, pts)) if (lands(ed, x, y, colour, dithered)) D.setPx(ed.doc, x, y, colour); }
   // A freehand stroke, pixel by pixel. It remembers what it painted over, so
   // with pixel-perfect on, an L-shaped corner can go back to what it was.
-  function strokeTo(ed, d, pts) {
+  // Each pixel that changes plucks a note: its colour's step in the ramp, so
+  // shading down a ramp plays a scale.
+  function strokeTo(ed, H, d, pts) {
     const ink = inkOf(ed), w = ed.doc.w;
+    // Shading ink: each pixel the stroke passes steps once along the ramp,
+    // darker, or lighter with the right button.
+    if (shadeOn(ed)) {
+      d.ramp = d.ramp || rampOf(ed.doc.palette, ed.doc.bitmap);
+      for (const p of pts) for (const [mx, my] of mirrored(ed, [p])) {
+        const k = my * w + mx, c = D.getPx(ed.doc, mx, my);
+        if (d.orig.has(k) || !c) continue;
+        d.orig.set(k, c);
+        const next = shadeStep(d.ramp, c, ed.rightInk ? 1 : -1);
+        if (next !== c) { D.setPx(ed.doc, mx, my, next); H.sound("px", { h: rampStep(ed.doc, next) }); }
+      }
+      return;
+    }
     for (const p of pts) {
       const l = d.trail[d.trail.length - 1];
       if (l && l[0] === p[0] && l[1] === p[1]) continue;
+      // A wide brush just dabs: there are no L-shaped corners to take back.
+      if (ed.size > 1) { paintPts(ed, brushPts(p[0], p[1], ed.size), ink, true); d.trail.push(p); if (d.trail.length > 3) d.trail.shift(); continue; }
       for (const [mx, my] of mirrored(ed, [p])) { const k = my * w + mx; if (!d.orig.has(k)) d.orig.set(k, D.getPx(ed.doc, mx, my) || ""); }
-      paintPts(ed, [p], ink);
+      const was = inDoc(ed, p[0], p[1]) ? D.getPx(ed.doc, p[0], p[1]) || "" : ink;
+      if (was !== ink && lands(ed, p[0], p[1], ink, true)) H.sound("px", { h: rampStep(ed.doc, ink || was), erase: !ink });
+      paintPts(ed, [p], ink, true);
       d.trail.push(p);
-      if (ed.perfect) {
+      if (ed.perfect && !ditherOn(ed)) {
         const i = perfectDrop(d.trail);
         if (i >= 0) {
           for (const [mx, my] of mirrored(ed, [d.trail[i]])) D.setPx(ed.doc, mx, my, d.orig.get(my * w + mx) || "");
@@ -264,11 +396,242 @@ const SuitePixelEd = (() => {
     }
   }
   const mirrorOK = (ed) => ed.bonus.includes("mirror");
+  const shadeOn = (ed) => !!ed.shade && ed.tool === "pencil" && ed.bonus.includes("shade");
+  const ditherOn = (ed) => !!ed.dither && ed.bonus.includes("dither");
+  const lockOn = (ed) => !!ed.lockAlpha && ed.bonus.includes("lockalpha");
+  // Where paint may land. Lock alpha keeps to pixels already drawn and rubs
+  // none out; the dither brush keeps to its pattern.
+  function lands(ed, x, y, colour, dithered) {
+    if (lockOn(ed) && (!colour || !D.getPx(ed.doc, x, y))) return false;
+    if (dithered && ditherOn(ed) && !DITHERS[ed.dither](x, y)) return false;
+    return true;
+  }
+
+  /* ── frames: a sprite that moves ───────────────────────── */
+  // Frame lengths on the game's own beat, so an animation keeps time with the
+  // music: a sixteenth at 96 bpm is 156 ms.
+  const STEP_MS = 60000 / 96 / 4;
+  const LENGTHS = [[1, "1/4 beat"], [2, "1/2 beat"], [3, "3/4 beat"], [4, "1 beat"], [6, "1 1/2 beats"], [8, "2 beats"]];
+  const framesOK = (ed) => ed.bonus.includes("frames");
+  const tb = (o, label, title, on, off) => '<button class="sx__tb' + (on ? " on" : "") + '" data-o="' + o + '" title="' + esc(title) + '" aria-pressed="' + !!on + '"' + (off ? " disabled" : "") + ">" + esc(label) + "</button>";
+  const DIR_MARK = { forward: "→", reverse: "←", pingpong: "↔" };
+  const DIR_NAME = { forward: "Forward", reverse: "Backward", pingpong: "There and back" };
+  // The tag being worked on, or null: what plays and what retime and reverse act on.
+  const tagOf = (ed) => (ed.tagSel != null && ed.doc.tags && ed.doc.tags[ed.tagSel]) || null;
+  // The run of frames tools act on: the chosen tag's, or all of them.
+  const runOf = (ed) => { const t = tagOf(ed), n = D.framesOf(ed.doc).length; return t ? [t.from, t.to] : [0, n - 1]; };
+
+  function paintTime(ed, H) {
+    const el = ed.body.querySelector(".sx__time");
+    if (!el) return;
+    el.hidden = !framesOK(ed);
+    if (el.hidden) { stopPlay(ed); return; }
+    const doc = ed.doc, frames = D.framesOf(doc), n = frames.length, cur = doc.frames ? doc.frame : 0;
+    if (n < 2) stopPlay(ed);
+    if (ed.tagSel != null && !(doc.tags && doc.tags[ed.tagSel])) ed.tagSel = null;
+    const ms = frames[cur].ms, near = LENGTHS.find(([k]) => Math.abs(Math.round(k * STEP_MS) - ms) <= 2);
+    const tags = doc.tags || [], tag = tagOf(ed);
+    let h = '<span class="sx__olab">FRAMES</span>' +
+      ib("fr:prev", "fr-prev", "Previous frame (,)", false, n < 2) +
+      ib("fr:play", ed.playing ? "fr-stop" : "fr-play", ed.playing ? "Stop the preview (Enter)" : "Play it in the preview (Enter)", ed.playing, n < 2) +
+      ib("fr:next", "fr-next", "Next frame (.)", false, n < 2) + '<span class="sx__osep"></span>' +
+      '<span class="sx__frs">' + frames.map((f, i) => '<button class="sx__fr' + (i === cur ? " on" : "") + '" data-fr="' + i + '" title="Frame ' + (i + 1) + ", " + f.ms + " ms" +
+        tags.filter((t) => i >= t.from && i <= t.to).map((t) => ", " + t.name).join("") + '">' +
+        '<canvas width="' + doc.w + '" height="' + doc.h + '"></canvas><i>' + (i + 1) + "</i>" +
+        tags.map((t, k) => (i >= t.from && i <= t.to ? '<u style="background:' + TAG_COLOURS[k % TAG_COLOURS.length] + ";bottom:" + k % 3 * 3 + 'px"></u>' : "")).join("") + "</button>").join("") + "</span>" +
+      ib("fr:add", "plus", "New frame: a copy of this one, straight after it") + '<span class="sx__osep"></span>';
+    if (n > 1) {
+      h += '<label class="sx__num"><span>LENGTH</span><select data-o="frms">' +
+        LENGTHS.map(([k, label]) => '<option value="' + Math.round(k * STEP_MS) + '"' + (near && near[0] === k ? " selected" : "") + ">" + label + "</option>").join("") +
+        (near ? "" : '<option selected value="' + ms + '">' + ms + " ms</option>") + "</select></label>" +
+        ib("fr:left", "fr-left", "Move this frame earlier", false, cur === 0) + ib("fr:right", "fr-right", "Move this frame later", false, cur === n - 1) +
+        ib("fr:del", "l-del", "Delete this frame");
+      // Second row: what runs of frames can do.
+      h += '<span class="sx__brk"></span><span class="sx__olab">TAGS</span>' +
+        tags.map((t, k) => '<button class="sx__tag' + (k === ed.tagSel ? " on" : "") + '" data-tag="' + k + '" style="--tc:' + TAG_COLOURS[k % TAG_COLOURS.length] + '" title="' + esc(t.name + ": frames " + (t.from + 1) + " to " + (t.to + 1) + ", " + DIR_NAME[t.dir] + ". Click to play just this run and act on it.") + '"><b>' + esc(t.name) + "</b><i>" + (t.from + 1) + "–" + (t.to + 1) + " " + DIR_MARK[t.dir] + "</i></button>").join("") +
+        (tags.length < D.MAX_TAGS ? tb("fr:tagadd", "+ Tag", "Name a run of frames (idle, walk, attack), starting at this one") : "");
+      if (tag) h += '<label class="sx__num sx__num--wide"><span>NAME</span><input data-o="tagname" maxlength="16" value="' + esc(tag.name) + '"></label>' +
+        '<label class="sx__num"><span>FROM</span><input type="number" data-o="tagfrom" min="1" max="' + n + '" value="' + (tag.from + 1) + '" style="width:40px"></label>' +
+        '<label class="sx__num"><span>TO</span><input type="number" data-o="tagto" min="1" max="' + n + '" value="' + (tag.to + 1) + '" style="width:40px"></label>' +
+        '<label class="sx__num"><span>PLAYS</span><select data-o="tagdir">' + D.TAG_DIRS.map((d) => '<option value="' + d + '"' + (d === tag.dir ? " selected" : "") + ">" + DIR_NAME[d] + "</option>").join("") + "</select></label>" +
+        ib("fr:tagdel", "l-del", "Remove this tag (the frames stay)");
+      else h += '<label class="sx__num"><span>PLAYS</span><select data-o="loopmode">' + D.TAG_DIRS.map((d) => '<option value="' + d + '"' + (d === ed.loopMode ? " selected" : "") + ">" + DIR_NAME[d] + "</option>").join("") + "</select></label>";
+      h += '<span class="sx__osep"></span><label class="sx__num"><span>SPEED</span><select data-o="speed">' + SPEEDS.map((x) => '<option value="' + x + '"' + (x === ed.speed ? " selected" : "") + ">" + x + "×</option>").join("") + "</select></label>" +
+        '<span class="sx__osep"></span>' + ib("fr:onion", "fr-onion", "Onion skin: the frames before show through in red, the ones after in blue", ed.onion) +
+        (ed.onion ? '<label class="sx__num"><span>BACK</span><input type="number" data-o="onb" min="0" max="3" value="' + ed.onB + '" style="width:34px"></label><label class="sx__num"><span>AHEAD</span><input type="number" data-o="ona" min="0" max="3" value="' + ed.onA + '" style="width:34px"></label>' : "") +
+        '<span class="sx__osep"></span><span class="sx__olab">' + (tag ? "THIS TAG" : "ALL") + "</span>" +
+        tb("fr:same", "Same length", "Give every frame here the length of this one") +
+        tb("fr:easein", "Ease in", "Lengths go from the first frame's to the last frame's, slow to speed up", false, false) +
+        tb("fr:easeout", "Ease out", "Lengths go from the first frame's to the last frame's, quick to slow down") +
+        tb("fr:rev", "Reverse", "Play these frames the other way round") +
+        '<span class="sx__ospace"></span>' + tb("fr:export", "Export…", "Save it as a sheet, a GIF, an animated PNG or a run of PNGs");
+    } else h += '<span class="sx__ohint">Add a frame to animate. Each starts as a copy of the one before.</span>';
+    el.innerHTML = h;
+    el.querySelectorAll(".sx__fr canvas").forEach((c, i) => {
+      const g = c.getContext("2d");
+      g.imageSmoothingEnabled = false;
+      R.draw(g, Object.assign({}, doc, { bitmap: frames[i].px }), { scale: 1, checker: true });
+    });
+  }
+  function frameAct(ed, H, what) {
+    const doc = ed.doc;
+    commitFloat(ed, H); finishPen(ed, H, true);
+    if (what === "add") {
+      if (!H.mutate(ed, () => D.addFrame(doc))) { H.status(ed, "That's as many frames as a sprite can have."); return; }
+      H.sound("layer");
+      H.status(ed, "Frame " + (doc.frame + 1) + " of " + doc.frames.length + ", a copy of the one before: change what moves.");
+    }
+    if (what === "del") { H.mutate(ed, () => D.removeFrame(doc)); H.sound("tuck"); }
+    if (what === "left" || what === "right") { H.mutate(ed, () => D.moveFrame(doc, what === "left" ? -1 : 1)); H.sound("tool"); }
+    if ((what === "prev" || what === "next") && doc.frames) {
+      D.goFrame(doc, (doc.frame + (what === "next" ? 1 : -1) + doc.frames.length) % doc.frames.length);
+      render(ed, H, {});
+      H.sound("tool");
+      H.status(ed, "Frame " + (doc.frame + 1) + " of " + doc.frames.length + ".");
+    }
+    if (what === "play") { if (ed.playing) stopPlay(ed); else startPlay(ed); paintTime(ed, H); paintPreview(ed); }
+    if (what === "onion") { ed.onion = !ed.onion; render(ed, H, {}); H.sound("tool"); }
+    if (what === "tagadd") {
+      const k = (doc.tags || []).length;
+      if (!H.mutate(ed, () => D.addTag(doc, "tag " + (k + 1), doc.frame, Math.min(doc.frames.length - 1, doc.frame + 1), "forward"))) return;
+      ed.tagSel = k; H.sound("layer");
+      H.status(ed, "A tag: set its name, its frames and how it plays. Click it again to leave it.");
+    }
+    if (what === "tagdel") { if (ed.tagSel != null) H.mutate(ed, () => D.removeTag(doc, ed.tagSel)); ed.tagSel = null; H.sound("tuck"); }
+    const [from, to] = runOf(ed);
+    if (what === "same") { H.mutate(ed, () => D.setRangeMs(doc, from, Array(to - from + 1).fill(doc.frames[doc.frame].ms))); H.sound("tool"); }
+    if (what === "easein" || what === "easeout") {
+      const list = F.spread(to - from + 1, doc.frames[from].ms, doc.frames[to].ms, what === "easein" ? "in" : "out");
+      H.mutate(ed, () => D.setRangeMs(doc, from, list));
+      H.sound("tool");
+      H.status(ed, "Lengths eased between frame " + (from + 1) + " and frame " + (to + 1) + ": change either end and ease again.");
+    }
+    if (what === "rev") { H.mutate(ed, () => D.reverseFrames(doc, from, to)); H.sound("layer"); }
+    if (what === "export") { stopPlay(ed); if (typeof SuiteFrameExport !== "undefined") SuiteFrameExport.open(ed, H); }
+    paintTime(ed, H);
+  }
+  // Frame lengths fall on the game's beat; a playing preview keeps to its own clock.
+  // The preview plays a run of frames, each for its own length (faster or slower by
+  // the speed), while you draw: a tag's run in its own direction, or every frame.
+  function startPlay(ed) {
+    stopPlay(ed);
+    if (!ed.doc.frames) return;
+    const seq = () => { const t = tagOf(ed); return F.sequence(D.framesOf(ed.doc), t || { from: 0, to: ed.doc.frames.length - 1, dir: ed.loopMode }); };
+    ed.playing = true;
+    let s = seq();
+    ed.pvPos = Math.max(0, s.findIndex((x) => x.i === ed.doc.frame));
+    ed.pvFrame = s[ed.pvPos].i;
+    const step = () => {
+      if (!ed.playing || !ed.body.isConnected || !ed.doc.frames) { stopPlay(ed); return; }
+      s = seq();
+      ed.pvPos = (ed.pvPos + 1) % s.length;
+      ed.pvFrame = s[ed.pvPos].i;
+      ed.walkX += ed.walkPx;
+      paintPreview(ed);
+      ed.playTimer = setTimeout(step, s[ed.pvPos].ms / ed.speed);
+    };
+    ed.playTimer = setTimeout(step, s[ed.pvPos].ms / ed.speed);
+  }
+  function stopPlay(ed) { clearTimeout(ed.playTimer); ed.playTimer = 0; ed.playing = false; }
+  // The frames either side, faint: those before in red, those after in blue, the nearest strongest.
+  function onion(ed, ctx) {
+    const doc = ed.doc, fr = D.framesOf(doc);
+    const tint = (px, colour) => { ctx.fillStyle = colour; for (let i = 0; i < px.length; i++) if (px[i]) ctx.fillRect(i % doc.w, Math.floor(i / doc.w), 1, 1); };
+    ctx.save();
+    for (const o of F.onion(doc.frame, fr.length, ed.onB, ed.onA).reverse()) {
+      ctx.globalAlpha = o.alpha * 0.6;
+      tint(fr[o.i].px, o.side === "before" ? "#FF4040" : "#3FA0FF");
+    }
+    ctx.restore();
+  }
+
+  /* ── craft sounds ──────────────────────────────────────── */
+  // Where a colour sits in the sprite's ramp, 0 (darkest) to 1 (lightest):
+  // its place in the palette when it's there, otherwise just how light it is.
+  function rampStep(doc, c) {
+    if (!c) return 0;
+    const pal = (doc.palette || []).filter(Boolean);
+    if (pal.length > 1 && pal.includes(c)) { const s = pal.slice().sort((a, b) => P.luma(a) - P.luma(b)); return s.indexOf(c) / (s.length - 1); }
+    return P.luma(c) / 255;
+  }
+  // A line's runs, in order: how many pixels go along before each step.
+  function runsOf(pts) {
+    if (pts.length < 2) return [pts.length];
+    const [x0, y0] = pts[0], [x1, y1] = pts[pts.length - 1], k = Math.abs(x1 - x0) >= Math.abs(y1 - y0) ? 1 : 0;
+    const out = [];
+    let n = 0, last = null;
+    for (const p of pts) { if (last !== null && p[k] !== last) { out.push(n); n = 0; } n++; last = p[k]; }
+    out.push(n);
+    return out;
+  }
+  // A small burst over each thing just tidied, and one of Tori's gold stars
+  // when nothing's left. Over the canvas, never on it; not with reduced motion.
+  function pops(ed, H, cells, star) {
+    if (H.reduced()) return;
+    const cv = ed.st.cv, host = cv.parentNode;
+    const put = (cls, x, y, html) => {
+      const el = document.createElement("i");
+      el.className = cls; el.setAttribute("aria-hidden", "true");
+      el.style.left = cv.offsetLeft + x + "px"; el.style.top = cv.offsetTop + y + "px";
+      if (html) el.innerHTML = html;
+      host.appendChild(el);
+      el.addEventListener("animationend", () => el.remove());
+      setTimeout(() => el.remove(), 2000);
+    };
+    for (const [x, y] of cells.slice(0, 10)) { const p = ed.st.toView(x + 0.5, y + 0.5); put("sx__pop", p.x, p.y); }
+    if (star) { const m = ed.st.toView(ed.doc.w / 2, ed.doc.h / 2); put("sx__star", m.x, m.y, iconSVG("star", 64)); }
+  }
+
+  /* ── Polish ────────────────────────────────────────────── */
+  // What's left to tidy, found again after every change. While Polish is on,
+  // each thing tidied chimes, and the last one plays a little run.
+  function polishCheck(ed, H) {
+    if (!P || !ed.doc.bitmap) return;
+    const before = ed.pol, was = before ? before.total : null;
+    ed.pol = P.find(ed.doc.bitmap, ed.doc.w, ed.doc.h);
+    if (!ed.polish || was === null || ed.pol.total === was) return;
+    // The status line keeps count, unless it's saying something else.
+    const said = String((ed.win && ed.win.status) || "");
+    if (!said || /^(Polish|Clean|Gold)/.test(said)) H.status(ed, ed.pol.total ? polishLine(ed) : "Gold star: clean. Nothing left for Polish to ring.");
+    if (ed.pol.total > was) return;
+    const still = new Set(ed.pol.marks.map((m) => m.x + "," + m.y));
+    pops(ed, H, before.marks.filter((m) => !still.has(m.x + "," + m.y)).map((m) => [m.x, m.y]), !ed.pol.total);
+    H.sound(ed.pol.total ? "polish-fix" : "polish-clean");
+  }
+  // "Polish rings 3 lone pixels and 1 doubled corner."
+  function polishLine(ed) {
+    const pol = ed.pol;
+    if (!pol || !pol.total) return ed.doc.bitmap.some(Boolean) ? "Polish: nothing to tidy. It's clean." : "Polish rings what's worth tidying, once there's something drawn.";
+    const parts = P.KINDS.filter((k) => pol.counts[k.id]).map((k) => P.say(k.id, pol.counts[k.id]));
+    return "Polish rings " + (parts.length > 1 ? parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1] : parts[0]) + ".";
+  }
+  // What each ring means, and what to do about the first kind still showing.
+  const POLISH_TIPS = {
+    stray: "A lone pixel is noise, unless it's a glint you meant. A pinhole wants filling.",
+    double: "A doubled corner: take the pixel at the corner of the L out.",
+    step: "An uneven step: even the run out with the ones round it, or redraw with Line and Shift.",
+  };
+  function paintPolish(ed, ctx, b, z) {
+    const colour = Object.fromEntries(P.KINDS.map((k) => [k.id, k.colour]));
+    ctx.save();
+    for (const m of ed.pol.marks.slice(0, 5000)) {
+      const x = b.x + m.x * z, y = b.y + m.y * z;
+      ctx.beginPath();
+      if (z >= 8) ctx.rect(Math.round(x) + 1.5, Math.round(y) + 1.5, Math.max(1, Math.round(z) - 3), Math.max(1, Math.round(z) - 3));
+      else ctx.arc(x + z / 2, y + z / 2, Math.max(3, z * 0.9), 0, Math.PI * 2);
+      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(0,0,0,.55)"; ctx.stroke();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = colour[m.kind]; ctx.stroke();
+    }
+    ctx.restore();
+  }
 
   /* ── drawing ───────────────────────────────────────────── */
   function render(ed, H, o) {
     if (!ed.body.isConnected) return;
+    D.syncFrame(ed.doc);
+    polishCheck(ed, H);
     draw(ed);
+    paintTime(ed, H);
     if (o.panels !== false) { paintOpts(ed, H); paintSide(ed); }
     paintRail(ed, H);
     if (H.painted) H.painted(ed);
@@ -282,6 +645,7 @@ const SuitePixelEd = (() => {
     st.board(ctx, doc);
     ctx.imageSmoothingEnabled = false;
     st.docTransform(ctx);
+    if (ed.onion && framesOK(ed) && doc.frames) onion(ed, ctx);
     R.draw(ctx, doc, { scale: 1, checker: false });
     st.viewTransform(ctx);
     const z = st.zoom, b = st.toView(0, 0), cw = doc.w * z, ch = doc.h * z;
@@ -296,6 +660,7 @@ const SuitePixelEd = (() => {
     if (ed.grid && f) st.grid(ctx, doc, f);
     st.guides(ctx, doc, null);
     if (ed.ghost) st.ghostGuide(ctx, ed.ghost.axis, ed.ghost.v);
+    if (ed.polish && ed.pol && ed.pol.total && !ed.drag) paintPolish(ed, ctx, b, z);
     const look = st.look;
     ctx.save(); ctx.strokeStyle = look.smart; ctx.setLineDash([5, 4]);
     if (ed.mx) { ctx.beginPath(); ctx.moveTo(b.x + cw / 2, b.y - 8); ctx.lineTo(b.x + cw / 2, b.y + ch + 8); ctx.stroke(); }
@@ -360,24 +725,80 @@ const SuitePixelEd = (() => {
   function paintPreview(ed) {
     const c = ed.body.querySelector(".sx__pvc");
     if (!c) return;
-    const v = ed.looks || {}, n = v.tile ? 3 : 1;
-    const k = Math.max(1, Math.floor(Math.min(112 / (ed.doc.w * n), 112 / (ed.doc.h * n))));
+    const frames = D.framesOf(ed.doc);
+    const doc = ed.playing && frames.length > 1 ? Object.assign({}, ed.doc, { bitmap: frames[ed.pvFrame % frames.length].px }) : ed.doc;
+    const v = ed.looks || {}, w = ed.doc.w, h = ed.doc.h;
+    // One sprite, a block of them (a tile) or one on ground that slides by (a walk).
+    const cols = v.tile ? ed.tiles : v.walk ? 3 : 1, rows = v.tile ? ed.tiles : 1, ground = v.walk ? 2 : 0;
+    const box = v.tile || v.walk ? 196 : 112;
+    const k = Math.max(1, Math.floor(Math.min(box / (w * cols), box / ((h + ground) * rows))));
+    // A walk is a scene: it always has a sky, so the checker gives way to a dark one.
+    const fill = !v.sil && (GROUND_FILL[ed.pvBg] || (v.walk ? "#2A2D34" : null));
     const one = document.createElement("canvas");
-    one.width = ed.doc.w * k; one.height = ed.doc.h * k;
+    one.width = w * k; one.height = h * k;
     const g = one.getContext("2d");
     g.imageSmoothingEnabled = false;
+    if (fill) { g.fillStyle = fill; g.fillRect(0, 0, one.width, one.height); }
     // Every drawn pixel in one dark ink, on plain ground: the shape alone.
-    R.draw(g, v.sil ? Object.assign({}, ed.doc, { bg: null }) : ed.doc, { scale: k, checker: !v.sil });
+    R.draw(g, v.sil ? Object.assign({}, doc, { bg: null }) : doc, { scale: k, checker: !v.sil && !fill });
     if (v.sil) { g.globalCompositeOperation = "source-in"; g.fillStyle = "#0A0A0A"; g.fillRect(0, 0, one.width, one.height); }
-    c.width = one.width * n; c.height = one.height * n;
+    c.width = one.width * cols; c.height = one.height * rows + ground * k;
     const ctx = c.getContext("2d");
     ctx.imageSmoothingEnabled = false;
     if (v.sil) { ctx.fillStyle = "#E9E9E4"; ctx.fillRect(0, 0, c.width, c.height); }
     ctx.filter = v.grey ? "grayscale(1)" : "none";
-    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) ctx.drawImage(one, i * one.width, j * one.height);
+    if (v.walk) {
+      // The ground goes by ed.walkPx pixels a frame; the sprite stays put. A foot that
+      // slides on it is a step the wrong size.
+      ctx.fillStyle = v.sil ? "#E9E9E4" : fill; ctx.fillRect(0, 0, c.width, one.height);
+      ctx.fillStyle = "#6B5232"; ctx.fillRect(0, one.height, c.width, ground * k);
+      ctx.fillStyle = "#8C6E45";
+      const off = ((ed.walkX % 8) + 8) % 8;
+      for (let x = -8; x < w * cols + 8; x++) if (((x + off) % 8 + 8) % 8 < 4) ctx.fillRect((x - off) * k, one.height, k, k);
+      ctx.drawImage(one, one.width, 0);
+    } else for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) ctx.drawImage(one, i * one.width, j * one.height);
+    ctx.filter = "none";
+    let note = "";
+    if (v.tile && ed.seam) {
+      const sm = F.seams(doc.bitmap, w, h);
+      ctx.fillStyle = "rgba(255,40,40,.65)";
+      for (let i = 1; i < cols; i++) for (const y of sm.across) ctx.fillRect(i * w * k - k, y * k, 2 * k, k);
+      for (let j = 1; j < rows; j++) for (let i = 0; i < cols; i++) for (const x of sm.down) ctx.fillRect(i * w * k + x * k, j * h * k - k, k, 2 * k);
+      note = sm.across.length || sm.down.length
+        ? "Hard seams: " + sm.across.length + " row" + (sm.across.length === 1 ? "" : "s") + ", " + sm.down.length + " column" + (sm.down.length === 1 ? "" : "s") + " (red)"
+        : "No hard seams: it repeats cleanly.";
+    }
+    paintPvo(ed, note);
     ed.body.querySelectorAll("[data-pv]").forEach((b) => { const on = !!v[b.dataset.pv]; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); });
   }
+  // What the preview can be set to: its ground, the tile's size and seam marks,
+  // the walk's speed. Only rebuilt when they change, so a menu is not pulled
+  // from under you while the sprite plays.
+  function paintPvo(ed, note) {
+    const el = ed.body.querySelector(".sx__pvo");
+    if (!el) return;
+    const v = ed.looks || {}, sig = [ed.pvBg, v.tile, v.walk, ed.tiles, ed.seam, ed.walkPx, v.sil].join("|");
+    if (el.dataset.sig !== sig) {
+      el.dataset.sig = sig;
+      el.innerHTML = '<label class="sx__num"><span>GROUND</span><select data-o="pvbg"' + (v.sil ? " disabled" : "") + ">" + GROUNDS.map(([id, label]) => '<option value="' + id + '"' + (id === ed.pvBg ? " selected" : "") + ">" + label + "</option>").join("") + "</select></label>" +
+        (v.tile ? '<label class="sx__num"><span>TILES</span><select data-o="pvtiles">' + [2, 3, 4].map((n) => '<option value="' + n + '"' + (n === ed.tiles ? " selected" : "") + ">" + n + " × " + n + "</option>").join("") + "</select></label>" +
+          '<button class="sx__tb' + (ed.seam ? " on" : "") + '" data-o="pvseam" aria-pressed="' + ed.seam + '" title="Mark where the tile meets itself with a harder change than it has inside">Seams</button>' : "") +
+        (v.walk ? '<label class="sx__num"><span>GROUND MOVES</span><select data-o="walkpx">' + [1, 2, 3, 4].map((n) => '<option value="' + n + '"' + (n === ed.walkPx ? " selected" : "") + ">" + n + " px a frame</option>").join("") + "</select></label>" : "") +
+        '<span class="sx__pvn"></span>';
+    }
+    const n = el.querySelector(".sx__pvn");
+    if (n) n.textContent = note || "";
+  }
   function paintSide(ed) {
+    const sec = ed.body.querySelector(".sx__panel--pol");
+    if (sec && P) {
+      sec.hidden = !ed.polish;
+      const pol = ed.pol || { total: 0, counts: {} }, first = P.KINDS.find((k) => pol.counts[k.id]);
+      if (ed.polish) sec.querySelector(".sx__pol").innerHTML = pol.total
+        ? P.KINDS.filter((k) => pol.counts[k.id]).map((k) => '<p class="sx__polk"><i style="border-color:' + k.colour + '"></i>' + esc(P.say(k.id, pol.counts[k.id])) + "</p>").join("") +
+          '<p class="sx__hint">' + esc(POLISH_TIPS[first.id]) + "</p>"
+        : '<p class="sx__polk sx__polk--ok">' + (ed.doc.bitmap.some(Boolean) ? "Clean. Nothing to tidy." : "Nothing drawn yet.") + "</p>";
+    }
     const used = [...new Set(ed.doc.bitmap.filter(Boolean))];
     ed.body.querySelector(".sx__used").innerHTML = used.length
       ? used.map((c) => '<button class="sx__chip" data-pal="' + c + '" style="background:' + c + '" title="' + c + ' — draw with it"></button>').join("") +
@@ -407,20 +828,37 @@ const SuitePixelEd = (() => {
   }
   // Fill, double-clicked: the colour the first click filled over is swapped for
   // the new one everywhere in the sprite, not just where it touches.
+  function swapColour(ed, was, ink) {
+    const b = ed.doc.bitmap;
+    let n = 0;
+    for (let i = 0; i < b.length; i++) if ((b[i] || "") === was) { b[i] = ink; n++; }
+    return n;
+  }
   function fillEverywhere(ed, H) {
     const f = ed.lastFill;
     ed.lastFill = null;
     if (!f || Date.now() - f.at > 600 || f.was === f.ink) return;
-    const pre = JSON.stringify(ed.doc), b = ed.doc.bitmap;
-    let n = 0;
-    for (let i = 0; i < b.length; i++) if ((b[i] || "") === f.was) { b[i] = f.ink; n++; }
-    if (!n) return;
+    const pre = JSON.stringify(ed.doc);
+    if (!swapColour(ed, f.was, f.ink)) return;
     H.record(ed, pre);
     render(ed, H, {});
     H.sound("layer");
     H.status(ed, "Every " + (f.was || "empty") + " pixel is " + (f.ink || "empty") + " now, all over the sprite.");
   }
   const cell = (ed, e) => { const p = ed.st.toDoc(e); return [Math.floor(p.x), Math.floor(p.y)]; };
+  // The pixels a fill from x, y would cover (4-connected, one colour).
+  function region(doc, x, y) {
+    const target = D.getPx(doc, x, y), out = [], seen = new Uint8Array(doc.w * doc.h), stack = [[x, y]];
+    if (target === null) return out;
+    while (stack.length) {
+      const [px, py] = stack.pop();
+      if (px < 0 || py < 0 || px >= doc.w || py >= doc.h || seen[py * doc.w + px] || D.getPx(doc, px, py) !== target) continue;
+      seen[py * doc.w + px] = 1;
+      out.push([px, py]);
+      stack.push([px + 1, py], [px - 1, py], [px, py + 1], [px, py - 1]);
+    }
+    return out;
+  }
 
   function down(ed, H, e) {
     const [x, y] = cell(ed, e), doc = ed.doc, pre = JSON.stringify(doc);
@@ -436,18 +874,25 @@ const SuitePixelEd = (() => {
       const f = ed.lastFill;
       if (f && f.x === x && f.y === y && Date.now() - f.at < 500) return;
       ed.lastFill = { x, y, was: D.getPx(doc, x, y) || "", ink: inkOf(ed), at: Date.now() };
-      for (const [px, py] of mirrored(ed, [[x, y]])) D.fill(doc, px, py, inkOf(ed));
-      H.record(ed, pre); render(ed, H, {}); return;
+      if (ed.fillAll && !ditherOn(ed) && lands(ed, x, y, inkOf(ed), false)) { ed.lastFill.at = 0; swapColour(ed, ed.lastFill.was, inkOf(ed)); H.record(ed, pre); H.sound("layer"); render(ed, H, {}); return; }
+      for (const [px, py] of mirrored(ed, [[x, y]])) {
+        if (!lands(ed, px, py, inkOf(ed), false)) continue;
+        if (ditherOn(ed)) { for (const [qx, qy] of region(doc, px, py)) if (DITHERS[ed.dither](qx, qy)) D.setPx(doc, qx, qy, inkOf(ed)); }
+        else D.fill(doc, px, py, inkOf(ed));
+      }
+      H.record(ed, pre); H.sound("layer"); render(ed, H, {}); return;
     }
     if (t === "pencil" || t === "erase") {
       // Shift-click: a straight line on from where the last stroke ended.
       if (e.shiftKey && ed.lastPx && inDoc(ed, ed.lastPx[0], ed.lastPx[1])) {
-        paintPts(ed, linePts(ed.lastPx[0], ed.lastPx[1], x, y), inkOf(ed));
+        const pts = linePts(ed.lastPx[0], ed.lastPx[1], x, y);
+        paintPts(ed, dab(ed, pts), inkOf(ed));
+        H.sound("px-line", { runs: runsOf(pts), h: rampStep(ed.doc, inkOf(ed)) });
         ed.lastPx = [x, y]; ed.rightInk = false;
         H.record(ed, pre); render(ed, H, {}); return;
       }
       ed.drag = { mode: "paint", pre, last: [x, y], trail: [], orig: new Map() };
-      strokeTo(ed, ed.drag, [[x, y]]);
+      strokeTo(ed, H, ed.drag, [[x, y]]);
       draw(ed); return;
     }
     if (["line", "rect", "ellipse"].includes(t)) { ed.drag = { mode: "shape", pre, from: [x, y], to: [x, y] }; draw(ed); return; }
@@ -460,7 +905,7 @@ const SuitePixelEd = (() => {
       return;
     }
     if (t === "text") { startStamp(ed, H, x, y); return; }
-    if (t === "wand") { wandAt(ed, H, x, y, ed.win && ed.win.cut ? ed.win.cut.tol : 24, e.shiftKey); return; }
+    if (t === "wand") { wandAt(ed, H, x, y, tolerance(ed), e.shiftKey, e.altKey); return; }
     if (t === "select") {
       const fx = ed.float ? ed.float.dx : 0, fy = ed.float ? ed.float.dy : 0;
       if (ed.mask && inMask(ed, x - fx, y - fy)) {
@@ -469,7 +914,7 @@ const SuitePixelEd = (() => {
         return;
       }
       commitFloat(ed, H);
-      ed.drag = { mode: "marquee", box: [x, y, x, y], add: e.shiftKey };
+      ed.drag = { mode: "marquee", box: [x, y, x, y], add: e.shiftKey, sub: e.altKey };
       draw(ed);
     }
   }
@@ -478,8 +923,8 @@ const SuitePixelEd = (() => {
   function move(ed, H, e) {
     const d = ed.drag, [x, y] = cell(ed, e);
     if (ed.tool === "pen" && ed.pen && !d) return;
-    if (!d) { ed.st.cv.style.cursor = ed.tool === "hand" ? "grab" : ed.tool === "select" && ed.mask && inMask(ed, x - (ed.float ? ed.float.dx : 0), y - (ed.float ? ed.float.dy : 0)) ? "move" : "crosshair"; return; }
-    if (d.mode === "paint") { strokeTo(ed, d, linePts(d.last[0], d.last[1], x, y).slice(1)); d.last = [x, y]; draw(ed); return; }
+    if (!d) { ed.st.cv.style.cursor = T.cursor(ed.tool, { overSel: ed.tool === "select" && !!ed.mask && inMask(ed, x - (ed.float ? ed.float.dx : 0), y - (ed.float ? ed.float.dy : 0)) }); return; }
+    if (d.mode === "paint") { strokeTo(ed, H, d, linePts(d.last[0], d.last[1], x, y).slice(1)); d.last = [x, y]; draw(ed); return; }
     if (d.mode === "shape") {
       let [x1, y1] = [x, y];
       if (e.shiftKey && ed.tool !== "line") { const m = Math.max(Math.abs(x1 - d.from[0]), Math.abs(y1 - d.from[1])); x1 = d.from[0] + Math.sign(x1 - d.from[0] || 1) * m; y1 = d.from[1] + Math.sign(y1 - d.from[1] || 1) * m; }
@@ -504,11 +949,16 @@ const SuitePixelEd = (() => {
     ed.drag = null;
     if (!d) return;
     if (d.mode === "paint") { ed.lastPx = d.last; ed.rightInk = false; H.record(ed, d.pre); render(ed, H, {}); return; }
-    if (d.mode === "shape") { paintPts(ed, previewPts(Object.assign({}, ed, { drag: d, pen: null, stamp: null })), inkOf(ed)); ed.rightInk = false; H.record(ed, d.pre); H.sound("layer"); render(ed, H, {}); return; }
+    if (d.mode === "shape") {
+      const pts = previewPts(Object.assign({}, ed, { drag: d, pen: null, stamp: null })), ink = inkOf(ed);
+      paintPts(ed, pts, ink, ed.filled && ed.tool !== "line"); ed.rightInk = false; H.record(ed, d.pre);
+      if (ed.tool === "line") H.sound("px-line", { runs: runsOf(pts), h: rampStep(ed.doc, ink) }); else H.sound("layer");
+      render(ed, H, {}); return;
+    }
     if (d.mode === "marquee") {
       const [x0, y0, x1, y1] = d.box, w = ed.doc.w;
-      const m = d.add && ed.mask ? ed.mask : new Uint8Array(w * ed.doc.h);
-      for (let y = Math.max(0, Math.min(y0, y1)); y <= Math.min(ed.doc.h - 1, Math.max(y0, y1)); y++) for (let x = Math.max(0, Math.min(x0, x1)); x <= Math.min(w - 1, Math.max(x0, x1)); x++) m[y * w + x] = 1;
+      const m = (d.add || d.sub) && ed.mask ? ed.mask : new Uint8Array(w * ed.doc.h);
+      for (let y = Math.max(0, Math.min(y0, y1)); y <= Math.min(ed.doc.h - 1, Math.max(y0, y1)); y++) for (let x = Math.max(0, Math.min(x0, x1)); x <= Math.min(w - 1, Math.max(x0, x1)); x++) m[y * w + x] = d.sub ? 0 : 1;
       ed.mask = X.count(m) ? m : null;
       render(ed, H, {});
       return;
@@ -528,6 +978,12 @@ const SuitePixelEd = (() => {
     }
     ed.float = { px, dx: 0, dy: 0, pre };
   }
+  // The bitmap with a lifted selection laid back down where it is now held.
+  function withFloat(bitmap, fl, w, h) {
+    const out = bitmap.slice();
+    for (const [x, y, c] of fl.px) { const px = x + fl.dx, py = y + fl.dy; if (px >= 0 && py >= 0 && px < w && py < h) out[py * w + px] = c; }
+    return out;
+  }
   function commitFloat(ed, H) {
     const fl = ed.float;
     if (!fl) return;
@@ -541,9 +997,17 @@ const SuitePixelEd = (() => {
     H.record(ed, fl.pre);
   }
   function selectionAct(ed, H, what) {
+    if (what === "all") { commitFloat(ed, H); ed.mask = new Uint8Array(ed.doc.w * ed.doc.h).fill(1); if (ed.tool !== "wand") ed.tool = "select"; render(ed, H, {}); return; }
     if (!ed.mask) return;
     commitFloat(ed, H);
     const doc = ed.doc;
+    if (what === "invert" || what === "grow" || what === "shrink") {
+      const m = what === "invert" ? selInvert(ed.mask) : what === "grow" ? selGrow(ed.mask, doc.w, doc.h) : selShrink(ed.mask, doc.w, doc.h);
+      ed.mask = X.count(m) ? m : null;
+      H.sound("layer");
+      render(ed, H, {});
+      return;
+    }
     if (what === "clear") H.mutate(ed, () => { ed.mask.forEach((v, i) => { if (v) doc.bitmap[i] = ""; }); });
     if (what === "paint") H.mutate(ed, () => { ed.mask.forEach((v, i) => { if (v && doc.bitmap[i]) doc.bitmap[i] = ed.fg; }); });
     if (what === "fillsel") H.mutate(ed, () => { ed.mask.forEach((v, i) => { if (v) doc.bitmap[i] = ed.fg; }); });
@@ -573,11 +1037,16 @@ const SuitePixelEd = (() => {
     return out;
   }
   // Cutout's wand, on the sprite: select a colour region.
-  function wandAt(ed, H, x, y, tol, add) {
+  // One tolerance for the wand, wherever it is set: the Cutout drawer's slider
+  // and the strip's box are the same number.
+  const tolerance = (ed) => (ed.win && ed.win.cut && Number.isFinite(ed.win.cut.tol) ? ed.win.cut.tol : 24);
+  function wandAt(ed, H, x, y, tol, add, sub) {
     commitFloat(ed, H);
-    const m = X.wand(rgbaOf(ed.doc), ed.doc.w, ed.doc.h, x, y, tol, add && ed.mask ? ed.mask : new Uint8Array(ed.doc.w * ed.doc.h));
-    ed.mask = X.count(m) ? m : null;
-    ed.tool = "select";
+    const len = ed.doc.w * ed.doc.h;
+    const m = X.wand(rgbaOf(ed.doc), ed.doc.w, ed.doc.h, x, y, tol, add && ed.mask ? Uint8Array.from(ed.mask) : new Uint8Array(len));
+    if (sub && ed.mask) { const keep = Uint8Array.from(ed.mask); for (let i = 0; i < len; i++) if (m[i]) keep[i] = 0; ed.mask = X.count(keep) ? keep : null; }
+    else ed.mask = X.count(m) ? m : null;
+    if (ed.tool !== "wand") ed.tool = "select";
     render(ed, H, {});
     H.status(ed, ed.mask ? X.count(ed.mask) + " pixels selected. Drag them, recolour them, or make them a card." : "Nothing there to select.");
   }
@@ -660,34 +1129,66 @@ const SuitePixelEd = (() => {
     if (t !== "select") commitFloat(ed, H);
     ed.tool = t;
     ed.st.handTool = t === "hand";
+    ed.st.cv.style.cursor = T.cursor(t);
+    H.remember(ed);
     H.sound("tool");
     render(ed, H, {});
+    H.status(ed, T.hint("pixel", t));
   }
   function onKey(ed, H, e) {
     const mod = e.metaKey || e.ctrlKey, k = e.key.toLowerCase();
     if (e.key === " " && !e.repeat) { ed.st.spaceDown = true; const u = (ev) => { if (ev.key === " ") { ed.st.spaceDown = false; document.removeEventListener("keyup", u); } }; document.addEventListener("keyup", u); return true; }
     if ((e.key === "Delete" || e.key === "Backspace") && ed.mask) { selectionAct(ed, H, "clear"); return true; }
     if (e.key === "Enter" && ed.pen) { finishPen(ed, H); return true; }
+    if (e.key === "Enter" && !mod && framesOK(ed) && ed.doc.frames && !ed.stamp) { frameAct(ed, H, "play"); return true; }
     if (e.key.startsWith("Arrow") && ed.mask) {
       if (!ed.float) lift(ed);
-      ed.float.dx += e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
-      ed.float.dy += e.key === "ArrowUp" ? -1 : e.key === "ArrowDown" ? 1 : 0;
+      const step = e.shiftKey ? 10 : 1;
+      ed.float.dx += e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+      ed.float.dy += e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
       draw(ed);
       return true;
     }
-    if (mod && k === "a") { ed.mask = new Uint8Array(ed.doc.w * ed.doc.h).fill(1); ed.tool = "select"; render(ed, H, {}); return true; }
+    if (mod && k === "a") { selectionAct(ed, H, "all"); return true; }
+    if (mod && k === "i") { selectionAct(ed, H, "invert"); return true; }
+    if (mod && (k === "c" || k === "x")) { return copySel(ed, H, k === "x"); }
+    if (mod && k === "v") { return pasteSel(ed, H); }
     if (e.shiftKey && !mod && ed.mask && ["h", "v", "r"].includes(k)) { selectionAct(ed, H, { h: "fliph", v: "flipv", r: "rotate" }[k]); return true; }
     if (mod || e.altKey) return false;
+    if ((e.key === "," || e.key === ".") && framesOK(ed) && ed.doc.frames) { frameAct(ed, H, e.key === "." ? "next" : "prev"); return true; }
     if (k === "x" && mirrorOK(ed)) { ed.mx = !ed.mx; render(ed, H, {}); return true; }
-    const t = TOOLS.find((x) => x.key === k);
-    if (t) { setTool(ed, H, t.id); return true; }
+    const id = T.keyMap("pixel", TOOLS)[k];
+    if (id) { setTool(ed, H, id); return true; }
     return false;
+  }
+  function copySel(ed, H, cut) {
+    if (!ed.mask) return false;
+    commitFloat(ed, H);
+    clip = clipCopy(ed.doc.bitmap, ed.mask, ed.doc.w, ed.doc.h);
+    if (!clip) { H.status(ed, "Nothing drawn in the selection to copy."); return true; }
+    H.status(ed, (cut ? "Cut " : "Copied ") + clip.px.length + " pixel" + (clip.px.length === 1 ? "" : "s") + ". Paste with the paste key, here or in another sprite.");
+    if (cut) selectionAct(ed, H, "clear");
+    return true;
+  }
+  // A paste arrives lifted, in the top-left of the sprite, ready to drag.
+  function pasteSel(ed, H) {
+    if (!clip) { H.status(ed, "Nothing copied yet."); return true; }
+    commitFloat(ed, H);
+    const at = clip.w > ed.doc.w || clip.h > ed.doc.h ? [0, 0] : [Math.floor((ed.doc.w - clip.w) / 2), Math.floor((ed.doc.h - clip.h) / 2)];
+    const r = clipPaste(clip, ed.doc.w, ed.doc.h, at);
+    if (!r.px.length) return true;
+    ed.mask = r.mask; ed.tool = "select";
+    ed.float = { px: r.px, dx: 0, dy: 0, pre: JSON.stringify(ed.doc) };
+    render(ed, H, {});
+    H.status(ed, "Pasted. Drag it into place; anything else puts it down.");
+    return true;
   }
   function escape(ed, H) {
     if (ed.stamp) { ed.stamp = null; render(ed, H, {}); return true; }
     if (ed.pen) { finishPen(ed, H); return true; }
     if (ed.float) { commitFloat(ed, H); render(ed, H, {}); return true; }
     if (ed.mask) { ed.mask = null; render(ed, H, {}); return true; }
+    if (ed.tool !== T.home("pixel")) { setTool(ed, H, T.home("pixel")); return true; }
     return false;
   }
 
@@ -708,16 +1209,34 @@ const SuitePixelEd = (() => {
         (ed.stamp ? '<button class="sx__tb" data-o="stamp">Stamp it</button>' : '<span class="sx__ohint">Click where the words go</span>') + '<span class="sx__osep"></span>';
     }
     if (ed.tool === "pen") h += '<span class="sx__ohint">Click, or drag for a curve · Enter lays the line down in pixels</span><span class="sx__osep"></span>';
-    if (ed.tool === "pencil" || ed.tool === "erase") h += '<button class="sx__tb' + (ed.perfect ? " on" : "") + '" data-o="perfect" aria-pressed="' + ed.perfect +
-      '" title="Pixel-perfect: a freehand stroke never doubles up at a corner">Pixel-perfect</button><span class="sx__osep"></span>';
+    if (ed.tool === "pencil" || ed.tool === "erase") h += '<label class="sx__num"><span>SIZE</span><input type="number" data-o="size" min="1" max="16" step="1" value="' + ed.size + '"></label>' +
+      '<button class="sx__tb' + (ed.perfect && ed.size === 1 ? " on" : "") + '" data-o="perfect" aria-pressed="' + (ed.perfect && ed.size === 1) + '"' + (ed.size > 1 ? " disabled" : "") +
+      ' title="Pixel-perfect: a freehand stroke never doubles up at a corner (one-pixel brush)">Pixel-perfect</button><span class="sx__osep"></span>';
+    if (ed.tool === "fill") h += '<span class="sx__olab">FILL</span><button class="sx__tb' + (!ed.fillAll ? " on" : "") + '" data-o="fill:joined" aria-pressed="' + !ed.fillAll + '" title="Fill the pixels joined to the one you click">Joined</button>' +
+      '<button class="sx__tb' + (ed.fillAll ? " on" : "") + '" data-o="fill:all" aria-pressed="' + ed.fillAll + '" title="Swap that colour everywhere in the sprite (also: double-click)">Every pixel</button><span class="sx__osep"></span>';
+    if (ed.tool === "wand") h += '<label class="sx__num"><span>TOLERANCE</span><input type="number" data-o="tol" min="0" max="255" step="4" value="' + tolerance(ed) + '"></label><span class="sx__osep"></span>';
+    if ((ed.tool === "select" || ed.tool === "wand") && !ed.mask) h += '<span class="sx__olab">SELECTION</span>' + ib("sel:all", "f-rect", "Select everything (⌘A)") + '<span class="sx__osep"></span>';
+    // The pro inks, once earned: shading and dither for the brush, lock alpha
+    // for everything that paints.
+    const inks = [];
+    if (ed.tool === "pencil" && ed.bonus.includes("shade")) inks.push(ib("shade", "ink-shade", "Shading ink: each pixel you pass steps one along the ramp, darker (right button: lighter)", ed.shade));
+    if (["pencil", "erase", "fill", "rect", "ellipse"].includes(ed.tool) && ed.bonus.includes("dither"))
+      inks.push(ib("dither", "ink-dither", "Dither: paint a checker, " + (ed.dither ? ed.dither + "% now; click for " + (ed.dither === 50 ? "25%" : "off") : "50%; click again for 25%") + (["rect", "ellipse"].includes(ed.tool) ? " (filled shapes)" : ""), !!ed.dither)
+        .replace("</button>", ed.dither ? '<b class="sx__badge sx__badge--ink">' + ed.dither + "</b></button>" : "</button>"));
+    if (["pencil", "erase", "fill", "line", "rect", "ellipse", "pen", "text"].includes(ed.tool) && ed.bonus.includes("lockalpha"))
+      inks.push(ib("lockalpha", "lock-alpha", "Lock alpha: paint lands only on pixels already drawn, and nothing is rubbed out", ed.lockAlpha));
+    if (inks.length) h += '<span class="sx__olab">INK</span>' + inks.join("") + '<span class="sx__osep"></span>';
     if (ed.mask) h += '<span class="sx__olab">SELECTION</span>' + ib("sel:paint", "t-fill", "Recolour what's drawn in it") + ib("sel:fillsel", "f-rect", "Fill it") +
       ib("sel:fliph", "flip-h", "Flip it left to right (Shift+H)") + ib("sel:flipv", "flip-v", "Flip it top to bottom (Shift+V)") + ib("sel:rotate", "rot90", "Turn it a quarter clockwise (Shift+R)") +
       ib("sel:outline", "s-outline", "Outline what's in it, one pixel, in the drawing colour") +
+      ib("sel:invert", "c-invert", "Select everything else (⌘I)") + ib("sel:grow", "plus", "Grow it by a pixel") + ib("sel:shrink", "l-del", "Shrink it by a pixel") +
       ib("sel:clear", "l-del", "Clear it (Del)") + ib("sel:card", "card", "Make it a card") + ib("sel:none", "none", "Deselect (Esc)") + '<span class="sx__osep"></span>';
     if (mirrorOK(ed)) h += ib("mx", "mirror", "Mirror left to right (X)", ed.mx) + ib("my", "mirror-h", "Mirror top to bottom", ed.my) + '<span class="sx__osep"></span>';
-    const f = ed.st.focus();
+    const f = ed.st.focus(), left = ed.pol ? ed.pol.total : 0;
     H.viewBar(ed, ib("grid", "grid", f ? "Tile grid " + Math.round(f.px) + " × " + Math.round(f.py) + " px" : "Tile grid: pull two guides down and two across", ed.grid && !!f, !f).replace('data-o="', 'data-v="') +
-      ib("clearguides", "guides-x", "Clear all guides", false, !(ed.doc.guides && (ed.doc.guides.v.length || ed.doc.guides.h.length))).replace('data-o="', 'data-v="'));
+      ib("clearguides", "guides-x", "Clear all guides", false, !(ed.doc.guides && (ed.doc.guides.v.length || ed.doc.guides.h.length))).replace('data-o="', 'data-v="') +
+      ib("polish", "polish", "Polish: ring what a pixel artist would tidy: lone pixels, doubled corners, uneven steps", ed.polish).replace('data-o="', 'data-v="')
+        .replace("</button>", ed.polish ? '<b class="sx__badge' + (left ? "" : " sx__badge--ok") + '">' + (left > 99 ? "99+" : left) + "</b></button>" : "</button>"));
     h += '<span class="sx__ospace"></span>' +
       '<span class="sx__pal">' + ed.doc.palette.map((c) => '<button class="sx__chip' + (c === ed.fg ? " on" : "") + '" data-pal="' + c + '" style="background:' + c + '" title="' + c + ' — Alt-click to remove"></button>').join("") +
       '<button class="sx__chip sx__chip--add" data-o="addpal" title="Add the drawing colour">+</button></span>';
@@ -725,6 +1244,14 @@ const SuitePixelEd = (() => {
   }
   function wirePanels(ed, H) {
     ed.body.addEventListener("click", (e) => {
+      const tg = e.target.closest("[data-tag]");
+      if (tg) {
+        const k = Number(tg.dataset.tag);
+        ed.tagSel = ed.tagSel === k ? null : k;
+        if (ed.tagSel != null && ed.doc.tags[k]) { D.goFrame(ed.doc, ed.doc.tags[k].from); render(ed, H, {}); } else paintTime(ed, H);
+        H.sound("tool");
+        return;
+      }
       const pv = e.target.closest("[data-pv]");
       if (pv) { ed.looks = Object.assign({}, ed.looks, { [pv.dataset.pv]: !(ed.looks || {})[pv.dataset.pv] }); paintPreview(ed); H.sound("tool"); return; }
       const t = e.target.closest("[data-tool],[data-o],[data-pal],[data-drawer]");
@@ -737,13 +1264,28 @@ const SuitePixelEd = (() => {
       }
       const o = t.dataset.o;
       if (o === "outline" || o === "filled") { ed.filled = o === "filled"; paintOpts(ed, H); }
-      if (o === "perfect") { ed.perfect = !ed.perfect; paintOpts(ed, H); H.sound("tool"); }
+      if (o === "perfect") { ed.perfect = !ed.perfect; H.remember(ed); paintOpts(ed, H); H.sound("tool"); }
+      if (o === "pvseam") { ed.seam = !ed.seam; paintPreview(ed); H.sound("tool"); }
+      if (o === "fill:joined" || o === "fill:all") { ed.fillAll = o === "fill:all"; H.remember(ed); paintOpts(ed, H); H.sound("tool"); }
+      if (o === "shade") { ed.shade = !ed.shade; paintOpts(ed, H); H.sound("tool"); H.status(ed, ed.shade ? "Shading ink: drag over pixels to step them darker along the ramp; the right button steps them lighter." : ""); }
+      if (o === "dither") { ed.dither = ed.dither === 50 ? 25 : ed.dither === 25 ? 0 : 50; paintOpts(ed, H); H.sound("tool"); H.status(ed, ed.dither ? "Dither: a " + ed.dither + "% checker, fixed to the sprite's grid so strokes and fills mesh." : ""); }
+      if (o === "lockalpha") { ed.lockAlpha = !ed.lockAlpha; paintOpts(ed, H); H.sound("tool"); H.status(ed, ed.lockAlpha ? "Lock alpha: only pixels already drawn take paint, and none are rubbed out." : ""); }
       if (o === "mx") { ed.mx = !ed.mx; render(ed, H, {}); }
       if (o === "my") { ed.my = !ed.my; render(ed, H, {}); }
       if (o === "grid") { ed.grid = !ed.grid; render(ed, H, {}); }
       if (o === "stamp") commitStamp(ed, H);
       if (o === "addpal") H.mutate(ed, () => { if (!ed.doc.palette.includes(ed.fg)) ed.doc.palette.push(ed.fg); });
       if (o && o.startsWith("sel:")) selectionAct(ed, H, o.slice(4));
+      if (o && o.startsWith("fr:")) frameAct(ed, H, o.slice(3));
+    });
+    ed.body.addEventListener("click", (e) => {
+      const f = e.target.closest("[data-fr]");
+      if (!f || !ed.doc.frames) return;
+      commitFloat(ed, H); finishPen(ed, H, true);
+      D.goFrame(ed.doc, Number(f.dataset.fr));
+      render(ed, H, {});
+      H.sound("tool");
+      H.status(ed, "Frame " + (ed.doc.frame + 1) + " of " + ed.doc.frames.length + ".");
     });
     ed.body.addEventListener("input", (e) => {
       const t = e.target;
@@ -754,6 +1296,24 @@ const SuitePixelEd = (() => {
       }
     });
     ed.body.addEventListener("change", (e) => {
+      if (e.target.dataset.o === "size") { ed.size = Math.max(1, Math.min(16, Math.round(Number(e.target.value)) || 1)); H.remember(ed); paintOpts(ed, H); return; }
+      if (e.target.dataset.o === "tol") {
+        const v = Math.max(0, Math.min(255, Math.round(Number(e.target.value)) || 0));
+        if (ed.win && ed.win.cut) { ed.win.cut.tol = v; if (ed.win.drawers && ed.win.drawers.repaint) ed.win.drawers.repaint("cutout"); }
+        paintOpts(ed, H); return;
+      }
+      if (e.target.dataset.o === "frms") { H.mutate(ed, () => D.frameMs(ed.doc, Number(e.target.value))); return; }
+      const o = e.target.dataset.o, val = e.target.value, n1 = Math.round(Number(val)) || 1;
+      if (o === "tagname") { H.mutate(ed, () => D.updateTag(ed.doc, ed.tagSel, { name: val })); return; }
+      if (o === "tagfrom") { H.mutate(ed, () => D.updateTag(ed.doc, ed.tagSel, { from: n1 - 1 })); return; }
+      if (o === "tagto") { H.mutate(ed, () => D.updateTag(ed.doc, ed.tagSel, { to: n1 - 1 })); return; }
+      if (o === "tagdir") { H.mutate(ed, () => D.updateTag(ed.doc, ed.tagSel, { dir: val })); return; }
+      if (o === "loopmode") { if (D.TAG_DIRS.includes(val)) ed.loopMode = val; paintTime(ed, H); return; }
+      if (o === "speed") { ed.speed = SPEEDS.includes(Number(val)) ? Number(val) : 1; return; }
+      if (o === "onb" || o === "ona") { const m = Math.max(0, Math.min(3, Math.round(Number(val)) || 0)); if (o === "onb") ed.onB = m; else ed.onA = m; render(ed, H, {}); return; }
+      if (o === "pvbg") { ed.pvBg = GROUNDS.some(([id]) => id === val) ? val : "checker"; paintPreview(ed); return; }
+      if (o === "pvtiles") { ed.tiles = Math.max(2, Math.min(4, n1)); paintPreview(ed); return; }
+      if (o === "walkpx") { ed.walkPx = Math.max(1, Math.min(4, n1)); paintPreview(ed); return; }
       if (e.target.dataset.o === "face") {
         ed.face = Number(e.target.value) || 0;
         if (ed.stamp) { const [face, size, weight] = FACES[ed.face]; ed.stamp.pts = textPts(ed.stamp.text, face, size, weight); draw(ed); }
@@ -769,7 +1329,7 @@ const SuitePixelEd = (() => {
     });
   }
 
-  return { mount, TOOLS, linePts, rectPts, ellipsePts, curvePts, perfectDrop, cleanLine, selTransform, selOutline };
+  return { mount, TOOLS, DITHERS, brushPts, selInvert, selGrow, selShrink, clipCopy, clipPaste, linePts, rectPts, ellipsePts, curvePts, perfectDrop, cleanLine, selTransform, selOutline, withFloat, rampOf, shadeStep };
 })();
 
 if (typeof module !== "undefined") module.exports = SuitePixelEd;

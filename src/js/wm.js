@@ -25,31 +25,169 @@ function pixelLabel(s){ return String(s).replace(" & ", " / "); }
 function uiSound(name){ if (typeof Music !== "undefined" && Music.ui) Music.ui(name); }
 
 /* ── shortcuts ─────────────────────────────────────────── */
+// The desktop icons. They open on double-click (or Enter), wear a badge for
+// anything waiting inside them, show a dot while their window is open, answer
+// to a right-click, and can be dragged onto any cell of the desktop's grid.
+const badges = new Map();     // key -> count waiting (kept for icons not yet on the desk)
+const ICON_CW = 92, ICON_CH = 86;   // one cell of the icon grid
+let iconPos = {};             // key -> {c, r}: the cells the player has placed icons in
+
+function iconStoreKey(){ return "pixel-crossing:icons:" + (document.body.dataset.slot || "desk"); }
+let iconPosSlot = "";
+function loadIconPos(){
+  iconPosSlot = iconStoreKey();
+  try { iconPos = JSON.parse(localStorage.getItem(iconStoreKey())) || {}; } catch { iconPos = {}; }
+}
+function saveIconPos(){
+  try { localStorage.setItem(iconStoreKey(), JSON.stringify(iconPos)); } catch { /* private window */ }
+}
+
+// Every icon takes its own cell: placed ones keep theirs, the rest fill the
+// free cells top to bottom, then left to right, in the order they were added.
+function iconRows(){ return Math.max(1, Math.floor((iconsEl.clientHeight + 2) / ICON_CH) || 1); }
+function layoutIcons(){
+  if (iconPosSlot !== iconStoreKey()) loadIconPos();
+  const rows = iconRows();
+  const taken = new Set(), cells = new Map();
+  const id = (c, r) => c + "," + r;
+  shortcuts.forEach((el, k) => {
+    const p = iconPos[k];
+    if (p && p.r < rows && !taken.has(id(p.c, p.r))){ taken.add(id(p.c, p.r)); cells.set(k, p); }
+  });
+  let c = 0, r = 0;
+  shortcuts.forEach((el, k) => {
+    if (!cells.has(k)){
+      while (taken.has(id(c, r))){ if (++r >= rows){ r = 0; c++; } }
+      taken.add(id(c, r));
+      cells.set(k, { c, r });
+    }
+    const cell = cells.get(k);
+    el.style.left = cell.c * ICON_CW + "px";
+    el.style.top = cell.r * ICON_CH + "px";
+    el._cell = cell;
+  });
+}
+
+// Windows a shortcut stands for: the one with its key, or "key:…" (a brief, a suite job).
+function winsFor(key){
+  return [...wins.values()].filter((w) => w.key === key || w.key.startsWith(key + ":"));
+}
+function markOpen(){
+  shortcuts.forEach((el, k) => el.classList.toggle("open", winsFor(k).length > 0));
+}
+
+// A count waiting inside an app; 0 clears it. It pulses once when it grows.
+function setBadge(key, n){
+  const prev = badges.get(key) || 0;
+  badges.set(key, n);
+  const el = shortcuts.get(key);
+  if (!el) return;
+  const b = el.querySelector(".sc__b");
+  b.textContent = n > 99 ? "99+" : String(n);
+  b.hidden = n <= 0;
+  if (n > prev && !reduced){ b.classList.remove("up"); void b.offsetWidth; b.classList.add("up"); }
+  el.title = n > 0 ? pixelLabel(el.dataset.label) + " — " + n + " waiting" : "";
+}
+
 function addShortcut(key, label, iconId, onOpen){
   if (shortcuts.has(key)) return shortcuts.get(key);
   const el = document.createElement("button");
   el.className = "sc";
   el.type = "button";
   el.dataset.key = key;
-  el.innerHTML = iconSVG(iconId, 32) + '<span class="sc__l"></span>';
+  el.dataset.label = label;
+  el.innerHTML = iconSVG(iconId, 32) + '<span class="sc__b" hidden></span><i class="sc__o"></i><span class="sc__l"></span>';
   el.querySelector(".sc__l").textContent = pixelLabel(label);
   el.addEventListener("click", (e) => {
     e.stopPropagation();
+    if (el.dataset.dragged) return;    // that was a drag, not a click
     selectShortcut(key);
+    uiSound("press");
     if (coarse) onOpen();              // no double-tap on touch
   });
   el.addEventListener("dblclick", (e) => { e.stopPropagation(); onOpen(); });
   el.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " "){ e.preventDefault(); onOpen(); }
   });
+  el.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    selectShortcut(key);
+    const mine = winsFor(key), shown = mine.filter((w) => !isMin(w));
+    CtxMenu.open(e, [
+      { label: "Open", act: onOpen },
+      { label: "Bring to Front", disabled: !mine.length, act: () => mine.forEach((w) => { w.el.classList.remove("min"); focusWin(w); }) },
+      { label: "Minimize", disabled: !shown.length, act: () => shown.forEach(minimizeWin) },
+      { label: "Close", disabled: !mine.length, act: () => mine.slice().forEach(closeWin) },
+      "-",
+      { label: "Auto Arrange Icons", act: autoArrangeIcons },
+    ]);
+  });
+  if (!coarse) dragIcon(el, key);
   iconsEl.appendChild(el);
   shortcuts.set(key, el);
+  setBadge(key, badges.get(key) || 0);
+  layoutIcons();
+  markOpen();
   return el;
+}
+
+// Drag an icon to another cell. Dropped on an occupied cell, the two swap.
+function dragIcon(el, key){
+  el.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    const box = iconsEl.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY, from = el._cell, ox = parseInt(el.style.left, 10), oy = parseInt(el.style.top, 10);
+    let moving = false;
+    const cellAt = (ev) => {
+      const rows = iconRows();
+      return {
+        c: Math.max(0, Math.min(Math.floor((box.width) / ICON_CW) - 1, Math.floor((ev.clientX - box.left) / ICON_CW))),
+        r: Math.max(0, Math.min(rows - 1, Math.floor((ev.clientY - box.top) / ICON_CH))),
+      };
+    };
+    const move = (ev) => {
+      if (!moving && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 5) return;
+      if (!moving){ moving = true; el.classList.add("drag"); el.setPointerCapture(e.pointerId); selectShortcut(key); }
+      el.style.left = ox + ev.clientX - sx + "px";
+      el.style.top = oy + ev.clientY - sy + "px";
+    };
+    const up = (ev) => {
+      el.removeEventListener("pointermove", move);
+      el.removeEventListener("pointerup", up);
+      el.removeEventListener("pointercancel", up);
+      if (!moving) return;
+      el.classList.remove("drag");
+      el.releasePointerCapture(ev.pointerId);
+      el.dataset.dragged = "1";        // the click that ends a drag is not a click
+      setTimeout(() => delete el.dataset.dragged, 0);
+      if (ev.type === "pointerup"){
+        const to = cellAt(ev);
+        shortcuts.forEach((other, k) => {
+          if (other !== el && other._cell && other._cell.c === to.c && other._cell.r === to.r) iconPos[k] = { c: from.c, r: from.r };
+        });
+        iconPos[key] = to;
+        saveIconPos();
+        uiSound("drop");
+      }
+      layoutIcons();
+    };
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerup", up);
+    el.addEventListener("pointercancel", up);
+  });
+}
+function autoArrangeIcons(){
+  iconPos = {};
+  saveIconPos();
+  layoutIcons();
+  uiSound("pick");
 }
 function selectShortcut(key){
   shortcuts.forEach((el, k) => el.classList.toggle("sel", k === key));
 }
 function clearSelection(){ shortcuts.forEach((el) => el.classList.remove("sel")); }
+window.addEventListener("resize", layoutIcons);
 
 /* ── focus / z-order ───────────────────────────────────── */
 function focusWin(w){
@@ -106,13 +244,17 @@ function unsnap(w){
 }
 
 /* ── the generic window ────────────────────────────────── */
+const FRAMES = ["classic", "slim", "ghost"];
 function createWindow(opts){
   const { key, title, iconId, footer = "", className = "", onClose = null } = opts;
+  // How much frame the window wears: classic Win98 plastic, a slim flat one,
+  // or a ghost whose title strip only opens when you point at it.
+  const frame = FRAMES.includes(opts.frame) ? opts.frame : "classic";
 
   const w = { key, briefIdx: 0, timers: [], prev: null, meta: opts.meta || {} };
 
   const el = document.createElement("div");
-  el.className = "w98" + (className ? " " + className : "");
+  el.className = "w98" + (frame !== "classic" ? " w98--f-" + frame : "") + (className ? " " + className : "");
   el.innerHTML =
     '<div class="tbar">' +
       '<span class="tbar__i">' + iconSVG(iconId, 16) + '</span>' +
@@ -189,6 +331,7 @@ function createWindow(opts){
   winsEl.appendChild(el);
   tasksEl.appendChild(tb);
   wins.set(key, w);
+  markOpen();
   w.setTitle(title);
   focusWin(w);
   uiSound("open");
@@ -222,6 +365,7 @@ function closeWin(w){
   }
   w.el.remove(); w.tb.remove();
   wins.delete(w.key);
+  markOpen();
   if (activeWin === w){
     activeWin = null;
     const last = [...wins.values()].pop();
@@ -240,6 +384,7 @@ function dragBy(handle, w, mode, dir){
     e.preventDefault();
     focusWin(w);
     handle.setPointerCapture(e.pointerId);
+    if (mode === "move") w.el.classList.add("dragging");
     const sx = e.clientX, sy = e.clientY;
     const desk = deskSize(), deskBox = deskEl.getBoundingClientRect();
     const min = { w: parseInt(w.el.style.minWidth, 10) || 250, h: parseInt(w.el.style.minHeight, 10) || 170 };
@@ -268,6 +413,7 @@ function dragBy(handle, w, mode, dir){
       }
     };
     const up = (ev) => {
+      w.el.classList.remove("dragging");
       handle.releasePointerCapture(ev.pointerId);
       handle.removeEventListener("pointermove", move);
       handle.removeEventListener("pointerup", up);
@@ -400,7 +546,8 @@ document.getElementById("desk").addEventListener("contextmenu", (e) => {
   const item = (m, label, icon) => ({ label, icon, act: () => arrangeWins(m),
     disabled: m === "restore" ? ![...wins.values()].some(isMin) : !any || (m !== "min" && !shown) });
   CtxMenu.open(e, [item("cascade", "Cascade Windows", "cascade"), item("cols", "Tile Windows Side by Side", "tile-cols"),
-    item("rows", "Tile Windows Stacked", "tile-rows"), "-", item("min", "Minimize All Windows", "min-all"), item("restore", "Restore All Windows", "restore")]);
+    item("rows", "Tile Windows Stacked", "tile-rows"), "-", item("min", "Minimize All Windows", "min-all"), item("restore", "Restore All Windows", "restore"),
+    "-", { label: "Auto Arrange Icons", act: autoArrangeIcons }]);
 });
 arrangeMenu.addEventListener("click", (e) => {
   const b = e.target.closest("[data-arrange]");

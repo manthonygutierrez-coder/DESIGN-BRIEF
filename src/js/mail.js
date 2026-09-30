@@ -207,6 +207,7 @@ const Mail = (() => {
     trayEl.classList.toggle("has", n > 0);
     trayEl.querySelector(".tray__n").textContent = n > 0 ? String(n) : "";
     trayEl.title = n > 0 ? n + " unread" : "Inbox";
+    setBadge("mail", n);
   }
 
   let balloonTimer = 0;
@@ -241,7 +242,7 @@ const Mail = (() => {
 
     const w = createWindow({
       key: "mail", title: "INBOX", iconId: "mail",
-      w: 720, h: 500, minW: 460, minH: 300, className: "w98--mail",
+      w: 720, h: 500, minW: 460, minH: 300, className: "w98--mail", frame: "slim",
     });
     w.client.classList.add("client--flush");
     w.client.innerHTML =
@@ -430,7 +431,7 @@ const Mail = (() => {
     const c = clientOf(m);
     const w = createWindow({
       key, title: "RE: " + briefOf(m).project, iconId: "mail",
-      w: 540, h: 420, minW: 380, minH: 280, className: "w98--mail",
+      w: 540, h: 420, minW: 380, minH: 280, className: "w98--mail", frame: "slim",
     });
     w.client.classList.add("client--flush");
     w.client.innerHTML =

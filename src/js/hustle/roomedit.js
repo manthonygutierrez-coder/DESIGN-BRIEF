@@ -86,7 +86,7 @@ const RoomEdit = (() => {
     let w = getWin(KEY);
     if (!w) {
       w = createWindow({ key: KEY, title: "ROOM EDITOR", iconId: "roomedit",
-                         w: 700, h: 640, minW: 560, minH: 500, className: "w98--re" });
+                         w: 700, h: 640, minW: 560, minH: 500, className: "w98--re", frame: "slim" });
       w.client.classList.add("client--flush");
       w.client.addEventListener("click", onClick);
       w.client.addEventListener("change", onChange);

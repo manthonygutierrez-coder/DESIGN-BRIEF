@@ -302,13 +302,25 @@ const SuiteRender = (() => {
     return cv.toDataURL("image/png");
   }
 
+  // An animated sprite as a sheet: every frame, left to right, at a whole scale.
+  function toSheet(doc, scale = 1) {
+    const frames = doc.frames && doc.frames.length ? doc.frames : [{ px: doc.bitmap }];
+    const s = Math.max(1, Math.round(scale));
+    const cv = document.createElement("canvas");
+    cv.width = doc.w * s * frames.length;
+    cv.height = doc.h * s;
+    const ctx = cv.getContext("2d");
+    frames.forEach((f, i) => { ctx.save(); ctx.translate(i * doc.w * s, 0); draw(ctx, Object.assign({}, doc, { bitmap: f.px }), { scale: s, checker: false }); ctx.restore(); });
+    return cv.toDataURL("image/png");
+  }
+
   function thumb(doc, px = 96) {
     const s = Math.min(px / doc.w, px / doc.h);
     return toPNG(doc, doc.mode === "pixel" ? Math.max(1, Math.floor(s)) : s);
   }
 
   return {
-    draw, drawLayer, measureText, textLayout, pathInDoc, fontOf, toPNG, thumb, imageFor, checker,
+    draw, drawLayer, measureText, textLayout, pathInDoc, fontOf, toPNG, toSheet, thumb, imageFor, checker,
     // One layer on its own, onto a fresh canvas — the shape builder's masks
     // and the likeness check both start here. Its mirror comes with it.
     layerMask(l, w, h, scale = 1, ox = 0, oy = 0, doc = null) {

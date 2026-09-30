@@ -10,6 +10,12 @@
   --w-cli:#1C1E22;--w-txt:#E3E5E9;
   color-scheme:dark;
 }
+/* menus are hosted outside the screen (ctxmenu.js), so they take the colours too */
+.ctx.theme-dark{
+  --w-face:#2C2F34;--w-hi:#50545B;--w-lt:#3A3E44;--w-sh:#141619;--w-dk:#050607;
+  --w-nav:#1C3563;--w-nav2:#3A6AA3;--w-in1:#3C3F45;--w-in2:#51555C;
+  --w-cli:#1C1E22;--w-txt:#E3E5E9;
+}
 /* the web keeps its own look, lit, inside the dark window */
 .theme-dark .ie__view{
   --w-face:#C0C0C0;--w-hi:#FFFFFF;--w-lt:#DFDFDF;--w-sh:#808080;--w-dk:#0A0A0A;

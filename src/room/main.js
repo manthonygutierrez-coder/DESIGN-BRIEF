@@ -461,7 +461,7 @@ function hover() {
   const hit = pick();
   canvas.style.cursor = hit.screen || hit.power || (hit.poster && power === "on") ? "pointer" : "grab";
   const d = hit.poster ? PC.discipline(hit.poster) : null;
-  const next = d ? (d.label + " — " + d.concept).toUpperCase() + (power === "on" && PC.side() === "world" ? " · CLICK TO PUT IT ON THE SCREEN" : "") : "";
+  const next = d ? (d.label + " — " + d.concept).toUpperCase() : "";
   if (next !== label) { label = next; showHint(); }
 }
 

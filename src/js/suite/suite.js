@@ -17,7 +17,7 @@
  */
 
 const Suite = (() => {
-  const D = SuiteDoc, R = SuiteRender, C = SuiteCards, A = SuiteApps, X = SuiteCutout;
+  const D = SuiteDoc, R = SuiteRender, C = SuiteCards, A = SuiteApps, X = SuiteCutout, T = SuiteTools;
   const AUTOSAVE_MAX = 3 * 1024 * 1024;
   const MODES = ["vector", "pixel", "layout"];
   const EDITORS = { vector: () => SuiteVectorEd, pixel: () => SuitePixelEd, layout: () => SuiteLayoutEd };
@@ -44,6 +44,8 @@ const Suite = (() => {
       touched: s.touched && typeof s.touched === "object" ? s.touched : {},
       drawers: s.drawers && typeof s.drawers === "object" ? s.drawers : {},
       look: s.look === "classic" ? "classic" : "graphite",
+      // The tool each mode was last left on, so a new window picks up where you were.
+      tools: s.tools && typeof s.tools === "object" ? s.tools : {},
     };
     document.addEventListener("keydown", onKey);
     S().cards.forEach(registerPicture);
@@ -53,7 +55,7 @@ const Suite = (() => {
   const save = () => Bridge.saveState(state);
   const slot = () => Bridge.slot();
   const reduced = () => typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const sound = (name) => { if (typeof Music !== "undefined" && Music.ui) Music.ui(name); };
+  const sound = (name, o) => { if (typeof Music !== "undefined" && Music.ui) Music.ui(name, o); };
 
   /* ── jobs: what the work is for ────────────────────────── */
   // Studio jobs are briefs in the mailbox; Hustle jobs are gigs in progress.
@@ -169,7 +171,7 @@ const Suite = (() => {
   function makeWindow(key, job) {
     const w = createWindow({
       key, title: "DESIGN SUITE — " + (job ? job.brief.project : "SCRATCH"), iconId: "suite", w: 1000, h: 680, minW: 720, minH: 500,
-      className: "w98--suite", onClose: () => closeWindow(key),
+      className: "w98--suite", frame: "slim", onClose: () => closeWindow(key),
     });
     w.client.classList.add("client--flush");
     const win = { key, job, w, mode: null, eds: {}, status: "", cut: { mode: "wand", tol: 36 } };
@@ -203,7 +205,9 @@ const Suite = (() => {
         '<div class="sx__body"></div>' +
         '<div class="sx__foot"><span class="sx__status" role="status"></span><span class="sx__spacer"></span>' +
           '<label class="sx__job"><span>WORK ON</span><select data-s="job"></select></label>' +
+          '<button class="sx__look" data-s="keys" title="Keyboard shortcuts (?)" aria-haspopup="dialog">?</button>' +
           '<button class="sx__look" data-s="look" title="Switch the suite\'s look"></button></div>' +
+        '<div class="sx__sheet" role="dialog" aria-label="Keyboard shortcuts" hidden></div>' +
         '<div class="sx__splash" aria-hidden="true"></div>' +
       "</div>" +
       '<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="sx__file" hidden>';
@@ -290,7 +294,8 @@ const Suite = (() => {
       doc = D.create({ mode: mode === "vector" ? "free" : mode, w: pw, h: ph, name: job ? job.brief.project : A.MODES[mode].label + " sketch", briefId: job ? job.id : null,
         site: mode === "layout" ? { tagline: job ? job.client && job.client.site && job.client.site.tagline : "" } : undefined });
     }
-    const ed = { win, mode, appId, docKey, job, doc, hist: D.history(), bonus: A.bonusForMode(mode, slot(), S().unlocks) };
+    const ed = { win, mode, appId, docKey, job, doc, hist: D.history(), bonus: bonusOf(mode, job) };
+    Object.assign(ed, T.restore(mode, S().tools[mode], sheetTools(mode)));
     win.eds[mode] = ed;
     return ed;
   }
@@ -301,7 +306,7 @@ const Suite = (() => {
     if (prev) { if (prev.unmount) prev.unmount(); flushAutosave(prev); if (prev.ro) prev.ro.disconnect(); }
     win.mode = mode;
     const ed = editorFor(win, mode);
-    ed.bonus = A.bonusForMode(mode, slot(), S().unlocks);
+    ed.bonus = bonusOf(mode, ed.job);
     // Each mode gets a fresh host: its listeners go when it goes, so a click
     // in one mode never reaches another's handlers.
     const host = document.createElement("div");
@@ -328,8 +333,10 @@ const Suite = (() => {
   }
 
   function replaceDoc(ed, doc) {
+    if (ed.beforeHistory) ed.beforeHistory();
     const pre = JSON.stringify(ed.doc);
     ed.doc = doc;
+    if (ed.afterHistory) ed.afterHistory();
     ed.hist.record(pre);
     changed(ed, {});
   }
@@ -337,7 +344,7 @@ const Suite = (() => {
   /* ── the top bar ───────────────────────────────────────── */
   function paintTop(win) {
     const ed = win.eds[win.mode], root = win.root;
-    root.querySelectorAll("[data-mode]").forEach((b) => { if (b.closest(".sx__modes")) { const on = b.dataset.mode === win.mode; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); } });
+    root.querySelectorAll("[data-mode]").forEach((b) => { if (b.closest(".sx__modes")) { const on = b.dataset.mode === win.mode; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); b.tabIndex = on ? 0 : -1; } });
     const canvas = win.mode !== "layout";
     root.querySelectorAll(".sx__g--zoom,.sx__g--doc,.sx__g--export").forEach((el) => { el.hidden = !canvas; });
     const presets = A.presetsFor(win.mode, ed.appId);
@@ -382,6 +389,7 @@ const Suite = (() => {
       if (s === "zin" && ed.st) { ed.st.step(1); }
       if (s === "zout" && ed.st) { ed.st.step(-1); }
       if ((s === "fit" || s === "zval") && ed.st) { ed.st.fit(ed.doc); ed.draw(); paintZoom(win); }
+      if (s === "keys") { toggleSheet(win); return; }
       if (s === "save") saveDoc(ed);
       if (s === "export") exportPNG(ed, win.mode === "pixel" ? Number(root.querySelector('[data-s="xscale"]').value) : 1);
       if (s === "deliver") deliver(ed);
@@ -389,6 +397,7 @@ const Suite = (() => {
       if (s === "look") { S().look = S().look === "graphite" ? "classic" : "graphite"; save(); win.root.dataset.look = S().look; Object.values(win.eds).forEach((x) => x.relook && x.relook()); paintTop(win); sound("pick"); }
       if (s === "new") {
         const [, pw, ph] = A.presetsFor(win.mode, ed.appId)[Number(root.querySelector('[data-s="preset"]').value) || 0];
+        if (ed.beforeHistory) ed.beforeHistory();
         mutate(ed, () => {
           const fresh = D.create({ mode: ed.doc.mode, w: pw, h: ph, name: ed.doc.meta.name, briefId: ed.doc.meta.briefId });
           fresh.palette = ed.doc.palette.slice();
@@ -396,10 +405,13 @@ const Suite = (() => {
           Object.keys(ed.doc).forEach((k) => delete ed.doc[k]);
           Object.assign(ed.doc, fresh);
         });
+        if (ed.afterHistory) ed.afterHistory();
         if (ed.st) { ed.st.fit(ed.doc); ed.render(); paintZoom(win); }
         setStatus(ed, "New " + pw + "×" + ph + " document. Undo brings the old one back.");
       }
     });
+    root.addEventListener("keydown", walkBar);
+    root.addEventListener("click", (e) => { if (e.target.closest("[data-s='keysclose']") || (e.target.classList && e.target.classList.contains("sx__sheet"))) root.querySelector(".sx__sheet").hidden = true; });
     root.addEventListener("input", (e) => {
       if (e.target.dataset.s === "name") { const ed = win.eds[win.mode]; ed.doc.meta.name = e.target.value.slice(0, 80) || "Untitled"; changed(ed, { quiet: true }); if (win.mode === "layout") ed.draw(); }
     });
@@ -419,7 +431,7 @@ const Suite = (() => {
   }
 
   /* ── the plumbing every mode borrows ───────────────────── */
-  let autosaveTimer = 0;
+  let autosaveTimer = 0, rememberTimer = 0;
   function changed(ed, opts = {}) {
     ed.dirty = true;
     clearTimeout(autosaveTimer);
@@ -430,7 +442,8 @@ const Suite = (() => {
   }
   function flushAutosave(ed) {
     if (!ed || !ed.dirty) return;
-    const text = JSON.stringify(ed.doc);
+    // A selection lifted off the sprite is still part of the work: save it back in.
+    const text = JSON.stringify(ed.snapshotDoc ? ed.snapshotDoc() : ed.doc);
     if (text.length > AUTOSAVE_MAX) { setStatus(ed, "Too large to autosave — use Save to keep it."); return; }
     S().docs[ed.docKey] = JSON.parse(text);
     S().touched[ed.docKey] = Date.now();
@@ -450,9 +463,13 @@ const Suite = (() => {
     if (pre && JSON.stringify(ed.doc) !== pre) { ed.hist.record(pre); changed(ed, { quiet: true }); }
   }
   function undo(ed, redo) {
+    // Anything held in the hand (a lifted selection) is put down first, so it is
+    // a step of its own that undo can take back, not something lost.
+    if (ed.beforeHistory) ed.beforeHistory();
     const next = redo ? ed.hist.redo(ed.doc) : ed.hist.undo(ed.doc);
     if (!next) return;
     ed.doc = next;
+    if (ed.afterHistory) ed.afterHistory();
     if (ed.blockSel != null && ed.blockSel >= (ed.doc.blocks || []).length) ed.blockSel = ed.doc.blocks.length - 1;
     changed(ed, {});
     paintTop(ed.win);
@@ -467,7 +484,8 @@ const Suite = (() => {
 
   const H = {
     status: setStatus, sound, look: () => S().look, reduced,
-    mutate, record, changed,
+    mutate, record, changed, saveFiles,
+    remember: (ed) => { S().tools[ed.mode] = T.remember(ed.mode, ed); clearTimeout(rememberTimer); rememberTimer = setTimeout(save, 800); },
     card: cardById, addCards, fonts,
     drawerButtons: (ed) => ["cutout", "swatch", "cards"].concat(ed.win.lesson ? ["lesson"] : []).map((id) => {
       const d = DRAWERS[id];
@@ -476,7 +494,7 @@ const Suite = (() => {
     toggleDrawer: (ed, id) => { ed.win.drawers.toggle(id); if (ed.render) ed.render({ panels: false }); },
     switchMode: (ed, mode) => switchMode(ed.win, mode),
     // After any repaint: the lesson's controls light up again, and its ticks move.
-    painted: (ed) => afterPaint(ed.win),
+    painted: (ed) => { describeCanvas(ed); afterPaint(ed.win); },
     // Open panels over the canvas, in the view's pixels: fitting keeps the board clear of them.
     covered: (ed) => (ed.view ? [...ed.view.querySelectorAll(".dw__panel:not([hidden]):not(.is-closing)")] : [])
       .map((p) => ({ x: p.offsetLeft, y: p.offsetTop, w: p.offsetWidth, h: p.offsetHeight })),
@@ -836,8 +854,6 @@ const Suite = (() => {
     const doc = ed ? ed.doc : D.normalize(S().docs[(L.mode === "vector" ? (L.app === "type" ? "type" : "banner") : L.mode) + ":" + win.job.id]);
     return { doc, cards: S().cards };
   }
-  const MODE_TOOLS = { vector: SuiteVectorEd.TOOLS.map((t) => t.id).concat(Object.keys(SuiteVectorEd.SHAPES)),
-    pixel: SuitePixelEd.TOOLS.map((t) => t.id), layout: ["select", "text"] };
   function selectorsFor(ctrl) {
     const [kind, id] = ctrl.split(":");
     if (ctrl === "ruler") return [".sx__rx", ".sx__ry"];
@@ -860,6 +876,42 @@ const Suite = (() => {
     // A shape that isn't the one showing in the rail: ring the shapes button.
     if (!out.length && ctrl.startsWith("tool:") && SuiteVectorEd.SHAPES[ctrl.slice(5)]) win.root.querySelectorAll(".sx__rail .sx__fly").forEach((el) => out.push(el));
     return out;
+  }
+
+  /* ── keyboard: the shortcut sheet, toolbars you can walk, a labelled canvas ── */
+  // The tools of each mode as the sheet lists them (the shapes are Vector tools too).
+  const sheetTools = (mode) => mode === "pixel" ? SuitePixelEd.TOOLS
+    : mode === "layout" ? [{ id: "select", key: "v", label: "Select" }, { id: "text", key: "t", label: "Type" }]
+    : SuiteVectorEd.TOOLS.filter((t) => !t.flyout).concat(Object.entries(SuiteVectorEd.SHAPES).map(([id, sh]) => ({ id, key: sh.key, label: sh.label })));
+  function toggleSheet(win) {
+    const el = win.root.querySelector(".sx__sheet");
+    if (!el.hidden) { el.hidden = true; return; }
+    const kbd = (k) => k.split(" / ").map((x) => "<kbd>" + esc(kb(x)) + "</kbd>").join(" ");
+    el.innerHTML = '<div class="sx__sheetbox"><header><b>KEYBOARD</b><span>' + esc(A.MODES[win.mode].label) + '</span><button data-s="keysclose" title="Close (Esc)" aria-label="Close">×</button></header><div class="sx__sheetcols">' +
+      T.sheet(win.mode, sheetTools(win.mode)).map((g) => '<section><h4>' + esc(g.title) + "</h4><dl>" +
+        g.rows.map(([k, what]) => "<dt>" + kbd(k) + "</dt><dd>" + esc(what) + "</dd>").join("") + "</dl></section>").join("") + "</div></div>";
+    el.hidden = false;
+    el.querySelector("button").focus();
+  }
+  // Arrow keys walk along a toolbar or the mode tabs, as they do in any desktop app.
+  function walkBar(e) {
+    const bar = e.target.closest && e.target.closest(".sx__rail,.sx__modes,.sx__opts");
+    if (!bar || !/^Arrow(Left|Right|Up|Down)$/.test(e.key) || e.target.matches("input,select,textarea")) return;
+    const items = [...bar.querySelectorAll("button:not(:disabled)")], i = items.indexOf(e.target.closest("button"));
+    if (i < 0) return;
+    const d = e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 1;
+    const next = items[(i + d + items.length) % items.length];
+    e.preventDefault(); e.stopPropagation();
+    next.focus();
+    if (bar.classList.contains("sx__modes")) next.click();          // the tabs follow focus
+  }
+  // What the canvas is, for anyone who cannot see it.
+  function describeCanvas(ed) {
+    const cv = ed && ed.st && ed.st.cv;
+    if (!cv || !ed.doc) return;
+    const d = ed.doc, n = ed.mode === "pixel" ? d.bitmap.filter(Boolean).length + " pixels drawn" : d.layers.length + " layer" + (d.layers.length === 1 ? "" : "s");
+    cv.setAttribute("role", "img");
+    cv.setAttribute("aria-label", A.MODES[ed.mode].label + " canvas, " + d.w + " by " + d.h + ", " + n + (ed.sel && ed.sel.length ? ", " + ed.sel.length + " selected" : ""));
   }
 
   function afterPaint(win) {
@@ -1011,9 +1063,29 @@ const Suite = (() => {
     else setStatus(ed, "Save failed: " + (res && res.error));
     sound("press");
   }
+  // Several files at once (a sheet and its JSON, a GIF, a ZIP): each to 04-final in the
+  // desktop app, or a download in a browser tab.
+  const MIME = { ".png": "image/png", ".gif": "image/gif", ".zip": "application/zip", ".json": "application/json" };
+  async function saveFiles(ed, files) {
+    const done = [];
+    for (const f of files) {
+      const req = { ...jobPlace(ed), slot: "04-final", name: f.name.slice(0, -f.ext.length), ext: f.ext };
+      if (f.bytes) req.bytesBase64 = SuiteEncode.toBase64(f.bytes); else req.text = f.text;
+      const res = await Bridge.suiteSave(req);
+      if (res && res.ok) done.push(res.name);
+      else if (!Bridge.native) { download(f.name, URL.createObjectURL(new Blob([f.bytes || f.text], { type: MIME[f.ext] || "application/octet-stream" }))); done.push(f.name); }
+      else { setStatus(ed, "Export failed: " + (res && res.error)); sound("press"); return false; }
+    }
+    setStatus(ed, (Bridge.native ? "Exported " : "Downloaded ") + done.join(", ") + (Bridge.native ? " to 04-final" + (slot() === "studio" ? " — ready to attach to a reply." : ".") : "."));
+    sound("press");
+    return true;
+  }
   async function exportPNG(ed, scale) {
-    const dataURL = R.toPNG(ed.doc, scale);
-    const name = ed.doc.meta.name + (scale && scale !== 1 ? "@" + scale + "x" : "");
+    // An animated sprite goes out as a sheet: every frame, left to right.
+    const sheet = !!(ed.doc.frames && ed.doc.frames.length > 1);
+    if (sheet) D.syncFrame(ed.doc);
+    const dataURL = sheet ? R.toSheet(ed.doc, scale) : R.toPNG(ed.doc, scale);
+    const name = ed.doc.meta.name + (sheet ? " sheet" : "") + (scale && scale !== 1 ? "@" + scale + "x" : "");
     const res = await Bridge.suiteSave({ ...jobPlace(ed), slot: "04-final", name, dataURL });
     if (res && res.ok) setStatus(ed, "Exported " + res.name + " to 04-final" + (slot() === "studio" ? " — ready to attach to a reply." : "."));
     else if (!Bridge.native) { download(name + ".png", dataURL); setStatus(ed, "Downloaded " + name + ".png"); }
@@ -1066,6 +1138,9 @@ const Suite = (() => {
     if (e.target.closest && e.target.closest("input,textarea,select")) return;
     const mod = e.metaKey || e.ctrlKey;
     if (mod && e.key.toLowerCase() === "z") { e.preventDefault(); undo(ed, e.shiftKey); return; }
+    const modeKey = mod && Object.keys(T.MODE_KEYS).find((m) => T.MODE_KEYS[m] === e.key);
+    if (modeKey) { e.preventDefault(); if (MODES.includes(modeKey)) switchMode(win, modeKey); return; }
+    if (e.key === "?" && !mod) { e.preventDefault(); toggleSheet(win); return; }
     if (mod && e.key.toLowerCase() === "s") { e.preventDefault(); saveDoc(ed); return; }
     if (mod && (e.key === "=" || e.key === "+" || e.key === "-") && ed.st) { e.preventDefault(); ed.st.step(e.key === "-" ? -1 : 1); return; }
     if (mod && e.key === "0" && ed.st) { e.preventDefault(); ed.st.fit(ed.doc); ed.draw(); paintZoom(win); return; }
@@ -1080,6 +1155,10 @@ const Suite = (() => {
     if (!win) return;
     e.stopImmediatePropagation();
     if (win.swatchPick) { win.swatchPick = false; win.drawers.repaint("swatch"); return; }
+    const exp = win.root && win.root.querySelector(".sx__exp");
+    if (exp) { const x = exp.querySelector('[data-x="close"]'); if (x) x.click(); return; }
+    const sheet = win.root && win.root.querySelector(".sx__sheet");
+    if (sheet && !sheet.hidden) { sheet.hidden = true; return; }
     const ed = win.eds[win.mode];
     if (ed && ed.escape && ed.escape()) return;
     const open = ["cutout", "swatch", "cards"].filter((id) => win.drawers.isOpen(id));
@@ -1090,8 +1169,20 @@ const Suite = (() => {
     if (!A.BONUS[name] || S().unlocks.includes(name)) return false;
     S().unlocks.push(name);
     save();
-    wins.forEach((win) => Object.values(win.eds).forEach((ed) => { ed.bonus = A.bonusForMode(ed.mode, slot(), S().unlocks); }));
+    refreshBonus();
     return true;
+  }
+  // The bonus tools a mode has: those earned, and any lent for this job (a
+  // research game's prize, kept by Hustle with the gig).
+  function bonusOf(mode, job) {
+    const lent = job && typeof Hustle !== "undefined" && Hustle.loans ? Hustle.loans(job.id) : [];
+    return A.bonusForMode(mode, slot(), S().unlocks.concat(lent));
+  }
+  function refreshBonus() {
+    wins.forEach((win) => Object.values(win.eds).forEach((ed) => {
+      ed.bonus = bonusOf(ed.mode, ed.job);
+      if (win.mode === ed.mode && ed.render && ed.body && ed.body.isConnected) ed.render({});
+    }));
   }
 
   // The most recently edited document for a job, from whichever mode made it.
@@ -1104,7 +1195,7 @@ const Suite = (() => {
   }
 
   return {
-    boot, launcher, open, addCards, unlock, docFor, forget, replaceCard,
+    boot, launcher, open, addCards, unlock, refreshBonus, docFor, forget, replaceCard,
     cards: () => S().cards.slice(),
     cutoutFrom: (initial, jobId) => {
       const w = launcher(jobId);

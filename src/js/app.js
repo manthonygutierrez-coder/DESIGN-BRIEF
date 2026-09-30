@@ -5,7 +5,6 @@ addEventListener("keydown", (e) => {
     if (smenu.classList.contains("on")) toggleStart(false); else cross(-1);
     return;
   }
-  if (e.key === "ArrowLeft" && !e.target.closest(".w98")) cross(-1);
   if (e.key.toLowerCase() === "n" && activeWin && activeWin.ci !== undefined){
     if (finishReveal(activeWin)) return;
     activeWin.briefIdx = (activeWin.briefIdx + 1) % CATS[activeWin.ci].briefs.length;
@@ -14,7 +13,6 @@ addEventListener("keydown", (e) => {
 });
 
 /* ── init ───────────────────────────────────────────── */
-setPreview(0);
 sideScreen.inert = true;
 
 // Nothing that reads saved state boots here any more: the save slot is chosen

@@ -44,7 +44,9 @@ const CtxMenu = (() => {
     prevFocus = document.activeElement;
     const host = document.getElementById("pc") || document.body;
     el = document.createElement("div");
-    el.className = "ctx" + (opts.look ? " ctx--" + opts.look : "");
+    // The menu lives in #pc, outside the screen it belongs to: it dresses like it.
+    const dark = document.querySelector(".side--screen.theme-dark");
+    el.className = "ctx" + (dark ? " theme-dark" : "") + (opts.look ? " ctx--" + opts.look : "");
     el.setAttribute("role", "menu");
     el.innerHTML = list.map((it, i) => (it === "-" ? '<div class="ctx__sep" role="separator"></div>'
       : '<button type="button" class="ctx__i" role="menuitem" data-i="' + i + '"' + (it.disabled ? " disabled" : "") + ">" +

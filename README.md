@@ -165,6 +165,20 @@ Every step of a job is a small puzzle, and all of it happens on the desktop.
    cards inherit what the search was about. **Compare rivals** is a deduction grid:
    once you have clipped everything a rival does, the rest of its column fills in,
    and the row nobody does is the gap. Guessing early is allowed; a wrong guess costs.
+
+   **Research games.** Some clients' worlds hide a game. Dennis's site, untouched
+   since about 2004, pops up a card trick (the Princess Card Trick): the deck deals
+   five, you think of one, and when four come back yours is gone. It always is,
+   because none of the four were dealt; you catch him by naming another card that
+   went too, and the trap is a look-alike that was never on the table. The research
+   clock stops while the game's window is up, and a wrong call costs five seconds.
+   The first catch wins his signature card as a fact, his black and gold as colour
+   cards, and Align on loan for that job only. Playing is never needed: everything
+   a need rests on is on the pages. Each go deals from the gig's run, so a reload
+   deals the same. The rules are `hustle/cardtrick.js` (pure and tested), the show
+   is `hustle/cardgame.js`, and `minigame.js` is the frame any game plays in: a
+   pixel canvas scaled by whole numbers, and a strip for what's said and what you
+   can do.
 4. **Make it** in the design suite with the cards you found, then **Deliver**.
 5. **The review** scores the work line by line — needs (70), limits (20), the gap
    (10), minus lateness — and reputation unlocks bonus suite tools, follow-up jobs
@@ -246,6 +260,33 @@ keeps the Line tool to clean steps (1:1, 2:1, 3:1), and double-clicking with Fil
 swaps that colour everywhere in the sprite. A selection can be flipped, turned a
 quarter, or outlined a pixel wide, and the preview checks a sprite the way pixel
 artists do: as a silhouette, in greyscale, or tiled three by three.
+
+**Polish** (the sparkle by the zoom) rings what a pixel artist tidies before calling a
+sprite done: lone pixels and pinholes, lines doubled up at a step, and uneven steps
+(the 1 in 3, 1, 3). Its count sits on the switch, and each thing tidied chimes, with
+a small burst over the spot, and one of Tori's gold stars when it reaches none
+(`suite/polish.js`, pure and tested). A glint, one light pixel set among darker ones,
+is left alone, as are dithers and curves whose steps grow steadily. Tori's icon lesson
+has a step for it. As you draw, every pixel plucks a note of the chord, pitched by
+its colour's step in the ramp, so shading down a ramp plays a scale; rubbing out plays
+an octave down. A line lands to its own rhythm, a note a step: clean steps keep time
+and jaggies stumble. The Ellipse tool lays its outline down with no doubled corners.
+
+Three pro inks come with standing in Hustle (Studio has them from the start):
+**shading ink** (8), where each pixel a stroke passes steps one along the palette's
+ramp, darker, or lighter with the right button; the **dither brush** (13), a 50% or
+25% checker fixed to the sprite's grid for the pencil, Fill and filled shapes; and
+**lock alpha** (20), where paint lands only on pixels already drawn and nothing is
+rubbed out.
+
+**Frames** (28 in Hustle) turn a sprite into an animation, from a bar under the work:
+a new frame starts as a copy of the one before, `,` and `.` step through them, and each
+frame's length is in beats of the game's own tempo (a quarter beat is 156 ms), so a
+loop keeps time with the music. Onion skin shows the frame before in red and the one
+after in blue, the preview plays the loop while you draw, and Export writes a sheet
+with every frame left to right. The colour count covers every frame. Frames live in
+the document (`suite/doc.js`: `addFrame`, `goFrame` and the rest, tested), and the
+picture every tool draws on is always the frame you're on.
 
 **Drawers** pull out of the canvas's edges and tuck back into tabs: **Cards** (the
 tray), **Swatch** (a palette with a WCAG contrast grid) and **Cutout** (wand and lasso
@@ -332,6 +373,8 @@ src/
     wm.js          generic Win98 window manager (drag, resize from any edge, snap to
                    a half, min/max/close, Arrange menu on the taskbar)
     ctxmenu.js     the right-click menu, in Win98 or the suite's own look
+    minigame.js    the frame a research game plays in: a pixel canvas scaled by whole
+                   numbers, and a strip for what's said and what you can do
     scheme.js      light or dark windows, from the moon in the tray; the dark
                    colours are styles/dark.css, and web pages keep their own
     brief-doc.js   the brief document and its typewriter reveal
@@ -351,6 +394,8 @@ src/
     hustle/
       camera.js    your camera: the wardrobe, room pieces and palettes (pure, tested)
       camview.js   the camera builder, the setup guide, and you in the corner of a call
+      cardtrick.js Dennis's card trick, the rules: seeded deals, look-alikes, claims (pure, tested)
+      cardgame.js  the card trick on screen, in Dennis's purple and gold
     music/
       theme.js     the score: one theme in D, arranged for the hub, the hunt, the case
                    and the studio, with the mix rules for reputation and deadlines (pure, tested)

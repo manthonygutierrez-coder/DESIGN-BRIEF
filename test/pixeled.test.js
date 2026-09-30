@@ -104,3 +104,72 @@ test("selections: an outline rings what is drawn, one pixel, and never paints ov
   assert.equal(o.bitmap.filter(Boolean).length, 6);
 });
 
+
+test("a lifted selection is saved back in where it is held, and the sprite itself is untouched", () => {
+  const w = 4, h = 4, bmp = new Array(w * h).fill("");
+  bmp[0] = "#A";                                                // what stays
+  const fl = { px: [[1, 1, "#B"], [2, 1, "#C"]], dx: 1, dy: 1 };  // lifted from row 1, held one along and down
+  const out = P.withFloat(bmp, fl, w, h);
+  assert.equal(out[0], "#A");
+  assert.equal(out[2 * w + 2], "#B");
+  assert.equal(out[2 * w + 3], "#C");
+  assert.equal(bmp[2 * w + 2], "", "the original is not changed");
+  const off = P.withFloat(bmp, { px: [[3, 3, "#D"]], dx: 2, dy: 2 }, w, h);
+  assert.equal(off.filter(Boolean).length, 1, "pixels held off the edge are dropped, not wrapped");
+});
+
+test("brush: a size-n dab covers n by n pixels around the pixel you point at", () => {
+  assert.deepEqual(P.brushPts(5, 5, 1), [[5, 5]]);
+  const three = P.brushPts(5, 5, 3).map((p) => p.join(",")).sort();
+  assert.equal(three.length, 9);
+  assert.ok(three.includes("4,4") && three.includes("6,6") && three.includes("5,5"));
+  assert.equal(P.brushPts(0, 0, 4).length, 16, "an even brush is still n by n");
+  assert.equal(P.brushPts(0, 0, 99).length, 256, "the brush stops at 16");
+});
+
+test("selections: invert, grow and shrink", () => {
+  const w = 5, h = 5, mask = new Uint8Array(w * h);
+  mask[2 * w + 2] = 1;
+  const inv = P.selInvert(mask);
+  assert.equal(inv[2 * w + 2], 0);
+  assert.equal(inv.reduce((a, b) => a + b, 0), 24);
+  const grown = P.selGrow(mask, w, h);
+  assert.equal(grown.reduce((a, b) => a + b, 0), 5, "one pixel becomes a plus");
+  assert.equal(P.selShrink(grown, w, h).reduce((a, b) => a + b, 0), 1, "and the plus shrinks to its middle");
+  assert.equal(P.selShrink(mask, w, h).reduce((a, b) => a + b, 0), 0, "a single pixel shrinks away");
+  const edge = new Uint8Array(w * h); edge[0] = 1;
+  assert.equal(P.selGrow(edge, w, h).reduce((a, b) => a + b, 0), 3, "growing stops at the edge of the sprite");
+});
+
+test("clipboard: a copy keeps the drawn pixels' shape and pastes where you say, clipped to the sprite", () => {
+  const w = 6, h = 6, bmp = new Array(w * h).fill(""), mask = new Uint8Array(w * h);
+  for (const [x, y, c] of [[1, 1, "#A"], [2, 1, "#B"], [1, 2, "#C"]]) bmp[y * w + x] = c;
+  for (let y = 1; y <= 3; y++) for (let x = 1; x <= 3; x++) mask[y * w + x] = 1;
+  const clip = P.clipCopy(bmp, mask, w, h);
+  assert.deepEqual([clip.w, clip.h], [3, 3], "the box of the selection, not of the drawing");
+  assert.equal(clip.px.length, 3, "only what was drawn");
+  const r = P.clipPaste(clip, w, h, [3, 3]);
+  assert.deepEqual(r.px.map((p) => p.join(",")).sort(), ["3,3,#A", "3,4,#C", "4,3,#B"]);
+  assert.equal(r.mask.reduce((a, b) => a + b, 0), 3);
+  const off = P.clipPaste(clip, w, h, [5, 5]);
+  assert.equal(off.px.length, 1, "pixels pasted off the edge are dropped");
+  assert.equal(P.clipCopy(bmp, new Uint8Array(w * h), w, h), null, "an empty selection copies nothing");
+  assert.equal(P.clipCopy(new Array(w * h).fill(""), mask, w, h), null, "a selection of empty pixels copies nothing");
+});
+
+test("pixel inks: shading steps along the palette's ramp, and stops at its ends", () => {
+  const ramp = P.rampOf(["#F6D0A0", "#3A2418", "#D9804A", "#8A4A2E"], []);
+  assert.deepEqual(ramp, ["#3A2418", "#8A4A2E", "#D9804A", "#F6D0A0"], "darkest to lightest");
+  assert.equal(P.shadeStep(ramp, "#D9804A", -1), "#8A4A2E", "a dab darkens one step");
+  assert.equal(P.shadeStep(ramp, "#D9804A", 1), "#F6D0A0", "the other button lightens");
+  assert.equal(P.shadeStep(ramp, "#3A2418", -1), "#3A2418", "the darkest stays the darkest");
+  assert.equal(P.shadeStep(ramp, "#D8814B", -1), "#8A4A2E", "a colour off the ramp steps from the nearest on it");
+  assert.deepEqual(P.rampOf([], ["#FFFFFF", "", "#000000", "#FFFFFF"]), ["#000000", "#FFFFFF"], "no palette: the sprite's own colours");
+});
+
+test("pixel inks: dither patterns are fixed to the sprite's grid", () => {
+  const count = (f) => { let n = 0; for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) if (f(x, y)) n++; return n; };
+  assert.equal(count(P.DITHERS[50]), 32, "a 50% checker");
+  assert.equal(count(P.DITHERS[25]), 16, "and a 25% one");
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 7; x++) assert.notEqual(P.DITHERS[50](x, y), P.DITHERS[50](x + 1, y), "neighbours alternate");
+});

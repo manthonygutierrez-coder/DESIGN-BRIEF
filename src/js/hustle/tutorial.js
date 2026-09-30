@@ -542,6 +542,7 @@ const HustleTutorial = (() => {
         { id: "down", say: "Drag the mark's card onto the sprite: it comes down to pixels, in the sprite's colours.", with: ["drawer:cards"], check: { card: "tori-mark" } },
         { id: "palette", say: "Keep it to a few colours: Swatch has classic palettes, or take the colours from the work.", with: ["drawer:swatch"], check: { palette: 2 } },
         { id: "clean", say: "Clean it up with the Pencil (B) and Eraser (E). Every pixel counts at this size.", with: ["tool:pencil", "tool:erase"], check: { drawn: 60 } },
+        { id: "polish", say: "Turn Polish on: it rings lone pixels, doubled corners and uneven steps. Tidy them till two or fewer are left.", with: ["view:polish"], check: { polish: 2 } },
         { id: "curve", say: "The Pen lays a curve down in clean pixels: good for the rim of a bowl.", with: ["tool:pen"], check: null },
       ],
     },

@@ -215,6 +215,7 @@ ipcMain.handle('projects:pickFiles', async () => {
  */
 
 const SUITE_MAX_BYTES = 12 * 1024 * 1024;
+const SUITE_BINARY = { '.gif': [0x47, 0x49, 0x46, 0x38], '.png': [0x89, 0x50, 0x4E, 0x47], '.zip': [0x50, 0x4B, 0x03, 0x04] };
 
 function insideRoot(root, target) {
   const rel = path.relative(root, target);
@@ -227,14 +228,24 @@ ipcMain.handle('suite:save', async (_e, req) => {
     const slot = SLOTS.includes(req.slot) ? req.slot : '02-process';
     const base = safeName(req.name || 'untitled').replace(/\.+$/, '') || 'untitled';
     let buf, ext;
-    if (typeof req.dataURL === 'string') {
+    if (typeof req.bytesBase64 === 'string') {
+      // Binary exports (an animated GIF, an animated PNG, a ZIP of frames): only these
+      // kinds, and only if the bytes really begin the way that kind of file does.
+      ext = String(req.ext || '').toLowerCase();
+      const magic = SUITE_BINARY[ext];
+      if (!magic) return { ok: false, error: 'that kind of file is not accepted' };
+      if (req.bytesBase64.length > Math.ceil(SUITE_MAX_BYTES * 4 / 3) + 8 || !/^[A-Za-z0-9+/]*={0,2}$/.test(req.bytesBase64)) return { ok: false, error: 'bad file data' };
+      buf = Buffer.from(req.bytesBase64, 'base64');
+      if (!magic.every((b, i) => buf[i] === b)) return { ok: false, error: 'that is not a ' + ext.slice(1).toUpperCase() + ' file' };
+    } else if (typeof req.dataURL === 'string') {
       const m = req.dataURL.match(/^data:image\/png;base64,([A-Za-z0-9+/=]+)$/);
       if (!m) return { ok: false, error: 'only PNG exports are accepted' };
       buf = Buffer.from(m[1], 'base64');
       ext = '.png';
     } else if (typeof req.text === 'string') {
       buf = Buffer.from(req.text, 'utf8');
-      ext = '.pxdoc';
+      ext = req.ext === '.json' ? '.json' : '.pxdoc';
+      if (ext === '.json') { try { JSON.parse(req.text); } catch { return { ok: false, error: 'that is not JSON' }; } }
     } else return { ok: false, error: 'nothing to save' };
     if (buf.length > SUITE_MAX_BYTES) return { ok: false, error: 'file too large' };
 

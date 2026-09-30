@@ -32,7 +32,7 @@ const SuiteApps = (() => {
       label: "Pixel", icon: "app-pixel", mode: "pixel", blurb: "Sprites, icons, tiles at true resolution",
       presets: [["Icon", 16, 16], ["Sprite", 32, 32], ["Portrait", 64, 64], ["Tile sheet", 96, 96]],
       tools: ["pencil", "erase", "fill", "pick"],
-      bonus: ["mirror"],
+      bonus: ["mirror", "shade", "dither", "lockalpha", "frames"],
       for: ["character", "asset3d", "illustrative"],
     },
     layout: {
@@ -52,27 +52,16 @@ const SuiteApps = (() => {
     },
   };
 
-  const TOOLS = {
-    select: { label: "Select / move", key: "v" },
-    rect: { label: "Rectangle", key: "r" },
-    ellipse: { label: "Ellipse", key: "o" },
-    text: { label: "Text", key: "t" },
-    image: { label: "Place image", key: "i" },
-    eyedrop: { label: "Eyedropper", key: "e" },
-    pen: { label: "Pen — click points, click the first to close", key: "p" },
-    build: { label: "Shape builder — drag across shapes to merge, alt-drag to cut", key: "m" },
-    pencil: { label: "Pencil", key: "b" },
-    erase: { label: "Eraser", key: "e" },
-    fill: { label: "Fill", key: "g" },
-    pick: { label: "Pick colour", key: "i" },
-  };
-
   const BONUS = {
     gradient: "Two-colour gradient fills",
 
     snap: "Snap to a 10px grid",
     align: "Align to canvas or selection",
     mirror: "Mirror drawing across the centre",
+    shade: "Shading ink: step pixels along the palette's ramp",
+    dither: "The dither brush: a checker, for textures and in-between tones",
+    lockalpha: "Lock alpha: paint only onto pixels already drawn",
+    frames: "Frames: animate a sprite, with onion skin and a sheet to export",
   };
 
   /* ── modes ─────────────────────────────────────────────
@@ -183,7 +172,7 @@ const SuiteApps = (() => {
     return f.weights.reduce((a, b) => (Math.abs(b - w) < Math.abs(a - w) ? b : a));
   }
 
-  return { APPS, TOOLS, BONUS, BLOCKS, MAX_ITEMS, MODES, FONTS, FONT_CATS, forDiscipline, relevant, bonusFor, blankItem, modeOf, presetsFor, bonusForMode, weightFor };
+  return { APPS, BONUS, BLOCKS, MAX_ITEMS, MODES, FONTS, FONT_CATS, forDiscipline, relevant, bonusFor, blankItem, modeOf, presetsFor, bonusForMode, weightFor };
 })();
 
 if (typeof module !== "undefined") module.exports = SuiteApps;
