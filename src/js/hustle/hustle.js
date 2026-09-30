@@ -939,6 +939,7 @@ const Hustle = (() => {
         key: gameKey(id), spec, seed: (seed + (g.goes || 0) * 7919) >>> 0,
         // What the game has already won, so it can say so.
         won: (factId) => ((gsOf(id).found && gsOf(id).found.facts) || []).includes(factId),
+        factLabel: (factId) => { const f = (gigOf(id).facts || []).find((x) => x.id === factId); return f ? f.label : factId; },
         grant: (factId, said) => grantFact(id, factId, said),
         prize: (cards) => grantCards(id, cards),
         miss: (sec) => gameMiss(id, sec),
@@ -1852,6 +1853,7 @@ const Hustle = (() => {
       play: (id) => playGame(id),
       open: (id) => gameOpen(id),
       on: (id) => gameOn(id),
+      skipTour: () => { if (G().me) { G().me.guide = "done"; save(); } },
     },
     progress,
     // What your camera's "show me" buttons do, the same way the game's own do.
