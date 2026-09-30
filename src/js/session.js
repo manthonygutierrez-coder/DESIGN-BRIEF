@@ -4,19 +4,23 @@
  *   studio  real briefs by mail, real work in your own tools, real files
  *   hustle  gigs and research puzzles, made in the in-app design suite
  *
- * The first time you cross over, a logon dialog asks which. Everything that
- * reads state boots only after that. Logging off reloads the renderer rather
- * than trying to unwind every module's in-memory state — that is the guarantee
- * that nothing from one slot leaks into the other.
+ * The start screen (crossing.js) asks which, and crosses over to that desk;
+ * a logon dialog on the desk asks only if it somehow arrives without one.
+ * Everything that reads state boots only after that. Logging off reloads the
+ * renderer rather than trying to unwind every module's in-memory state — that
+ * is the guarantee that nothing from one slot leaks into the other, and why
+ * switching desks is a log off that remembers where you were going.
  */
 
 const Session = (() => {
   const LAST_KEY = "pixel-crossing:last-slot";
+  const NEXT_KEY = "pixel-crossing:next-slot";   // a switch, carried across the reload
   const LABELS = {
     studio: { name: "STUDIO", line: "Real clients write to you. You make the work in your own tools and send real files." },
     hustle: { name: "HUSTLE", line: "Find gigs, research them as puzzles, and make the work in the in-app suite. Build a reputation." },
   };
   let started = null;          // the slot, once logged on
+  let pending = null;          // chosen on the start screen, for the next arrival
   let dialog = null;
 
   function remembered() {
@@ -31,9 +35,29 @@ const Session = (() => {
     } catch { return null; }
   }
 
+  // The start screen's choice: logged on to when the desk comes in.
+  function choose(slot) {
+    if (!LABELS[slot]) return;
+    pending = slot;
+    try { localStorage.setItem(LAST_KEY, slot); } catch { /* private window */ }
+  }
+  // The other desk: log off, and go straight to it after the reload.
+  function switchTo(slot) {
+    if (!LABELS[slot]) return;
+    try { sessionStorage.setItem(NEXT_KEY, slot); localStorage.setItem(LAST_KEY, slot); } catch { /* private window */ }
+    logoff();
+  }
+  // Read once: where a switch was going.
+  function nextSlot() {
+    let s = null;
+    try { s = sessionStorage.getItem(NEXT_KEY); sessionStorage.removeItem(NEXT_KEY); } catch { s = null; }
+    return LABELS[s] ? s : null;
+  }
+
   function arrive() {
     if (started) { if (started === "studio" && typeof Mail !== "undefined") Mail.restore(); return; }
-    const auto = fromQuery();
+    const auto = pending || fromQuery();
+    pending = null;
     if (auto) { logon(auto); return; }
     showLogon();
   }
@@ -53,7 +77,7 @@ const Session = (() => {
               '<button class="logon__opt' + (s === last ? " last" : "") + '" data-slot="' + s + '">' +
                 "<b>" + LABELS[s].name + "</b><span>" + LABELS[s].line + "</span></button>").join("") +
           "</div>" +
-          '<div class="logon__foot"><button class="w98btn" data-back>Return to the World</button></div>' +
+          '<div class="logon__foot"><button class="w98btn" data-back>Start Screen</button></div>' +
         "</div>" +
       "</div>";
     deskEl.appendChild(dialog);
@@ -184,5 +208,5 @@ const Session = (() => {
     else location.reload();
   }
 
-  return { arrive, logon, logoff, slot: () => started, dialogOpen: () => !!dialog };
+  return { arrive, logon, logoff, choose, switchTo, nextSlot, fromQuery, remembered, LABELS, slot: () => started, dialogOpen: () => !!dialog };
 })();

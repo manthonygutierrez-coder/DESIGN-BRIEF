@@ -1,7 +1,7 @@
 # Bundled fonts
 
-Pixel Crossing bundles sixteen typefaces so the app works with no network.
-All sixteen are licensed under the SIL Open Font License, Version 1.1.
+Pixel Crossing bundles seventeen typefaces so the app works with no network.
+All seventeen are licensed under the SIL Open Font License, Version 1.1.
 The fonts are redistributed unmodified, as woff2 subsets from Google Fonts.
 
 | Family | Copyright | Source |
@@ -22,6 +22,7 @@ The fonts are redistributed unmodified, as woff2 subsets from Google Fonts.
 | Shrikhand | Copyright (c) 2015 Jonny Pinhorn (jonpinhorn.typedesign@gmail.com) | https://github.com/jonpinhorn/shrikhand |
 | Syne | Copyright 2017 The Syne Project Authors | https://gitlab.com/bonjour-monde/fonderie/syne-typeface |
 | Unbounded | Copyright 2022 The Unbounded Project Authors | https://github.com/googlefonts/unbounded |
+| Press Start 2P | Copyright 2012 The Press Start 2P Project Authors (cody@zone38.net), with Reserved Font Name "Press Start 2P" | https://github.com/google/fonts/tree/main/ofl/pressstart2p |
 
 The full licence text follows.
 

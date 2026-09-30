@@ -16,7 +16,7 @@ CATS.forEach((cat, i) => {
 slist.insertAdjacentHTML("beforeend", '<div class="ssep"></div>');
 const backItem = document.createElement("button");
 backItem.className = "si"; backItem.type = "button"; backItem.setAttribute("role", "menuitem");
-backItem.innerHTML = '<i>' + iconSVG("back", 16) + '</i><span>Return to the World...</span>';
+backItem.innerHTML = '<i>' + iconSVG("back", 16) + '</i><span>Start Screen...</span>';
 backItem.addEventListener("click", () => { toggleStart(false); cross(-1); });
 slist.appendChild(backItem);
 

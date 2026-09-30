@@ -34,23 +34,17 @@ const PC = (() => {
     el, flag, without, reveal, discipline,
     size: () => ({ w: el.clientWidth || innerWidth, h: el.clientHeight || innerHeight }),
     hasRoom: () => typeof Room !== "undefined" && Room.live(),
-    // On the world side, with nothing open or moving: Esc there stands you up.
-    worldIdle: () => !atScreen && !busy && !pickerEl.classList.contains("open"),
-    // A poster on the wall picks its discipline, without crossing over.
-    pick(id) {
-      const d = discipline(id);
-      if (!d || atScreen || busy) return false;
-      current = d.index;
-      pickerVal.textContent = CATS[current].label;
-      opts.forEach((o, k) => o.setAttribute("aria-selected", String(k === current)));
-      setPreview(current);
-      return true;
-    },
-    // Where the game is: the world side, or the desk.
+    // On the start screen, with nothing moving: Esc there stands you up.
+    worldIdle: () => !atScreen && !busy && Boot.calm(),
+    // The posters on the wall are just posters now: the start screen has no
+    // discipline to put up.
+    pick: () => false,
+    // Where the game is: the start screen ("world", as it always was), or the desk.
     side: () => (atScreen ? "desk" : "world"),
     // Give the game the keyboard, where it would have it after crossing.
     focus() {
-      const target = atScreen ? desk.focusTarget() : pickerBtn;
+      if (!atScreen) { Boot.focus(); return; }
+      const target = desk.focusTarget();
       if (target) target.focus({ preventScroll: true });
     },
   };
