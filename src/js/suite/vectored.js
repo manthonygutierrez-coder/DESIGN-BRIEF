@@ -1185,7 +1185,9 @@ const SuiteVectorEd = (() => {
     if ((e.key === "Delete" || e.key === "Backspace")) {
       if (ed.tool === "node" && ed.node) return removeNode(ed, H);
       if (!ed.sel.length) return false;
-      H.mutate(ed, () => { for (const id of ed.sel) D.remove(ed.doc, id); select(ed, []); });
+      const gone = chosen(ed).filter((l) => !l.locked);
+      if (!gone.length) { H.status(ed, "Locked layers stay put. Unlock them to delete."); return true; }
+      H.mutate(ed, () => { for (const l of gone) D.remove(ed.doc, l.id); select(ed, ed.sel.filter((id) => !gone.some((l) => l.id === id))); });
       H.sound("close");
       return true;
     }
@@ -1203,7 +1205,7 @@ const SuiteVectorEd = (() => {
     }
     if (e.key === "[" || e.key === "]") {
       const where = e.key === "]" ? (e.shiftKey ? "top" : "up") : e.shiftKey ? "bottom" : "down";
-      H.mutate(ed, () => { for (const l of chosen(ed)) D.restack(ed.doc, l.id, where); });
+      H.mutate(ed, () => { for (const l of chosen(ed)) if (!l.locked) D.restack(ed.doc, l.id, where); });
       H.sound("layer");
       return true;
     }
@@ -1710,8 +1712,13 @@ const SuiteVectorEd = (() => {
     const ls = chosen(ed);
     if (!ls.length) return;
     if (a === "dup") H.mutate(ed, () => { const ids = []; for (const l of ls) { const c = D.duplicate(ed.doc, l.id); if (c) ids.push(c.id); } select(ed, ids); });
-    if (a === "up" || a === "down") H.mutate(ed, () => { for (const l of (a === "up" ? ls.slice().reverse() : ls)) D.restack(ed.doc, l.id, a); });
-    if (a === "del") { H.mutate(ed, () => { for (const l of ls) D.remove(ed.doc, l.id); select(ed, []); }); H.sound("close"); return; }
+    if (a === "up" || a === "down") H.mutate(ed, () => { for (const l of (a === "up" ? ls.slice().reverse() : ls)) if (!l.locked) D.restack(ed.doc, l.id, a); });
+    if (a === "del") {
+      const gone = ls.filter((l) => !l.locked);
+      if (!gone.length) { H.status(ed, "Locked layers stay put. Unlock them to delete."); return; }
+      H.mutate(ed, () => { for (const l of gone) D.remove(ed.doc, l.id); select(ed, ed.sel.filter((id) => !gone.some((l) => l.id === id))); });
+      H.sound("close"); return;
+    }
     if (a === "merge") { buildShapes(ed, H, ls.filter((l) => DRAWN.includes(l.type)).map((l) => l.id), false, JSON.stringify(ed.doc)); return; }
     H.sound("layer");
   }

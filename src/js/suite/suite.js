@@ -328,8 +328,10 @@ const Suite = (() => {
   }
 
   function replaceDoc(ed, doc) {
+    if (ed.beforeHistory) ed.beforeHistory();
     const pre = JSON.stringify(ed.doc);
     ed.doc = doc;
+    if (ed.afterHistory) ed.afterHistory();
     ed.hist.record(pre);
     changed(ed, {});
   }
@@ -389,6 +391,7 @@ const Suite = (() => {
       if (s === "look") { S().look = S().look === "graphite" ? "classic" : "graphite"; save(); win.root.dataset.look = S().look; Object.values(win.eds).forEach((x) => x.relook && x.relook()); paintTop(win); sound("pick"); }
       if (s === "new") {
         const [, pw, ph] = A.presetsFor(win.mode, ed.appId)[Number(root.querySelector('[data-s="preset"]').value) || 0];
+        if (ed.beforeHistory) ed.beforeHistory();
         mutate(ed, () => {
           const fresh = D.create({ mode: ed.doc.mode, w: pw, h: ph, name: ed.doc.meta.name, briefId: ed.doc.meta.briefId });
           fresh.palette = ed.doc.palette.slice();
@@ -396,6 +399,7 @@ const Suite = (() => {
           Object.keys(ed.doc).forEach((k) => delete ed.doc[k]);
           Object.assign(ed.doc, fresh);
         });
+        if (ed.afterHistory) ed.afterHistory();
         if (ed.st) { ed.st.fit(ed.doc); ed.render(); paintZoom(win); }
         setStatus(ed, "New " + pw + "×" + ph + " document. Undo brings the old one back.");
       }
@@ -430,7 +434,8 @@ const Suite = (() => {
   }
   function flushAutosave(ed) {
     if (!ed || !ed.dirty) return;
-    const text = JSON.stringify(ed.doc);
+    // A selection lifted off the sprite is still part of the work: save it back in.
+    const text = JSON.stringify(ed.snapshotDoc ? ed.snapshotDoc() : ed.doc);
     if (text.length > AUTOSAVE_MAX) { setStatus(ed, "Too large to autosave — use Save to keep it."); return; }
     S().docs[ed.docKey] = JSON.parse(text);
     S().touched[ed.docKey] = Date.now();
@@ -450,9 +455,13 @@ const Suite = (() => {
     if (pre && JSON.stringify(ed.doc) !== pre) { ed.hist.record(pre); changed(ed, { quiet: true }); }
   }
   function undo(ed, redo) {
+    // Anything held in the hand (a lifted selection) is put down first, so it is
+    // a step of its own that undo can take back, not something lost.
+    if (ed.beforeHistory) ed.beforeHistory();
     const next = redo ? ed.hist.redo(ed.doc) : ed.hist.undo(ed.doc);
     if (!next) return;
     ed.doc = next;
+    if (ed.afterHistory) ed.afterHistory();
     if (ed.blockSel != null && ed.blockSel >= (ed.doc.blocks || []).length) ed.blockSel = ed.doc.blocks.length - 1;
     changed(ed, {});
     paintTop(ed.win);

@@ -215,6 +215,15 @@ const SuitePixelEd = (() => {
     ed.selectedImage = () => null;
     ed.wand = (x, y, tol, add) => wandAt(ed, H, x, y, tol, add);
     ed.unmount = () => { commitFloat(ed, H); finishPen(ed, H, true); };
+    // History hooks (suite.js): put a lifted selection down before undo, redo or a
+    // new document, forget a selection that no longer fits, and let autosave see
+    // the sprite with whatever is lifted off it laid back in.
+    ed.beforeHistory = () => { commitFloat(ed, H); };
+    ed.afterHistory = () => {
+      ed.float = null; ed.drag = null; ed.stamp = null;
+      if (ed.mask && ed.mask.length !== ed.doc.w * ed.doc.h) ed.mask = null;
+    };
+    ed.snapshotDoc = () => (ed.float ? Object.assign({}, ed.doc, { bitmap: withFloat(ed.doc.bitmap, ed.float, ed.doc.w, ed.doc.h) }) : ed.doc);
     ed.relook = () => { ed.st.look = SuiteStage.LOOKS[H.look()] || SuiteStage.LOOKS.graphite; draw(ed); };
     ed.viewClick = (o) => {
       if (o === "grid") { ed.grid = !ed.grid; render(ed, H, {}); }
@@ -528,6 +537,12 @@ const SuitePixelEd = (() => {
     }
     ed.float = { px, dx: 0, dy: 0, pre };
   }
+  // The bitmap with a lifted selection laid back down where it is now held.
+  function withFloat(bitmap, fl, w, h) {
+    const out = bitmap.slice();
+    for (const [x, y, c] of fl.px) { const px = x + fl.dx, py = y + fl.dy; if (px >= 0 && py >= 0 && px < w && py < h) out[py * w + px] = c; }
+    return out;
+  }
   function commitFloat(ed, H) {
     const fl = ed.float;
     if (!fl) return;
@@ -769,7 +784,7 @@ const SuitePixelEd = (() => {
     });
   }
 
-  return { mount, TOOLS, linePts, rectPts, ellipsePts, curvePts, perfectDrop, cleanLine, selTransform, selOutline };
+  return { mount, TOOLS, linePts, rectPts, ellipsePts, curvePts, perfectDrop, cleanLine, selTransform, selOutline, withFloat };
 })();
 
 if (typeof module !== "undefined") module.exports = SuitePixelEd;

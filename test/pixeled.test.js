@@ -104,3 +104,16 @@ test("selections: an outline rings what is drawn, one pixel, and never paints ov
   assert.equal(o.bitmap.filter(Boolean).length, 6);
 });
 
+
+test("a lifted selection is saved back in where it is held, and the sprite itself is untouched", () => {
+  const w = 4, h = 4, bmp = new Array(w * h).fill("");
+  bmp[0] = "#A";                                                // what stays
+  const fl = { px: [[1, 1, "#B"], [2, 1, "#C"]], dx: 1, dy: 1 };  // lifted from row 1, held one along and down
+  const out = P.withFloat(bmp, fl, w, h);
+  assert.equal(out[0], "#A");
+  assert.equal(out[2 * w + 2], "#B");
+  assert.equal(out[2 * w + 3], "#C");
+  assert.equal(bmp[2 * w + 2], "", "the original is not changed");
+  const off = P.withFloat(bmp, { px: [[3, 3, "#D"]], dx: 2, dy: 2 }, w, h);
+  assert.equal(off.filter(Boolean).length, 1, "pixels held off the edge are dropped, not wrapped");
+});

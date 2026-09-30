@@ -104,3 +104,12 @@ test("resizing keeps the work where it was, around the centre", () => {
   const site = D.create({ mode: "layout" });
   assert.equal(D.resize(site, 10, 10), false, "a page has no canvas size to change");
 });
+
+test("duplicating a locked layer gives a copy you can work on", () => {
+  const doc = D.create({ mode: "free" });
+  const l = D.add(doc, { type: "rect", x: 0, y: 0, w: 10, h: 10 });
+  l.locked = true;
+  const c = D.duplicate(doc, l.id);
+  assert.equal(c.locked, false);
+  assert.equal(l.locked, true, "the original stays locked");
+});

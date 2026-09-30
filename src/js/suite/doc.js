@@ -139,7 +139,7 @@ const SuiteDoc = (() => {
   function duplicate(doc, id) {
     const l = find(doc, id);
     if (!l) return null;
-    const copy = Object.assign(JSON.parse(JSON.stringify(l)), { id: uid("L"), x: l.x + 10, y: l.y + 10 });
+    const copy = Object.assign(JSON.parse(JSON.stringify(l)), { id: uid("L"), x: l.x + 10, y: l.y + 10, locked: false });
     doc.layers.splice(indexOf(doc, id) + 1, 0, copy);
     return copy;
   }
