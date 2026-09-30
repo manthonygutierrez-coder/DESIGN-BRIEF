@@ -180,6 +180,7 @@ const HustleMemory = (() => {
       });
     }
     start();
+    g.state = S;                                       // for tests: the table as it lies
     g.loop((dt) => {
       S.t += dt;
       if (S.wait > 0) { S.wait -= dt; if (S.wait <= 0) { settle(S.st); S.wait = 0; } }

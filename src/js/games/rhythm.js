@@ -138,7 +138,7 @@ const HustleRhythm = (() => {
       while (S.sec < spec.sections.length && S.now > sectionEnd(S.c, S.sec) + windows(still).good) {
         const sec = spec.sections[S.sec], ok = grade(S.c, S.sec) >= PASS;
         if (sec.grant && ok) {
-          if (api.grant(sec.grant, sec.say) === "new") { S.found = true; g.toast("+ fact card: " + (api.factLabel ? api.factLabel(sec.grant) : sec.grant)); }
+          if (api.grant(sec.grant, sec.say) === "new") { S.found = true; g.toast("+ fact card: " + (api.factLabel ? api.factLabel(sec.grant) : sec.grant)); hud(); }
           g.say(sec.say);
         } else if (sec.grant && !ok && !has(sec.grant)) g.say(spec.miss || "Keep the beat, and there's more to learn.");
         S.sec++;
@@ -179,6 +179,7 @@ const HustleRhythm = (() => {
       if (S.phase === "over") { const t2 = "THAT'S THE SHOW", w = Kit.measure(t2, 2); rect(ctx, "rgba(0,0,0,.5)", 0, 30, W, 26); Kit.text(ctx, t2, (W - w) / 2, 38, "#FFD86B", 2); }
     }
     title();
+    g.state = S;                                       // for tests: the song as it plays
     let clock = 0;
     g.loop((dt) => { clock += dt; update(dt); draw(clock); });
     draw(0);

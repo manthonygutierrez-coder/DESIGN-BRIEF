@@ -580,6 +580,7 @@ const HustleWalk = (() => {
     hud();
     if (grants.length && grants.every(has)) { S.done = true; S.toldDone = true; }
     explore();
+    g.state = { S, people };                           // for tests: where everyone is
     g.loop((dt) => { update(dt); draw(); });
     draw();
     return g;

@@ -172,6 +172,7 @@ const HustleSweep = (() => {
       }
     }
     start();
+    g.state = S;                                       // for tests: the board as it lies
     g.loop((dt) => { S.t += dt; draw(); });
     draw();
     return g;

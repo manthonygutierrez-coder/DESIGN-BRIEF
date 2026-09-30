@@ -146,6 +146,7 @@ const MiniGame = (() => {
         const n = document.createElement("p");
         n.className = "mg__toast";
         n.textContent = text;
+        n.style.top = 14 + screen.querySelectorAll(".mg__toast").length * 24 + "px";   // two at once stack, not overlap
         screen.appendChild(n);
         setTimeout(() => n.remove(), 2800);
       },

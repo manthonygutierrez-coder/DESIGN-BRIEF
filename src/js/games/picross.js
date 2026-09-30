@@ -99,6 +99,7 @@ const HustlePicross = (() => {
         S.done = true;
         if (typeof uiSound === "function") uiSound("loaded");
         if (p.grant && api.grant(p.grant, p.say) === "new") { S.found = true; g.toast("+ fact card: " + (api.factLabel ? api.factLabel(p.grant) : p.grant)); }
+        hud();
         g.say(p.say || "That's the picture.");
         g.choices([{ label: "Next picture", kind: "go", act: () => start(S.i + 1) }, { label: "Close", kind: "quiet", act: () => g.close() }]);
       }
@@ -168,6 +169,7 @@ const HustlePicross = (() => {
       Kit.text(ctx, nm, vx + 12 - Kit.measure(nm) / 2, vy + cl.h * 2 + 8, C.ink);
     }
     start(0);
+    g.state = S;                                       // for tests: the grid as it stands
     g.loop((dt) => { S.t += dt; draw(); });
     draw();
     return g;

@@ -482,6 +482,7 @@ const HustleMicro = (() => {
     }
 
     title();
+    g.state = S;                                       // for tests: the run as it stands
     g.loop((dt) => { update(dt); draw(); });
     draw();
     return g;
