@@ -1,7 +1,184 @@
 {
   "version": 1,
-  "updated": "2026-09-21T13:10:38Z",
+  "updated": "2026-10-05T13:18:06Z",
   "briefs": [
+    {
+      "id": "2026-10-05-naming-the-ground",
+      "cadence": "weekly",
+      "received": "2026-10-05T13:18:06Z",
+      "discipline": "Type Design",
+      "brief": {
+        "project": "NAMING THE GROUND",
+        "client": "A walking-map publisher that has lettered its sheets the same way since 1968",
+        "ask": "Every name on our thirty-four sheets is set in a face our own draughtsman cut in 1968 and somebody digitised badly off a bitmap in 1997. The water names are not in it at all — they are adhesive film, and the roll ran out in March. Draw the face properly, roman for the ground and italic for the water, before Sheet 12 goes to the new press in January.",
+        "deliver": [
+          "Roman and italic, upper and lower case, with the accents the Welsh and Gaelic names need",
+          "Three optical sizes drawn separately at 4.5, 6 and 9 point — not one face scaled",
+          "Tabular figures that column up in a table of spot heights",
+          "A proof of the whole set overprinting contour brown and woodland green",
+          "A substitution list for the forty-one names that will no longer fit"
+        ],
+        "limits": [
+          "Water names are set along the water. Every letter has to read rotated to any angle, upside down included.",
+          "Nothing thinner than 0.08 mm. Below that it goes into the contour brown and does not come out.",
+          "A 1 and a 7 get read in bad light by somebody who is lost. They cannot be mistaken for each other."
+        ],
+        "tone": "Exact · worn in · not nostalgic"
+      },
+      "clientProfile": {
+        "who": "Esme Thirlwall",
+        "role": "Cartographic Editor",
+        "co": "Thwaitegill Survey",
+        "dom": "thwaitegill.co.uk",
+        "frame": "paper",
+        "voice": "People read these names in weather, so I would rather have it right than early.",
+        "refs": [
+          "contour map detail",
+          "folded walking map",
+          "lettering proof strip",
+          "trig point pillar",
+          "fell in low cloud"
+        ],
+        "site": {
+          "tagline": "Walking maps of the northern fells · 1:25,000",
+          "mastL": "Thirty-four sheets",
+          "mastR": "Surveyed on foot",
+          "foot": "Sheet corrections posted here, not reprinted.",
+          "nav": [
+            [
+              "Home",
+              "/"
+            ],
+            [
+              "The sheets",
+              "/sheets"
+            ]
+          ],
+          "pages": {
+            "/": [
+              {
+                "t": "lede",
+                "p": "Thirty-four sheets covering the ground between Shap and the Tyne gap. Every one walked, and corrected every seven years whether or not anything has moved."
+              },
+              {
+                "t": "notice",
+                "h": "Relettering, Sheets 1–34",
+                "p": "All thirty-four sheets are being relettered for the new press over the next two years. Sheets still carrying the 1968 lettering remain accurate. The names have not changed, only the type they are set in.",
+                "stamp": "Notice to walkers"
+              },
+              {
+                "t": "spec",
+                "h": "How a sheet is made",
+                "rows": [
+                  [
+                    "Scale",
+                    "1:25,000. Four centimetres to one kilometre"
+                  ],
+                  [
+                    "Contour interval",
+                    "10 m, reduced to 5 m on the limestone"
+                  ],
+                  [
+                    "Sheet size",
+                    "960 × 680 mm, folded to 120 × 230 mm"
+                  ],
+                  [
+                    "Paper",
+                    "Coated, 115 gsm. It will not tear wet"
+                  ],
+                  [
+                    "Printing",
+                    "Four-colour litho until 2026; digital from Sheet 12"
+                  ],
+                  [
+                    "Lettering",
+                    "Set to the 1968 originals. Water names applied as film"
+                  ],
+                  [
+                    "Survey cycle",
+                    "Seven years, on foot, in all weathers"
+                  ]
+                ]
+              }
+            ],
+            "/sheets": [
+              {
+                "t": "table",
+                "h": "In print",
+                "sub": "Sheets are sold singly. A sheet marked 1968 has not been relettered yet.",
+                "cols": [
+                  "Sheet",
+                  "Covers",
+                  "Edition",
+                  "Lettering"
+                ],
+                "rows": [
+                  [
+                    "1",
+                    "Shap and the Lune gorge",
+                    "Eleventh, 2024",
+                    "1968 originals"
+                  ],
+                  [
+                    "7",
+                    "Mallerstang",
+                    "Ninth, 2021",
+                    "1968 originals"
+                  ],
+                  [
+                    "12",
+                    "Thwaitegill and Rigg End",
+                    "Twelfth, 2027",
+                    "New face, in hand"
+                  ],
+                  [
+                    "19",
+                    "Cross Fell, north",
+                    "Eighth, 2019",
+                    "1968 originals"
+                  ],
+                  [
+                    "26",
+                    "The Tyne gap",
+                    "Tenth, 2023",
+                    "1968 originals"
+                  ],
+                  [
+                    "31",
+                    "Kielder, west",
+                    "Sixth, 2018",
+                    "1968 originals, out of print"
+                  ]
+                ]
+              },
+              {
+                "t": "notice",
+                "h": "Water names",
+                "p": "The adhesive italic we have lettered rivers and tarns with since 1971 is discontinued. We hold enough film for two more sheets. After that the water goes unnamed or it goes in a new face.",
+                "stamp": "March 2026"
+              }
+            ]
+          }
+        }
+      },
+      "assets": {
+        "markSVG": "<path d=\"M32 10 54 46H10z\" fill=\"none\" stroke=\"%B%\" stroke-width=\"6\" stroke-linejoin=\"round\"/><circle cx=\"32\" cy=\"34\" r=\"5.5\" fill=\"%B%\"/><path d=\"M4 52c9-6 16-1 24-4s15-8 32-4\" fill=\"none\" stroke=\"%C%\" stroke-width=\"4\" stroke-linecap=\"round\"/><path d=\"M4 60c9-6 16-1 24-4s15-8 32-4\" fill=\"none\" stroke=\"%C%\" stroke-width=\"4\" stroke-linecap=\"round\" opacity=\".5\"/>",
+        "images": [
+          {
+            "ref": "contour map detail",
+            "path": "briefs/assets/thwaitegill/sheet.png"
+          },
+          {
+            "ref": "folded walking map",
+            "path": "briefs/assets/thwaitegill/cover.png"
+          },
+          {
+            "ref": "lettering proof strip",
+            "path": "briefs/assets/thwaitegill/proof.png"
+          }
+        ]
+      }
+    },
     {
       "id": "2026-09-21-slow-fill",
       "cadence": "weekly",
