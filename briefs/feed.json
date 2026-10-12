@@ -1,7 +1,256 @@
 {
   "version": 1,
-  "updated": "2026-10-05T13:18:06Z",
+  "updated": "2026-10-12T13:10:39Z",
   "briefs": [
+    {
+      "id": "2026-10-12-two-hours-either-side",
+      "cadence": "weekly",
+      "received": "2026-10-12T13:10:39Z",
+      "discipline": "Interface Design",
+      "brief": {
+        "project": "TWO HOURS EITHER SIDE",
+        "client": "A causeway authority whose crossing times have been a recorded telephone message since 1983",
+        "ask": "The crossing times have reached people the same way for forty-three years: a recorded line in the keeper's hut, re-recorded twice a day, and a hand-cranked board at the mainland gate. The exchange goes digital on 27 January and the line goes with it. From that morning the times live on a screen, and the screen has to do what the recording did — be read by somebody sitting at the top of the bank with the engine running, deciding whether to go now or turn round. Eleven vehicles were lifted off the sands last year. All eleven drivers had seen a crossing time somewhere.",
+        "deliver": [
+          "The crossing page on a phone, in every state it has: open, closing, closed — and the state it will be in most, cached and hours old.",
+          "The gate board at the mainland head, read from a car doing twenty with the sun behind it.",
+          "The keeper's screen in the hut: how one person commits a day of windows and shuts the crossing early when the wind turns.",
+          "What a stale page does when it cannot know. Drawn, for all three surfaces, not described in a paragraph.",
+          "A one-page states-and-transitions sheet the Commissioners can minute and the keeper can argue with."
+        ],
+        "limits": [
+          "There is no signal from the top of the bank to the island gate. The page a driver reads is the one their phone cached in the car park.",
+          "The board is read at twenty miles an hour through glass the sand has been etching since 2019. Two lines, and the second is optional.",
+          "The Commissioners publish times. They do not say it is safe to cross. Any wording a coroner could read as permission has to go.",
+          "No countdown that keeps running after the page has lost the tide. A clock that lies is worse than a blank space."
+        ],
+        "tone": "Exact · unpersuaded · no reassurance"
+      },
+      "clientProfile": {
+        "who": "Hester Quine",
+        "role": "Clerk to the Commissioners",
+        "co": "Barrowfleet Causeway Commissioners",
+        "dom": "barrowfleetcauseway.org.uk",
+        "frame": "civic",
+        "theme": {
+          "bg": "#F2EFE4",
+          "panel": "#E4DFCE",
+          "ink": "#15201D",
+          "dim": "#5C6762",
+          "line": "#CBC4AE",
+          "brand": "#0E564E",
+          "brand2": "#C2521C",
+          "link": "#0B463F",
+          "onBrand": "#F2EFE4",
+          "head": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+          "body": "Georgia, 'Times New Roman', serif",
+          "mark": "horizon",
+          "markFace": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+          "rule": "2px"
+        },
+        "voice": "Nobody rings this office to ask when the water comes in. They ring to ask whether they will get back. Answer that, and nothing else.",
+        "wrap": "The board went in on the Tuesday and the keeper has not telephoned once to complain, which from him is a testimonial. The closed state is now the first thing the island shop looks at in the morning. Invoice the Clerk, not the county.",
+        "refs": [
+          "tidal causeway at dusk",
+          "sands refuge tower",
+          "hand-cranked tide board",
+          "crossing times on a phone screen",
+          "salt-etched sign glass"
+        ],
+        "site": {
+          "tagline": "The causeway to Barrowfleet. Open about thirteen hours in twenty-four, never the same thirteen.",
+          "est": "Constituted 1847 · Gate House, Barrowfleet Bank",
+          "foot": "Where this page and the gate board disagree, the board is correct.",
+          "nav": [
+            [
+              "Home",
+              "/"
+            ],
+            [
+              "Crossing times",
+              "/crossing"
+            ],
+            [
+              "The gate and the towers",
+              "/gate"
+            ]
+          ],
+          "pages": {
+            "/": [
+              {
+                "t": "lede",
+                "p": "One mile and three-quarters of road laid on sand. It is covered twice a day and has been since 1847."
+              },
+              {
+                "t": "notice",
+                "h": "The recorded line closes on 27 January",
+                "p": "The number in the Gate House goes when the exchange goes digital. After that morning the crossing times are published here and on the gate board, and nowhere else.",
+                "stamp": "Notice to road users"
+              },
+              {
+                "t": "table",
+                "h": "Published windows",
+                "cols": [
+                  "Date",
+                  "Open from",
+                  "Open until",
+                  "Second window"
+                ],
+                "rows": [
+                  [
+                    "Mon 12 Oct",
+                    "04:10",
+                    "11:20",
+                    "16:35 – 23:45"
+                  ],
+                  [
+                    "Tue 13 Oct",
+                    "04:55",
+                    "12:05",
+                    "17:20 – 00:30"
+                  ],
+                  [
+                    "Wed 14 Oct",
+                    "05:45",
+                    "12:55",
+                    "18:10 – 01:20"
+                  ],
+                  [
+                    "Thu 15 Oct",
+                    "06:40",
+                    "13:50",
+                    "19:05 – 02:15"
+                  ],
+                  [
+                    "Fri 16 Oct",
+                    "07:40",
+                    "14:50",
+                    "20:05 – 03:10"
+                  ]
+                ],
+                "note": "These are the Commissioners' published windows. They are not advice, and they assume a car, a dry road and no onshore wind above force five."
+              },
+              {
+                "t": "prose",
+                "h": "Why the times move",
+                "p": "Low water walks forward about fifty minutes a day, so a window that fell mid-morning this week falls at lunchtime the next. There is no pattern a visitor can hold in their head, which is the entire reason there is a board at the gate."
+              }
+            ],
+            "/crossing": [
+              {
+                "t": "spec",
+                "h": "The rule, as the Commissioners minute it",
+                "sub": "Read out at the Michaelmas meeting and unchanged since 1991.",
+                "rows": [
+                  [
+                    "Window",
+                    "Two hours either side of low water, less twenty minutes at each end"
+                  ],
+                  [
+                    "Depth",
+                    "The road floods at the gate first. Three hundred millimetres will stop a car and four hundred and fifty will move it"
+                  ],
+                  [
+                    "Wind",
+                    "An onshore wind above force five brings the water in early. The keeper may shorten a window without notice"
+                  ],
+                  [
+                    "Closure",
+                    "The keeper's decision. It is not appealable and it is not explained at the time"
+                  ],
+                  [
+                    "Refuges",
+                    "Two towers, at 0.6 and 1.3 miles. Nine rungs each. No telephone, no light and no shelter from the wind"
+                  ],
+                  [
+                    "Recovery",
+                    "Coastguard first, then a contractor. The vehicle remains yours and so does the bill"
+                  ],
+                  [
+                    "Insurance",
+                    "No policy the Commissioners have ever been shown covers a vehicle driven onto a closed crossing"
+                  ]
+                ]
+              },
+              {
+                "t": "notice",
+                "h": "If the water is already across the road",
+                "p": "Do not drive at it and do not reverse down the causeway. Leave the vehicle, walk to the nearer tower and go up. Eleven drivers did that last year and eleven were taken off.",
+                "stamp": "Read this before you cross"
+              },
+              {
+                "t": "feed",
+                "h": "Closures and incidents",
+                "items": [
+                  {
+                    "d": "18 Sep",
+                    "h": "Window shortened by forty minutes",
+                    "p": "Onshore wind, force six. The keeper cranked the board at 05:50. The recorded line was changed at 06:10, by which time two cars had already gone down."
+                  },
+                  {
+                    "d": "2 Sep",
+                    "h": "Two vehicles on the sands",
+                    "p": "Both drivers reached the second tower on foot. One vehicle was recovered on the Thursday. One was not."
+                  },
+                  {
+                    "d": "11 Aug",
+                    "h": "Board jammed",
+                    "p": "Salt in the mechanism. The gate was manned on foot for two days and the queue reached the village."
+                  }
+                ]
+              }
+            ],
+            "/gate": [
+              {
+                "t": "spec",
+                "h": "The gate board",
+                "rows": [
+                  [
+                    "Built",
+                    "1961. Case 1984. The glass has not been replaced since"
+                  ],
+                  [
+                    "Mechanism",
+                    "Hand-cranked, two drums of thirty-one numerals"
+                  ],
+                  [
+                    "Changed",
+                    "Twice daily by the keeper, on foot, in whatever weather there is"
+                  ],
+                  [
+                    "Read from",
+                    "Forty metres, at twenty miles an hour, often into the sun"
+                  ],
+                  [
+                    "Known fault",
+                    "The drums slip in frost, and a slipped drum reads as a perfectly legitimate time"
+                  ]
+                ]
+              },
+              {
+                "t": "notice",
+                "h": "The board is the last word",
+                "p": "Where the board and this page disagree, the board is correct. It stands thirty metres from the water and this page does not.",
+                "stamp": "Standing resolution, 1991"
+              },
+              {
+                "t": "gallery",
+                "h": "The crossing",
+                "caps": [
+                  "Causeway head, last window of the day",
+                  "Second tower, 1.3 miles out",
+                  "The board as the keeper leaves it",
+                  "The page as a driver sees it"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "assets": {
+        "markSVG": "<path d=\"M10 58 36 6h14L24 58z\" fill=\"%B%\"/><rect x=\"4\" y=\"30\" width=\"56\" height=\"10\" fill=\"%C%\"/><rect x=\"4\" y=\"46\" width=\"56\" height=\"6\" fill=\"%C%\" opacity=\".45\"/>"
+      }
+    },
     {
       "id": "2026-10-05-naming-the-ground",
       "cadence": "weekly",
