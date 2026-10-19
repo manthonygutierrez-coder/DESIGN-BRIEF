@@ -1,7 +1,227 @@
 {
   "version": 1,
-  "updated": "2026-10-12T13:10:39Z",
+  "updated": "2026-10-19T13:07:59Z",
   "briefs": [
+    {
+      "id": "2026-10-19-open-pan",
+      "cadence": "weekly",
+      "received": "2026-10-19T13:07:59Z",
+      "discipline": "3D & Asset",
+      "brief": {
+        "project": "OPEN PAN",
+        "client": "A salt works that has spent twenty years packing somebody else's name",
+        "ask": "The own-label contract that takes four fifths of the make ends on 31 March and will not be renewed, so from April the salt is sold under our own name to kitchens and merchants who have never seen it. They buy salt by the grain, and a photograph of white crystals on a white sheet tells them nothing, so the four grades want modelling and rendering at one true scale, with the packs rendered alongside them. The packs are the awkward part: the trade listing closes on 30 January and the cartons do not come off the press until the third week of February, so everything on the sheet and the ordering page has to be a render of a pack that does not exist yet.",
+        "deliver": [
+          "Four grades modelled as crystal libraries — flake, coarse, medium, fine — each built from at least twelve distinct crystals, so no heap repeats itself across the range",
+          "One salt material used on all four grades, with a dry and a stored-a-fortnight variant",
+          "The four packs modelled to the printer's die lines: 125 g tin, 500 g carton, 1.5 kg tub, 25 kg sack",
+          "One camera and light rig, delivered as a scene file, that every grade and every pack is shot on",
+          "Three views of each pack at 2048 px and a 512 px thumbnail cut from the same render, not resized from a larger one",
+          "A true-scale comparison plate, all four grades at 1:1 at 300 dpi, for the back of the trade sheet",
+          "glTF meshes of the four packs for the ordering page, under 2 MB each"
+        ],
+        "limits": [
+          "Everything at one scale. A flake is eight millimetres across the base and a fine grain is three tenths of one; if the fine grade has been scaled up to look like something, the plate is a lie and the first delivery exposes it.",
+          "One rig and one material across all four grades, and no sheen on any of them. Damp salt is a fault we reject at the pan, and a render that glistens says we shipped it.",
+          "The packs are cut against the die lines dated 12 January. If a crease falls where you have drawn a fold, the printer will not take the blame and neither will I.",
+          "Nothing in frame but the salt and the pack. No slate, no linen, no wooden board, no hand."
+        ],
+        "tone": "Cold · literal · plain"
+      },
+      "clientProfile": {
+        "who": "Maud Hesketh",
+        "role": "Works Manager",
+        "co": "Calderstow Salt Works",
+        "dom": "calderstowsalt.co.uk",
+        "frame": "shop",
+        "theme": {
+          "bg": "#F3F1EA",
+          "panel": "#E7E4D9",
+          "ink": "#19232A",
+          "dim": "#69737A",
+          "line": "#CEC9BA",
+          "brand": "#2E5A66",
+          "brand2": "#19232A",
+          "link": "#24474F",
+          "onBrand": "#F3F1EA",
+          "head": "'Archivo', 'Helvetica Neue', Arial, sans-serif",
+          "body": "Georgia, 'Times New Roman', serif",
+          "mark": "stack",
+          "markText": "C",
+          "markFace": "'Archivo', Arial, sans-serif"
+        },
+        "greet": "Maud Hesketh, Calderstow.",
+        "voice": "My mother ran these pans for thirty years and never once had to say whose salt it was. I have until March to learn how.",
+        "wrap": "The grade plate went on the back of the trade sheet and two buyers have now asked for the flake by name, which has not happened here before. The sack render is the one I keep looking at — it is a sack, and it looks like a sack, and that is harder than it sounds.",
+        "refs": [
+          "open pan salt works interior",
+          "flake salt crystal macro",
+          "salt rake on an iron pan",
+          "brine wellhead pump",
+          "salt drying shed"
+        ],
+        "site": {
+          "tagline": "Open-pan salt. Brine from the Calderstow wellhead since 1868.",
+          "est": "Est. 1868 · Pan House, Calderstow",
+          "foot": "Prices held to 31 March 2028.",
+          "nav": [
+            [
+              "Home",
+              "/"
+            ],
+            [
+              "Grades & packs",
+              "/grades"
+            ]
+          ],
+          "pages": {
+            "/": [
+              {
+                "t": "lede",
+                "p": "Six tonnes a week, raked off four iron pans by hand, and until this spring almost none of it left the works with our name on it."
+              },
+              {
+                "t": "notice",
+                "h": "Own-label packing ends on 31 March 2027",
+                "p": "The contract that has taken four fifths of our make since 2006 will not be renewed. From 1 April the whole week's make is sold direct, under our own name, in our own packs. Merchants holding a standing order should write to the works this month so it stays on the books.",
+                "stamp": "Notice to merchants and the catering trade"
+              },
+              {
+                "t": "spec",
+                "h": "The works",
+                "rows": [
+                  [
+                    "Brine",
+                    "Drawn from the wellhead at 183 m, 25.5 degrees Baumé"
+                  ],
+                  [
+                    "Pans",
+                    "Four open iron pans, 6.4 × 4.9 m, fired from beneath"
+                  ],
+                  [
+                    "Method",
+                    "Held at 94 °C and raked to the side by hand, twice a shift"
+                  ],
+                  [
+                    "Make",
+                    "Six tonnes a week. Less in a wet August"
+                  ],
+                  [
+                    "Added to it",
+                    "Nothing. No anti-caking agent, no iodine"
+                  ],
+                  [
+                    "Minimum order",
+                    "One 25 kg sack. We will not break a sack"
+                  ]
+                ]
+              },
+              {
+                "t": "feed",
+                "h": "From the works",
+                "items": [
+                  {
+                    "d": "6 Oct 2026",
+                    "h": "Pan three relined",
+                    "p": "Nine days off the fire and back in the make. The flake off it is coming through a shade coarser and will settle by November."
+                  },
+                  {
+                    "d": "22 Sep 2026",
+                    "h": "Notice received on the packing contract",
+                    "p": "Thirty weeks, which is the length of the notice period and not a surprise."
+                  },
+                  {
+                    "d": "4 Aug 2026",
+                    "h": "Wellhead pump changed",
+                    "p": "First time since 1991. Same brine, same gravity, measured twice to be sure of it."
+                  }
+                ]
+              }
+            ],
+            "/grades": [
+              {
+                "t": "table",
+                "h": "The four grades",
+                "cols": [
+                  "Grade",
+                  "Grain",
+                  "Takes to",
+                  "Packs"
+                ],
+                "rows": [
+                  [
+                    "Flake",
+                    "6–9 mm hollow pyramid",
+                    "Finishing. Crushed between the fingers",
+                    "125 g tin · 500 g carton"
+                  ],
+                  [
+                    "Coarse",
+                    "3–4 mm",
+                    "Mills, brines, a crust on a loaf",
+                    "1.5 kg tub · 25 kg sack"
+                  ],
+                  [
+                    "Medium",
+                    "1–2 mm",
+                    "Everyday cooking, and the pinch pot by the stove",
+                    "500 g carton · 1.5 kg tub"
+                  ],
+                  [
+                    "Fine",
+                    "0.2–0.4 mm",
+                    "Baking and cure, where it has to go",
+                    "500 g carton · 25 kg sack"
+                  ]
+                ],
+                "note": "Grain is measured on a dry sieve at the works. A flake is measured across the base of the pyramid, which is the only honest way to measure a flake."
+              },
+              {
+                "t": "notice",
+                "h": "Every photograph on this page is a render",
+                "p": "The packs do not come off the printer until February, and we would rather show you the carton we are going to send than the one we used to pack for somebody else. The salt in them is modelled at the size it arrives: a flake and a fine grain side by side at one scale, which is a comparison nobody in this trade prints.",
+                "stamp": "Stated plainly, so nobody finds out later"
+              },
+              {
+                "t": "spec",
+                "h": "Ordering",
+                "rows": [
+                  [
+                    "Trade minimum",
+                    "One 25 kg sack, or six of any retail pack"
+                  ],
+                  [
+                    "Lead time",
+                    "Five working days. A fortnight in December"
+                  ],
+                  [
+                    "Carriage",
+                    "Pallet to a goods entrance. We do not deliver to a house"
+                  ],
+                  [
+                    "Samples",
+                    "250 g of any grade, once, free"
+                  ],
+                  [
+                    "Price",
+                    "Held to 31 March 2028. Brine does not get dearer"
+                  ]
+                ]
+              }
+            ]
+          },
+          "gallery": [
+            "Pan house, west end",
+            "Flake off the rake",
+            "Wellhead",
+            "Drying shed"
+          ]
+        }
+      },
+      "assets": {
+        "markSVG": "<path d=\"M32 5 59 32 32 59 5 32z\" fill=\"none\" stroke=\"%B%\" stroke-width=\"5\" stroke-linejoin=\"round\"/><path d=\"M32 20 44 32 32 44 20 32z\" fill=\"%C%\"/>"
+      }
+    },
     {
       "id": "2026-10-12-two-hours-either-side",
       "cadence": "weekly",
