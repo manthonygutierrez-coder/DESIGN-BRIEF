@@ -554,6 +554,37 @@ const Capsules = (() => {
   }
 
 
+  /* ── unseen: a dark silhouette, lit from behind ─────────
+   * Until you have drawn a creature and compared, its picture stays in shadow:
+   * every pixel goes dark, the edges the light catches (from behind, upper
+   * right) take the rim colour, brightest on the outermost pixel and fading one
+   * pixel in, and the far side gets a faint cool bounce. The rim is tinted by
+   * the creature's type, so a fire creature glows warm and a water one cool. */
+  const RIMS = { ember: "#FFB05A", tide: "#8FE3FF", leaf: "#B8F28A", volt: "#FFF07A", stone: "#EAD9B4", frost: "#DDF6FF", gloom: "#D9A8FF", gale: "#C6F7E4" };
+  const SHADE = "#16111E";
+  function silhouette(img, type) {
+    const { w, h, px } = img, rim = RIMS[type] || "#F4E9C8", soft = mixHex(rim, SHADE, 0.55), bounce = mixHex("#6B78B8", SHADE, 0.6);
+    const on = (x, y) => x >= 0 && y >= 0 && x < w && y < h && !!px[y * w + x];
+    const out = new Array(w * h).fill("");
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (!on(x, y)) continue;
+      let v = SHADE;
+      if (!on(x, y - 1) || !on(x + 1, y) || !on(x + 1, y - 1)) v = rim;             // the edge facing the light
+      else if (!on(x, y - 2) || !on(x + 2, y) || !on(x + 2, y - 2)) v = soft;      // and a pixel in, fading
+      else if (!on(x - 1, y) || !on(x - 1, y + 1)) v = bounce;                     // the far side
+      out[y * w + x] = v;
+    }
+    return { w, h, px: out };
+  }
+
+  // The page as it reads before you know who it is: "Who's that?" No name, just "it".
+  function veiled(p) {
+    const re = new RegExp("\\b" + p.name + "\\b", "g");
+    const swap = (t) => t.replace(re, (m, at, str) => (at === 0 || /[.!?]\s+$/.test(str.slice(0, at)) ? "It" : "it"));
+    const body = p.body.map(swap);
+    return { ...p, name: "???", body, behaviour: swap(p.behaviour), text: body.join("\n\n") };
+  }
+
   /* ── reading a page: from the words to the creature ─────
    * read(text) builds the creature a page describes, for the painter to draw.
    * It reads the physical description sentence by sentence: what the body is
@@ -759,7 +790,7 @@ const Capsules = (() => {
     return { id, ...p, text: p.body.join("\n\n"), spec };
   }
 
-  return { make, describe, read, page, sprite, compare, rng, COLOURS, TYPES, BEASTS, TOY_IDS, rgbOf };
+  return { make, describe, read, page, sprite, silhouette, veiled, compare, rng, COLOURS, TYPES, BEASTS, TOY_IDS, RIMS, rgbOf };
 })();
 
 if (typeof module !== "undefined") module.exports = Capsules;

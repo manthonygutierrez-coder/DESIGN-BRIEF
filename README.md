@@ -118,6 +118,11 @@ unfolds: its own physical description (posture, covering, head, eyes, ears,
 mouth, limbs, back, tail and markings, the way a field guide describes a body)
 and a line on how it lives. The wheel scrolls the page; a click or Esc puts it down.
 
+Until you have drawn it, a creature is a **Who's that?**: its picture is a dark
+silhouette lit from behind, the rim tinted by its type (`Capsules.silhouette`),
+its name is ???, and its page says only "it". That holds on the slip, in the Dex
+and for the toy on the shelf, until you compare your drawing.
+
 Every creature is drawn from its words. `Capsules.read` (in `content/capsules.js`,
 pure and tested) reads a page into the creature it describes, giving each part
 the colour named nearest it ("a crest of pale aqua"), and the painter draws that
@@ -130,9 +135,10 @@ read thousands of those pages and check the words alone give the same picture.
 The page goes to the computer (`PC.capsule`): in Studio, the **Capsule Dex** (Start
 menu and desktop) keeps every creature's page, with its picture, category, type,
 height and weight. **Draw it in Pixel** opens the Design Suite on a 48×48 page named
-after the creature; **Compare my drawing** puts your drawing beside its picture at
-the same size, with how close the silhouette (a mirrored drawing counts) and each
-named colour came. A creature that comes out before you log on, or in Hustle,
+by its number (so the title gives nothing away); **Compare my drawing** brings
+it out of the shadow ("It's Tidepup!"): your drawing beside its picture at the
+same size, with how close the silhouette (a mirrored drawing counts) and each
+named colour came, and its toy on the shelf in the room lights up. A creature that comes out before you log on, or in Hustle,
 waits until Studio boots.
 
 ## Two ways to play

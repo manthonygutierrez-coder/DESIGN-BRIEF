@@ -50,3 +50,5 @@ html.room-boot body{background:#07080c}
 @keyframes slipIn{from{opacity:0;transform:translateY(-46%) rotate(2deg)}to{opacity:1;transform:translateY(-50%)}}
 @media (prefers-reduced-motion:reduce){.room3d__slip{animation:none}}
 .room3d__paper .room3d__life{font-style:italic;color:#4A4038;border-top:1px dotted #9A8F80;padding-top:6px}
+.room3d__toy.is-unseen canvas{background:radial-gradient(circle at 62% 38%,#514A74 0,#241D33 55%,#0E0B14 100%)}
+.room3d__toy.is-unseen span{color:#F4E9C8;font-size:15px}

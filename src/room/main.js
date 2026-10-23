@@ -117,6 +117,8 @@ async function boot() {
     // The page is about to reload (logging off): come back at the screen.
     keepSeat() { try { sessionStorage.setItem(FLAG, JSON.stringify({ at: "pc" })); } catch { /* private */ } },
     state: () => ({ mode, phase: rig.phase, power, weather: shell.view.weather, sky: shell.view.sky().phase }),
+    // A creature drawn and compared in the Capsule Dex: its toy on the gachapon's shelf comes out of the shadow.
+    reveal: () => { if (gacha) gacha.reveal(); },
   };
 
   if (flag.at === "pc") {

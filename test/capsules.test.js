@@ -138,3 +138,27 @@ test("a toy sleeps in its capsule: only its eyes change", () => {
   const diff = awake.filter((v, i) => v !== asleep[i]).length;
   assert.ok(diff > 0 && diff < 40, "a few pixels round the eyes, " + diff);
 });
+
+test("unseen, a creature is a dark silhouette lit from behind, in its type's rim colour", () => {
+  for (const id of [...C.TOY_IDS, "seed:4242", "seed:777"]) {
+    const p = C.page(id), art = C.sprite(p.spec), sil = C.silhouette(art, p.type);
+    assert.deepEqual(sil.px.map(Boolean), art.px.map(Boolean), id + ": the same shape, pixel for pixel");
+    const used = new Set(sil.px.filter(Boolean));
+    assert.ok(used.size <= 4, id + ": only shadow, rim, the rim fading and the bounce: " + [...used]);
+    assert.ok(used.has(C.RIMS[p.type]), id + ": the rim is lit in its type's colour");
+    for (const c of Object.keys(p.spec.colours).map((k) => C.COLOURS[p.spec.colours[k]]).filter(Boolean)) assert.ok(!used.has(c), id + ": none of its own colours show");
+    const shade = sil.px.filter((v) => v === "#16111E").length, filled = sil.px.filter(Boolean).length;
+    assert.ok(shade > filled * 0.35, id + ": mostly in shadow");
+  }
+});
+
+test("before you know who it is, its page never says its name", () => {
+  for (const id of [...C.TOY_IDS, "seed:4242"]) {
+    const p = C.page(id), v = C.veiled(p);
+    assert.equal(v.name, "???");
+    assert.ok(!(v.text + " " + v.behaviour).includes(p.name), id + ": no " + p.name + " in the words");
+    assert.ok(v.text.startsWith("It is "), id + ": it reads from the start: " + v.text.slice(0, 20));
+    assert.ok(v.behaviour.startsWith("It "), id + ": " + v.behaviour.slice(0, 20));
+    assert.deepEqual(C.sprite(C.read(v.text)).px, C.sprite(p.spec).px, id + ": and the words still draw the same creature");
+  }
+});

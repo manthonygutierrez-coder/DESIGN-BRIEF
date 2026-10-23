@@ -6,10 +6,15 @@
  * physical description, and how it lives. The picture is drawn from the words
  * (Capsules.read), so what you read is what it looks like.
  *
- *   draw it      the Design Suite opens in Pixel on a 48 × 48 page named after
- *                the creature; what you have drawn so far comes back with it
- *   compare      your drawing beside its picture at the same size, with how
- *                close the silhouette and the colours came (Capsules.compare)
+ * Until you have drawn it, a creature is a "Who's that?": its picture a dark
+ * silhouette lit from behind, its name ??? and its page saying only "it".
+ *
+ *   draw it      the Design Suite opens in Pixel on a 48 × 48 page named by its
+ *                number; what you have drawn so far comes back with it
+ *   compare      it steps out of the shadow ("It's Tidepup!"): your drawing
+ *                beside its picture at the same size, with how close the
+ *                silhouette and the colours came (Capsules.compare). Its toy on
+ *                the gachapon's shelf in the room lights up too.
  *
  * The room hands a creature over with PC.capsule(id): "toy:tidepup" for one of
  * the six toys, "seed:123" for one the machine made up. One that comes out
@@ -20,14 +25,17 @@
  */
 
 const CapsuleDex = (() => {
-  const PENDING = "pixel-crossing:capsules";
+  const PENDING = "pixel-crossing:capsules", SEEN = "pixel-crossing:revealed";
   const TYPES = { ember: "Fire", tide: "Water", leaf: "Grass", volt: "Electric", stone: "Rock", frost: "Ice", gloom: "Dusk", gale: "Wind" };
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
   let state = null, w = null, current = -1, note = "";
 
   const list = () => state.capsules;
   const save = () => Bridge.saveState(state);
-  const docName = (p) => "Capsule — " + p.name;
+  // a Pixel page is named by number, so its title never gives the creature away
+  const docName = (i) => "Capsule No. " + String(i + 1).padStart(3, "0");
+  const known = (e) => !!e.score;
+  const shown = (e) => { const p = Capsules.page(e.id); return known(e) ? p : Capsules.veiled(p); };
   // An id from anything a slip has been stored as: the first build kept bare seeds.
   const idOf = (x) => (x && typeof x.id === "string" && /^(toy|seed):/.test(x.id) ? x.id : x && Number.isFinite(x.seed) ? "seed:" + (x.seed >>> 0) : typeof x === "string" && /^(toy|seed):/.test(x) ? x : null);
 
@@ -86,18 +94,18 @@ const CapsuleDex = (() => {
       w.client.innerHTML = '<div class="cdx cdx--empty"><p>No capsules yet.</p><p class="cdx__hint">Stand up from the desk and turn the crank on the gachapon machine in the corner of your room. Every capsule holds a little creature, and its page comes here.</p></div>';
       return;
     }
-    const e = items[current], p = Capsules.page(e.id);
+    const e = items[current], p = shown(e), real = Capsules.page(e.id);
     if (!e.seen) { e.seen = true; save(); badge(); }
-    const rows = items.map((c, i) => { const q = Capsules.page(c.id);
+    const rows = items.map((c, i) => { const q = shown(c);
       return '<button class="cdx__row' + (i === current ? " on" : "") + '" data-pick="' + i + '"><canvas class="cdx__mini" data-mini="' + i + '" width="48" height="48"></canvas>' +
         '<span class="cdx__no">' + String(i + 1).padStart(3, "0") + '</span><span class="cdx__nm">' + esc(q.name) + "</span>" +
         (c.score ? '<b class="cdx__sc">' + c.score.overall + "%</b>" : !c.seen ? '<i class="cdx__new">NEW</i>' : "") + "</button>"; }).join("");
-    const drawn = liveDrawing(p) || e.drawn;
+    const drawn = liveDrawing(current) || e.drawn;
     w.client.innerHTML =
       '<div class="cdx">' +
         '<nav class="cdx__list" aria-label="Capsules">' + rows + "</nav>" +
         '<article class="cdx__slip">' +
-          '<aside class="cdx__box"><h2>' + esc(p.name) + '</h2><canvas data-pic="art" width="48" height="48"></canvas>' +
+          '<aside class="cdx__box' + (known(e) ? "" : " is-unseen") + '"><h2>' + (known(e) ? esc(p.name) : "Who's that?") + '</h2><canvas data-pic="art" width="48" height="48"></canvas>' +
             "<dl><dt>Category</dt><dd>" + esc(p.category.replace(/^The /, "")) + "</dd><dt>Type</dt><dd>" + esc(TYPES[p.type] || p.type) + "</dd>" +
             "<dt>Height</dt><dd>" + p.height.toFixed(1) + " m</dd><dt>Weight</dt><dd>" + p.weight.toFixed(1) + " kg</dd><dt>No.</dt><dd>" + String(current + 1).padStart(3, "0") + "</dd></dl></aside>" +
           '<h3>Physical description</h3><div class="cdx__words">' + p.body.map((t) => "<p>" + esc(t) + "</p>").join("") + "</div>" +
@@ -105,12 +113,14 @@ const CapsuleDex = (() => {
           '<div class="cdx__acts"><button class="w98btn" data-act="draw">' + (drawn ? "Keep drawing" : "Draw it in Pixel") + "</button>" +
           '<button class="w98btn" data-act="compare">' + (e.score ? "Compare again" : "Compare my drawing") + "</button></div>" +
           (note ? '<p class="cdx__note" role="status">' + esc(note) + "</p>" : "") +
-          (e.score ? compareHtml(e) : '<p class="cdx__hint">Draw it from the words, then compare your drawing with its picture.</p>') +
+          (e.score ? compareHtml(e) : '<p class="cdx__hint">Draw it from the words, then compare your drawing to find out who it is.</p>') +
         "</article>" +
       "</div>";
-    const art = Capsules.sprite(p.spec);
-    paint(w.client.querySelector('[data-pic="art"]'), art);
-    items.forEach((c, i) => paint(w.client.querySelector('[data-mini="' + i + '"]'), i === current ? art : Capsules.sprite(Capsules.page(c.id).spec)));
+    // in the shadow until compared
+    const look = (c) => { const q = Capsules.page(c.id), a = Capsules.sprite(q.spec); return known(c) ? a : Capsules.silhouette(a, q.type); };
+    const art = Capsules.sprite(real.spec);
+    paint(w.client.querySelector('[data-pic="art"]'), look(e));
+    items.forEach((c, i) => paint(w.client.querySelector('[data-mini="' + i + '"]'), look(c)));
     if (e.score) { paint(w.client.querySelector('[data-pic="yours"]'), e.drawn); paint(w.client.querySelector('[data-pic="ref"]'), art); }
   }
 
@@ -134,32 +144,40 @@ const CapsuleDex = (() => {
 
   /* ── drawing it, and comparing ────────────────────────── */
   // The open Pixel page for this creature, if there is one.
-  function liveEd(p) {
+  function liveEd(i) {
     if (typeof Suite === "undefined") return null;
-    for (const x of Suite.peek()) { const ed = x.win && x.win.eds && x.win.eds.pixel; if (ed && ed.doc && ed.doc.meta && ed.doc.meta.name === docName(p)) return ed; }
+    const names = [docName(i), "Capsule — " + Capsules.page(list()[i].id).name];      // and the first build's titles
+    for (const x of Suite.peek()) { const ed = x.win && x.win.eds && x.win.eds.pixel; if (ed && ed.doc && ed.doc.meta && names.includes(ed.doc.meta.name)) return ed; }
     return null;
   }
-  function liveDrawing(p) {
-    const ed = liveEd(p);
+  function liveDrawing(i) {
+    const ed = liveEd(i);
     if (!ed || !ed.doc.bitmap.some(Boolean)) return null;
     return { w: ed.doc.w, h: ed.doc.h, px: ed.doc.bitmap.slice() };
   }
   function draw(e) {
-    const p = Capsules.page(e.id);
-    if (liveEd(p)) { Suite.open("pixel", null); return; }
-    const doc = SuiteDoc.create({ mode: "pixel", w: 48, h: 48, name: docName(p) });
+    const i = list().indexOf(e);
+    if (liveEd(i)) { Suite.open("pixel", null); return; }
+    const doc = SuiteDoc.create({ mode: "pixel", w: 48, h: 48, name: docName(i) });
     if (e.drawn && e.drawn.w === 48 && e.drawn.h === 48) doc.bitmap = e.drawn.px.slice();
     Suite.open("pixel", null, doc);
   }
   function compare(e) {
-    const p = Capsules.page(e.id), live = liveDrawing(p);
+    const p = Capsules.page(e.id), live = liveDrawing(list().indexOf(e)), first = !known(e);
     if (live) e.drawn = live;
     if (!e.drawn) { note = "Nothing drawn yet: Draw it in Pixel first, then compare."; render(); note = ""; return; }
     const r = Capsules.compare(e.drawn, p.spec);
     e.score = { silhouette: r.silhouette, colour: r.colour, overall: r.overall, colours: r.colours.map(({ name, hex, closest, score }) => ({ name, hex, closest, score })) };
     save();
+    if (first) {
+      // out of the shadow, here and on the gachapon's shelf in the room
+      try { const q = JSON.parse(localStorage.getItem(SEEN) || "[]"); if (!q.includes(e.id)) { q.push(e.id); localStorage.setItem(SEEN, JSON.stringify(q)); } } catch { /* private window */ }
+      if (typeof Room !== "undefined" && Room.reveal) Room.reveal();
+      note = "It's " + p.name + "!";
+    }
     if (typeof Music !== "undefined" && Music.sfx) Music.sfx("chime");
     render();
+    note = "";
   }
 
   function onClick(ev) {

@@ -32,16 +32,20 @@ const TOY = 0.13;                                              // a toy's height
 const CAPCOLS = [0xe2483d, 0x3e86d9, 0xf2c230, 0x38a565, 0xf08a2b, 0xd94f86, 0x8c4bd1, 0x2bb3b1];
 const TOYS_KEY = "pixel-crossing:toys";                      // the toys on the shelf (ids)
 const FOUND_KEY = "pixel-crossing:found";                    // which of the six have come out
+const SEEN_KEY = "pixel-crossing:revealed";                  // creatures you have drawn and compared: out of the shadow
 
 const pageOf = (id) => (typeof Capsules !== "undefined" ? Capsules.page(id) : null);
-// a creature's sprite on a canvas: asleep in its capsule, awake out of it
+const load = (key) => { try { const v = JSON.parse(localStorage.getItem(key) || "[]"); return Array.isArray(v) ? v : []; } catch { return []; } };
+const seen = (id) => load(SEEN_KEY).includes(id);
+// a creature's sprite on a canvas: asleep in its capsule, awake out of it, and
+// until you have drawn it and compared, a dark silhouette lit from behind
 function creatureCanvas(id, awake) {
   const [c, g] = canvas(48, 48), p = pageOf(id);
   if (!p) return c;
-  Capsules.sprite(p.spec, { asleep: !awake }).px.forEach((v, k) => { if (v) { g.fillStyle = v; g.fillRect(k % 48, Math.floor(k / 48), 1, 1); } });
+  const art = Capsules.sprite(p.spec, { asleep: !awake });
+  (seen(id) ? art : Capsules.silhouette(art, p.type)).px.forEach((v, k) => { if (v) { g.fillStyle = v; g.fillRect(k % 48, Math.floor(k / 48), 1, 1); } });
   return c;
 }
-const load = (key) => { try { const v = JSON.parse(localStorage.getItem(key) || "[]"); return Array.isArray(v) ? v : []; } catch { return []; } };
 const store = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* private window */ } };
 // what the next capsule holds: one of the six not yet found, else someone new
 function nextCreature() {
@@ -184,7 +188,7 @@ export function buildGachapon(scene) {
   const toyGeo = new THREE.PlaneGeometry(TOY, TOY);
   const toyMat = (cnv) => new THREE.MeshBasicNodeMaterial({ map: tex(cnv), transparent: true, alphaTest: 0.5 });
   const toyTex = new Map();
-  const texFor = (id, awake) => { const k = id + (awake ? ":awake" : ":asleep"); if (!toyTex.has(k)) toyTex.set(k, toyMat(creatureCanvas(id, awake))); return toyTex.get(k); };
+  const texFor = (id, awake) => { const k = id + (awake ? ":awake" : ":asleep") + (seen(id) ? ":seen" : ""); if (!toyTex.has(k)) toyTex.set(k, toyMat(creatureCanvas(id, awake))); return toyTex.get(k); };
   const shelved = [];
   // ids now; the first build kept numbers for the six toys
   const TOY_ORDER = ["emberkit", "sproutle", "tidepup", "voltbug", "pebblor", "gloombat"];
@@ -292,13 +296,14 @@ export function buildGachapon(scene) {
     onSlip = onChange;
   }
   function showSlip() {
-    const p = pageOf(st.id);
-    if (!slipEl || !p) { st.phase = "idle"; return; }
+    const page = pageOf(st.id);
+    if (!slipEl || !page) { st.phase = "idle"; return; }
+    const known = seen(st.id), p = known ? page : Capsules.veiled(page);
     const esc = (v) => String(v).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
-    const where = st.where === "dex" ? "Its page is in the Capsule Dex on your computer. Draw it in Pixel from the words, then compare."
-      : "Its page will wait in the Capsule Dex until you log on to Studio. Draw it in Pixel from the words, then compare.";
+    const where = (st.where === "dex" ? "Its page is in the Capsule Dex on your computer." : "Its page will wait in the Capsule Dex until you log on to Studio.") +
+      (known ? " Draw it in Pixel, then compare." : " Draw it in Pixel from the words, then compare to find out who it is.");
     slipEl.innerHTML =
-      '<div class="room3d__toy"><canvas width="48" height="48"></canvas><span>' + esc(p.name) + " woke up!</span></div>" +
+      '<div class="room3d__toy' + (known ? "" : " is-unseen") + '"><canvas width="48" height="48"></canvas><span>' + (known ? esc(p.name) + " woke up!" : "Who's that?") + "</span></div>" +
       '<div class="room3d__paper"><header><h2>' + esc(p.name) + "</h2><p>" + esc(p.category) + " · " + p.height.toFixed(1) + " m · " + p.weight.toFixed(1) + " kg</p></header>" +
       p.body.map((t) => "<p>" + esc(t) + "</p>").join("") + '<p class="room3d__life">' + esc(p.behaviour) + "</p>" +
       "<footer>" + esc(where) + "</footer></div>";
@@ -313,8 +318,11 @@ export function buildGachapon(scene) {
     if (onSlip) onSlip();
   }
 
+  // Drawn and compared on the computer: the toy on the shelf steps out of the shadow.
+  function reveal() { placeToys(); }
+
   return {
-    group: g, update, pull, mount, closeSlip,
+    group: g, update, pull, mount, closeSlip, reveal,
     busy: () => st.phase !== "idle" && st.phase !== "slip",
     slipOpen: () => st.phase === "slip" && !!slipEl && !slipEl.hidden,
     scrollSlip: (dy) => { if (slipEl) slipEl.scrollTop += dy; },

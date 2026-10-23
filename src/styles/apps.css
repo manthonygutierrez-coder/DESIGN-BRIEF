@@ -620,3 +620,7 @@
 .cdx__box dt{color:#5A5048}.cdx__box dd{margin:0;text-align:right}
 .cdx__slip h3{overflow:hidden;font-family:"Silkscreen",monospace;font-size:10px;letter-spacing:.1em;margin:4px 0 6px;border-bottom:1px solid #1A1A1A;padding-bottom:3px}
 .cdx__cmp,.cdx__acts{clear:both}
+.cdx__box.is-unseen canvas{background:radial-gradient(circle at 62% 38%,#514A74 0,#241D33 55%,#0E0B14 100%);border-color:#0E0B14}
+.cdx__box.is-unseen h2{font-size:14px}
+.cdx__mini{background:#1B1626}
+.cdx__note:not(:empty){font-family:"Silkscreen",monospace;font-size:12px;letter-spacing:.06em}
