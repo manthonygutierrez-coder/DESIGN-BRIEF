@@ -30,3 +30,23 @@ html.room-boot body{background:#07080c}
 /* ─── Shut Down (session.js) ───────────────────────────── */
 .shutdown .logon__opt b{display:flex;align-items:center;gap:8px}
 @media (prefers-reduced-motion:reduce){.room3d__hint{animation:none}}
+
+/* A capsule's slip, unfolded over the room (gachapon.js): the toy that woke up, and the words to draw from. */
+.room3d__slip{position:absolute;right:max(16px,4vw);top:50%;z-index:3;transform:translateY(-50%);width:min(420px,calc(100vw - 32px));
+  max-height:min(78vh,640px);overflow:auto;scrollbar-width:none;display:flex;flex-direction:column;gap:10px;pointer-events:none;
+  animation:slipIn .35s cubic-bezier(.2,.8,.3,1.1)}
+.room3d__slip[hidden]{display:none}
+.room3d__slip::-webkit-scrollbar{display:none}
+.room3d__toy{display:flex;align-items:center;gap:10px;align-self:flex-start;padding:6px 12px 6px 6px;background:rgba(6,8,12,.72);box-shadow:4px 4px 0 rgba(0,0,0,.35);
+  font:400 13px/1.2 Silkscreen,monospace;letter-spacing:.06em;color:#FFCE6A}
+.room3d__toy canvas{width:96px;height:96px;image-rendering:pixelated;background:#f2efe7}
+.room3d__paper{padding:14px 18px 12px;background:#FBF6E6;color:#1A1A1A;box-shadow:5px 5px 0 rgba(0,0,0,.4);transform:rotate(-.6deg);
+  background-image:repeating-linear-gradient(transparent 0 23px,rgba(26,26,26,.07) 23px 24px)}
+.room3d__paper header{border-bottom:2px solid #1A1A1A;margin-bottom:8px;padding-bottom:5px}
+.room3d__paper h2{margin:0 0 3px;font:400 18px/1.1 Silkscreen,monospace;letter-spacing:.06em}
+.room3d__paper header p{margin:0;font:400 9px/1.3 Silkscreen,monospace;letter-spacing:.06em;color:#5A5048}
+.room3d__paper p{margin:0 0 8px;font:400 18px/1.24 VT323,ui-monospace,monospace}
+.room3d__paper footer{margin-top:6px;padding-top:6px;border-top:1px dashed #9A8F80;font:400 9px/1.5 Silkscreen,monospace;letter-spacing:.04em;color:#B8293A}
+@keyframes slipIn{from{opacity:0;transform:translateY(-46%) rotate(2deg)}to{opacity:1;transform:translateY(-50%)}}
+@media (prefers-reduced-motion:reduce){.room3d__slip{animation:none}}
+.room3d__paper .room3d__life{font-style:italic;color:#4A4038;border-top:1px dotted #9A8F80;padding-top:6px}

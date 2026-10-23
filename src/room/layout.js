@@ -53,6 +53,10 @@ export const PROPS = {
   floorLamp: { x: 2.25, z: 3.35 },
 };
 
+// The gachapon machine in the back-right corner, turned towards the chair: turn
+// its crank for a capsule, a little toy and a slip describing a creature to draw.
+export const GACHA = { x: 2.12, z: -0.86, ry: -0.78, body: 0xd9412c, wood: 0xb98552 };
+
 // The window over the desk, and the seven disciplines, one poster each.
 export const WINDOW = { x: 1.3, y: 1.62, w: 1.05, h: 1.05 };
 export const DOOR = { z: 2.7, w: 0.9, h: 2.05 };
