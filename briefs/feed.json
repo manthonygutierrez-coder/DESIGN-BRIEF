@@ -1,7 +1,299 @@
 {
   "version": 1,
-  "updated": "2026-10-19T13:07:59Z",
+  "updated": "2026-10-26T13:42:15Z",
   "briefs": [
+    {
+      "id": "2026-10-26-by-torchlight",
+      "cadence": "weekly",
+      "received": "2026-10-26T13:42:15Z",
+      "discipline": "Graphic Design",
+      "brief": {
+        "project": "BY TORCHLIGHT",
+        "client": "A licensed firework works whose printer has shut, taking the second colour with it",
+        "ask": "The trade printer at Rivelin that has wrapped our tubes since 2004 closed in September, and the works that took the plates on runs one ink at a narrower web, so every wrap in the range has to be redrawn to the two dies the new press holds — 206 × 88 mm and 152 × 66 mm — in one colour on the kraft. The second ink is how a handler has told a 1.3G item from a 1.4G one across a stacked crate since before I was here, and from February it is gone; the class has to be carried by the drawing instead. Trade orders open on 2 February and the first reel runs the week of 16 February, so the artwork is passed before either or we sell the season off the old stock.",
+        "deliver": [
+          "Wrap artwork for all fourteen items on the two new dies, print-ready PDF, each with the glue lap and the 12 mm dead margin drawn on it",
+          "One statutory block, set once: classification, UKCA number, net explosive content, licence number, minimum distance and the batch field, dropped into all fourteen unaltered",
+          "The class system in one ink — whatever separates 1.3G from 1.4G across a stacked crate — written up on one sheet so our own packers can apply it to an item we add in two years",
+          "Crate end stencils at two sizes, cut-ready, for the 24-tube and 6-tube cases",
+          "Firing-site board, 600 × 400 mm, one colour on aluminium: the distances, the licence number, nothing else",
+          "Trade order sheet, A4, one ink both sides, still readable after a wholesaler has photocopied it twice",
+          "The ink standard: one spot colour drawn down on the kraft the new press actually runs, with the lightest and heaviest sheets we accept mounted either side of it"
+        ],
+        "limits": [
+          "One ink plus the kraft. The press has a single unit and there is no second pass to come back for.",
+          "Nothing within 12 mm of the glue lap and nothing that has to meet across it. The wrap goes round by hand and two millimetres out is a good day.",
+          "It is read at arm's length, by torchlight, in the wet, by somebody already wearing gloves. If it needs daylight to work, it does not work.",
+          "No illustration of the effect. We have never drawn what the thing does on the outside of it, and a buyer who expected the picture is a complaint I cannot answer.",
+          "The statutory block does not move or shrink: pictogram no smaller than 10 mm, classification text no smaller than 2 mm cap height, no part of it reversed out. If it fails inspection the run is scrap and the season is gone with it."
+        ],
+        "tone": "Plain · lawful · unlit"
+      },
+      "clientProfile": {
+        "who": "Rhoda Gaunt",
+        "role": "Licence holder since 2011",
+        "co": "Netherhowe Fireworks",
+        "dom": "netherhowe.co.uk",
+        "frame": "press",
+        "theme": {
+          "bg": "#EDE2CC",
+          "panel": "#E1D3B6",
+          "ink": "#1C1814",
+          "dim": "#76664E",
+          "line": "#CBB893",
+          "brand": "#B5361C",
+          "brand2": "#1C1814",
+          "link": "#8E2A14",
+          "onBrand": "#EDE2CC",
+          "head": "'Archivo', 'Helvetica Neue', Arial, sans-serif",
+          "body": "Georgia, 'Times New Roman', serif",
+          "mark": "slab",
+          "markText": "N",
+          "markFace": "'Archivo', Arial, sans-serif"
+        },
+        "greet": "Rhoda Gaunt, Netherhowe.",
+        "voice": "We have printed the same wrap since 2004 and I would have kept it, but the press that made it is in a skip at Rivelin.",
+        "wrap": "The class mark went past the test house at Dunsmore without a comment, which is the only review that counts here. Two operators have asked who cut the crate stencils. The order sheet survives a wholesaler's photocopier better than the one it replaces, and I have stopped apologising for the brown paper.",
+        "refs": [
+          "kraft tube wrap, unglued",
+          "stencilled firework crate end",
+          "one-ink flexo printing plate",
+          "firing site board at dusk",
+          "net explosive content label"
+        ],
+        "site": {
+          "tagline": "Licensed manufacture for display operators and the trade. Nothing for retail sale.",
+          "est": "Est. 1947 · Magazine Lane, Netherhowe",
+          "foot": "Licence NH/EX/114, renewed each March.",
+          "nav": [
+            [
+              "Home",
+              "/"
+            ],
+            [
+              "The range",
+              "/range"
+            ]
+          ],
+          "pages": {
+            "/": [
+              {
+                "t": "lede",
+                "p": "Fourteen items, made in two sheds behind a worked-out quarry face, and the only thing printed on the outside of any of them is one colour on brown paper."
+              },
+              {
+                "t": "notice",
+                "h": "New wraps from the week of 16 February 2027",
+                "p": "The reel width changes and the second ink goes. Every tube leaving here from that week carries a redrawn wrap. Old two-colour wraps stay in circulation alongside them until the stock is gone, probably into 2028. The statutory information on both is identical and nothing about the contents has changed.",
+                "stamp": "Notice to the trade and to display operators"
+              },
+              {
+                "t": "spec",
+                "h": "The works",
+                "rows": [
+                  [
+                    "Licence",
+                    "NH/EX/114, renewed each March"
+                  ],
+                  [
+                    "Site",
+                    "Two process sheds and four magazines, Magazine Lane"
+                  ],
+                  [
+                    "Separation",
+                    "Shed to shed 24 m. Shed to the road 61 m"
+                  ],
+                  [
+                    "Classified",
+                    "At the test house at Dunsmore, not here"
+                  ],
+                  [
+                    "Made here",
+                    "Shells to 100 mm, mines, roman candles, single comets"
+                  ],
+                  [
+                    "Not made here",
+                    "Anything for retail sale, and anything we cannot store"
+                  ],
+                  [
+                    "Season",
+                    "Eleven months making, three weeks selling"
+                  ]
+                ]
+              },
+              {
+                "t": "table",
+                "h": "The range, abridged",
+                "sub": "Net explosive content is per tube, not per case. Full list on the range page.",
+                "cols": [
+                  "Item",
+                  "Class",
+                  "NEC",
+                  "Wrap die"
+                ],
+                "rows": [
+                  [
+                    "Shell, 100 mm",
+                    "1.3G",
+                    "310 g",
+                    "206 × 88"
+                  ],
+                  [
+                    "Shell, 75 mm",
+                    "1.3G",
+                    "165 g",
+                    "206 × 88"
+                  ],
+                  [
+                    "Mine, 125 mm",
+                    "1.3G",
+                    "240 g",
+                    "206 × 88"
+                  ],
+                  [
+                    "Candle, 8 shot",
+                    "1.4G",
+                    "84 g",
+                    "152 × 66"
+                  ],
+                  [
+                    "Comet, single",
+                    "1.4G",
+                    "31 g",
+                    "152 × 66"
+                  ]
+                ]
+              }
+            ],
+            "/range": [
+              {
+                "t": "notice",
+                "h": "Telling the new wrap from the old",
+                "p": "Until the old stock is gone a store may hold both. The new wrap is one colour and the class is carried by the mark itself; the old wrap is two and carries it in the ink. Where the two disagree, the statutory block is right and the wrap goes back on the vehicle.",
+                "stamp": "For handlers and store keepers"
+              },
+              {
+                "t": "table",
+                "h": "The fourteen",
+                "sub": "Everything we make. Nothing here is sold in a shop.",
+                "cols": [
+                  "Item",
+                  "Class",
+                  "NEC",
+                  "Wrap die",
+                  "Case"
+                ],
+                "rows": [
+                  [
+                    "Shell, 100 mm",
+                    "1.3G",
+                    "310 g",
+                    "206 × 88",
+                    "24"
+                  ],
+                  [
+                    "Shell, 75 mm",
+                    "1.3G",
+                    "165 g",
+                    "206 × 88",
+                    "24"
+                  ],
+                  [
+                    "Shell, 50 mm",
+                    "1.3G",
+                    "72 g",
+                    "206 × 88",
+                    "24"
+                  ],
+                  [
+                    "Mine, 125 mm",
+                    "1.3G",
+                    "240 g",
+                    "206 × 88",
+                    "6"
+                  ],
+                  [
+                    "Mine, 75 mm",
+                    "1.3G",
+                    "96 g",
+                    "206 × 88",
+                    "6"
+                  ],
+                  [
+                    "Candle, 8 shot",
+                    "1.4G",
+                    "84 g",
+                    "152 × 66",
+                    "24"
+                  ],
+                  [
+                    "Candle, 5 shot",
+                    "1.4G",
+                    "52 g",
+                    "152 × 66",
+                    "24"
+                  ],
+                  [
+                    "Comet, single",
+                    "1.4G",
+                    "31 g",
+                    "152 × 66",
+                    "24"
+                  ]
+                ]
+              },
+              {
+                "t": "spec",
+                "h": "Ordering",
+                "rows": [
+                  [
+                    "Window",
+                    "Opens 2 February. Closes when the season's make is committed, which is usually March"
+                  ],
+                  [
+                    "Minimum",
+                    "One case. We do not break a case"
+                  ],
+                  [
+                    "Lead time",
+                    "Six weeks, and longer for anything 1.3G ordered after August"
+                  ],
+                  [
+                    "Carriage",
+                    "Our own vehicle and our own driver within 180 miles. Beyond that, by arrangement"
+                  ],
+                  [
+                    "Storage",
+                    "You hold a licence for the net explosive content on your order. We ask to see it"
+                  ],
+                  [
+                    "Returns",
+                    "None. Nothing comes back onto this site once it has left it"
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "assets": {
+        "markSVG": "<rect x=\"21\" y=\"20\" width=\"22\" height=\"40\" fill=\"%B%\"/><rect x=\"21\" y=\"43\" width=\"22\" height=\"7\" fill=\"%C%\"/><path d=\"M43 25c9-3 12-9 9-17\" fill=\"none\" stroke=\"%C%\" stroke-width=\"5\" stroke-linecap=\"round\"/>",
+        "images": [
+          {
+            "ref": "kraft tube wrap, unglued",
+            "path": "briefs/assets/netherhowe/wrap.png"
+          },
+          {
+            "ref": "stencilled firework crate end",
+            "path": "briefs/assets/netherhowe/crate.png"
+          },
+          {
+            "ref": "firing site board at dusk",
+            "path": "briefs/assets/netherhowe/sign.png"
+          }
+        ]
+      }
+    },
     {
       "id": "2026-10-19-open-pan",
       "cadence": "weekly",

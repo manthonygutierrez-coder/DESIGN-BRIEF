@@ -1,0 +1,96 @@
+<!doctype html><html lang="en-GB"><meta charset="utf-8">
+<link rel="stylesheet" href="base.css">
+<style>
+  body{width:800px;height:600px;overflow:hidden}
+  .frame{width:800px;height:600px;background:#B79B70;position:relative;overflow:hidden}
+  /* the bench the wrap is laid on */
+  .frame:before{content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(90deg,rgba(0,0,0,.05) 0 1px,transparent 1px 38px)}
+
+  .sheet{position:absolute;left:76px;top:148px;width:648px;height:276px;background:#CBAE80;
+         box-shadow:0 14px 26px rgba(0,0,0,.26);color:var(--brand)}
+  .sheet:before{content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(0deg,rgba(28,24,20,.035) 0 2px,transparent 2px 5px)}
+
+  /* 12 mm dead margin at the glue lap, right */
+  .lap{position:absolute;right:0;top:0;bottom:0;width:38px;border-left:1.5px dashed rgba(28,24,20,.5);
+       background:rgba(28,24,20,.07)}
+  .lap span{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(90deg);
+            white-space:nowrap;font-size:8.5px;letter-spacing:.2em;color:rgba(28,24,20,.6)}
+
+  .body{position:absolute;left:26px;top:22px;right:52px;bottom:20px}
+
+  .item{margin:0;font-size:38px;font-weight:700;letter-spacing:.055em;line-height:.98}
+  .item small{display:block;font-size:14px;letter-spacing:.3em;font-weight:700;margin-top:7px}
+
+  /* class mark: 1.3G solid, 1.4G outline. The whole system in one ink. */
+  .cls{position:absolute;right:0;top:0;width:118px;height:60px;background:var(--brand);
+       color:#CBAE80;text-align:center}
+  .cls b{display:block;font-size:30px;font-weight:700;letter-spacing:.04em;padding-top:5px}
+  .cls i{display:block;font-size:8px;letter-spacing:.22em;font-style:normal;padding-top:1px}
+
+  /* statutory block — set once, dropped in unaltered */
+  .stat{position:absolute;left:0;right:0;bottom:0;height:98px;border:2px solid var(--brand);
+        display:flex;align-items:stretch}
+  .stat .dia{width:96px;border-right:2px solid var(--brand);display:flex;align-items:center;
+             justify-content:center}
+  .stat dl{margin:0;padding:9px 14px;display:grid;grid-template-columns:auto auto;
+           grid-auto-rows:min-content;gap:3px 26px;flex:1}
+  .stat dt{font-size:8px;letter-spacing:.2em;text-transform:uppercase;opacity:.75;
+           align-self:center}
+  .stat dd{margin:0;font-size:12.5px;font-weight:700;letter-spacing:.06em;align-self:center;
+           font-variant-numeric:tabular-nums}
+  .stat .batch{width:132px;border-left:2px solid var(--brand);padding:9px 10px;
+               font-size:8px;letter-spacing:.2em;text-transform:uppercase}
+  .stat .batch u{display:block;text-decoration:none;border-bottom:1.5px solid var(--brand);
+                 height:17px;margin-top:6px}
+
+  .foot{position:absolute;left:0;bottom:112px;font-size:9.5px;letter-spacing:.26em;
+        text-transform:uppercase}
+
+  /* prepress callouts, outside the sheet */
+  .dim{position:absolute;font-size:9px;letter-spacing:.2em;color:rgba(28,24,20,.62)}
+  .dim--w{left:76px;top:122px;width:648px;text-align:center;border-bottom:1px solid rgba(28,24,20,.4);
+          padding-bottom:4px}
+  .dim--h{left:30px;top:148px;height:276px;writing-mode:vertical-rl;text-align:center;
+          border-right:1px solid rgba(28,24,20,.4);padding-right:4px}
+  .cap{position:absolute;left:76px;top:452px;font-size:10px;letter-spacing:.2em;
+       text-transform:uppercase;color:rgba(28,24,20,.66)}
+  .cap b{color:#1C1814}
+  .cap2{position:absolute;left:76px;top:478px;right:76px;font-family:var(--serif);font-size:13px;
+        color:rgba(28,24,20,.78);line-height:1.4}
+</style>
+<div class="frame">
+  <div class="dim dim--w">206 mm</div>
+  <div class="dim dim--h">88 mm</div>
+
+  <div class="sheet">
+    <div class="lap"><span>GLUE LAP · 12 mm DEAD</span></div>
+    <div class="body">
+      <p class="item">SHELL<small>100 MM · SINGLE BREAK</small></p>
+      <div class="cls"><b>1.3G</b><i>SOLID = 1.3G</i></div>
+      <div class="foot">Netherhowe Fireworks · Magazine Lane</div>
+      <div class="stat">
+        <div class="dia">
+          <svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+            <path d="M30 3 57 30 30 57 3 30z" fill="none" stroke="#B5361C" stroke-width="3"/>
+            <path d="M30 15c5 8 9 11 9 15a9 9 0 0 1-18 0c0-4 4-7 9-15z" fill="#B5361C"/>
+            <text x="30" y="51" text-anchor="middle" font-family="Liberation Sans, sans-serif"
+                  font-size="7.5" font-weight="bold" letter-spacing="1" fill="#B5361C">1.3G</text>
+          </svg>
+        </div>
+        <dl>
+          <dt>Net explosive content</dt><dd>310 g</dd>
+          <dt>Licence</dt><dd>NH/EX/114</dd>
+          <dt>Minimum distance</dt><dd>25 m</dd>
+          <dt>Conformity</dt><dd>UKCA · 0598</dd>
+        </dl>
+        <div class="batch">Batch<u></u>Date fired<u></u></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cap"><b>WRAP, 100 MM SHELL</b> · ONE INK ON KRAFT · DIE 206 × 88</div>
+  <div class="cap2">Statutory block set once and dropped in unaltered. Class carried by the mark
+  itself — solid for 1.3G, outlined for 1.4G — because there is no second colour to carry it.</div>
+</div>

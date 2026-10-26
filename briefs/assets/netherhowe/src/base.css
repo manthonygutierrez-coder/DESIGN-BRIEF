@@ -1,0 +1,19 @@
+/* Netherhowe Fireworks — brand. One ink plus the paper. */
+:root{
+  --ground:#EDE2CC;
+  --panel:#E1D3B6;
+  --kraft:#CBAE80;
+  --kraft-dk:#B5986C;
+  --ink:#1C1814;
+  --dim:#76664E;
+  --line:#CBB893;
+  --brand:#B5361C;
+  --on-brand:#EDE2CC;
+  --sans:"Liberation Sans","DejaVu Sans",Arial,sans-serif;
+  --serif:"Bitstream Charter","Liberation Serif",Georgia,serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);
+     -webkit-font-smoothing:antialiased}
+.mark{display:block}

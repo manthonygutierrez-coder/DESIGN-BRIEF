@@ -1,0 +1,66 @@
+<!doctype html><html lang="en-GB"><meta charset="utf-8">
+<link rel="stylesheet" href="base.css">
+<style>
+  body{width:800px;height:600px;overflow:hidden}
+  .frame{width:800px;height:600px;background:#5E4A31;position:relative;overflow:hidden}
+  .crate{position:absolute;left:62px;top:58px;width:676px;height:484px;background:#9C7E55;
+         box-shadow:0 18px 30px rgba(0,0,0,.34)}
+  /* five boards with shadowed joints */
+  .crate:before{content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(0deg,
+      rgba(0,0,0,.001) 0 92px, rgba(28,16,6,.30) 92px 96px);}
+  /* grain */
+  .crate:after{content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 2px,
+      rgba(0,0,0,.035) 2px 7px)}
+  .batten{position:absolute;width:30px;top:0;bottom:0;background:rgba(255,245,225,.09);
+          border-left:2px solid rgba(28,16,6,.26);border-right:2px solid rgba(28,16,6,.26)}
+  .batten--l{left:44px} .batten--r{right:44px}
+  .nail{position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(28,16,6,.5)}
+
+  .stencil{position:absolute;inset:0;z-index:3}
+  /* stencil bridges: slivers of bare timber cut back through the paint */
+  .bridge{position:absolute;height:5px;background:#9C7E55;opacity:.92;z-index:4}
+  .vbridge{position:absolute;width:5px;background:#9C7E55;opacity:.92;z-index:4}
+  .cap{position:absolute;left:62px;top:16px;font-size:10px;letter-spacing:.2em;
+       text-transform:uppercase;color:rgba(255,245,225,.62)}
+  .cap b{color:#F2E4CC}
+</style>
+<div class="frame">
+  <div class="cap"><b>CRATE END STENCIL, 24-TUBE CASE</b> · ONE INK · CUT-READY</div>
+  <div class="crate">
+    <div class="batten batten--l"></div>
+    <div class="batten batten--r"></div>
+    <svg class="stencil" width="676" height="484" viewBox="0 0 676 484" xmlns="http://www.w3.org/2000/svg">
+      <g font-family="Liberation Sans, DejaVu Sans, sans-serif" fill="#B5361C" font-weight="bold">
+        <text x="338" y="92" text-anchor="middle" font-size="52" letter-spacing="6">NETHERHOWE</text>
+        <rect x="128" y="108" width="420" height="5"/>
+        <text x="338" y="166" text-anchor="middle" font-size="36" letter-spacing="9">SHELL 100 MM</text>
+
+        <!-- class: solid block for 1.3G, the same rule as the wrap -->
+        <rect x="128" y="206" width="150" height="74"/>
+        <text x="203" y="256" text-anchor="middle" font-size="42" letter-spacing="2" fill="#9C7E55">1.3G</text>
+
+        <text x="302" y="234" font-size="21" letter-spacing="4">24 TUBES</text>
+        <text x="302" y="268" font-size="21" letter-spacing="4">NEC 7.44 kg</text>
+
+        <rect x="128" y="312" width="420" height="3"/>
+        <text x="128" y="352" font-size="19" letter-spacing="5">NH/EX/114</text>
+        <text x="548" y="352" text-anchor="end" font-size="19" letter-spacing="5">KEEP DRY</text>
+        <text x="128" y="402" font-size="15" letter-spacing="6" opacity=".92">BATCH</text>
+        <rect x="196" y="392" width="150" height="3"/>
+        <text x="372" y="402" font-size="15" letter-spacing="6" opacity=".92">GROSS</text>
+        <rect x="444" y="392" width="104" height="3"/>
+      </g>
+    </svg>
+    <!-- bridges holding the stencil together -->
+    <div class="bridge" style="left:84px;top:116px;width:420px"></div>
+    <div class="bridge" style="left:84px;top:246px;width:150px"></div>
+    <div class="bridge" style="left:84px;top:62px;width:424px"></div>
+    <div class="bridge" style="left:84px;top:148px;width:424px"></div>
+    <div class="nail" style="left:56px;top:28px"></div>
+    <div class="nail" style="left:56px;top:452px"></div>
+    <div class="nail" style="right:56px;top:28px"></div>
+    <div class="nail" style="right:56px;top:452px"></div>
+  </div>
+</div>

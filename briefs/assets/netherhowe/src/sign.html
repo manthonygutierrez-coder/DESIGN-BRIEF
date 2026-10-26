@@ -1,0 +1,51 @@
+<!doctype html><html lang="en-GB"><meta charset="utf-8">
+<link rel="stylesheet" href="base.css">
+<style>
+  body{width:800px;height:600px;overflow:hidden}
+  .frame{width:800px;height:600px;position:relative;overflow:hidden;
+         background:linear-gradient(#2B3038 0%,#404349 54%,#2A2A26 55%,#232320 100%)}
+  /* dusk: quarry face behind */
+  .face{position:absolute;left:0;right:0;top:170px;height:160px;background:#4A453C;
+        clip-path:polygon(0 56%,14% 30%,27% 44%,41% 16%,58% 36%,72% 22%,86% 40%,100% 26%,100% 100%,0 100%)}
+  .post{position:absolute;left:378px;top:400px;width:44px;height:200px;background:#6E6355}
+  .post:after{content:"";position:absolute;left:-30px;top:170px;width:104px;height:26px;
+              background:#5C5247}
+
+  .board{position:absolute;left:100px;top:132px;width:600px;height:400px;background:#C9C6BE;
+         box-shadow:0 16px 28px rgba(0,0,0,.42);padding:26px 30px;color:var(--brand);
+         border:4px solid var(--brand)}
+  .board:before{content:"";position:absolute;inset:0;
+    background:linear-gradient(118deg,rgba(255,255,255,.2) 0 32%,rgba(255,255,255,0) 33%)}
+  .bolt{position:absolute;width:11px;height:11px;border-radius:50%;background:#8E8B83;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+
+  h1{margin:0;font-size:52px;font-weight:700;letter-spacing:.05em;line-height:.96}
+  .rule{height:5px;background:var(--brand);margin:16px 0 0}
+  dl{margin:18px 0 0;display:grid;grid-template-columns:auto 1fr;gap:9px 22px}
+  dt{font-size:13px;letter-spacing:.2em;text-transform:uppercase;align-self:center;opacity:.8}
+  dd{margin:0;font-size:34px;font-weight:700;letter-spacing:.04em;align-self:center;
+     font-variant-numeric:tabular-nums}
+  .foot{position:absolute;left:30px;right:30px;bottom:22px;display:flex;
+        justify-content:space-between;font-size:13px;letter-spacing:.2em;text-transform:uppercase}
+  .cap{position:absolute;left:100px;top:96px;font-size:10px;letter-spacing:.2em;
+       text-transform:uppercase;color:rgba(242,228,204,.62)}
+  .cap b{color:#F2E4CC}
+</style>
+<div class="frame">
+  <div class="face"></div>
+  <div class="post"></div>
+  <div class="cap"><b>FIRING-SITE BOARD, 600 × 400 MM</b> · ONE INK ON ALUMINIUM</div>
+  <div class="board">
+    <div class="bolt" style="left:14px;top:14px"></div>
+    <div class="bolt" style="right:14px;top:14px"></div>
+    <div class="bolt" style="left:14px;bottom:14px"></div>
+    <div class="bolt" style="right:14px;bottom:14px"></div>
+    <h1>OPERATORS<br>ONLY</h1>
+    <div class="rule"></div>
+    <dl>
+      <dt>Spectators</dt><dd>50 m</dd>
+      <dt>Fallout</dt><dd>100 m</dd>
+    </dl>
+    <div class="foot"><span>NH/EX/114</span><span>Netherhowe</span></div>
+  </div>
+</div>
