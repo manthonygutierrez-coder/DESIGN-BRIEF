@@ -107,6 +107,40 @@ click and key on the way down. `?room=0` plays without it, as `tools/music/film.
 does. The scene grew out of the desk scene in the Father's Day project (its camera
 rig, CRT and lighting), rebuilt for this game with nothing in it loaded from a file.
 
+## The gachapon machine
+
+In the back-right corner of the room stands a capsule machine on a wooden stand.
+Turn round in the chair and click it: a wooden token goes from the stack on its
+shelf into the slot, the crank turns, the rotor under the capsules turns a third
+of a turn, and a capsule rolls out of the outlet onto the shelf and opens. The
+little creature asleep inside wakes up and stays on the shelf, and its page
+unfolds: its own physical description (posture, covering, head, eyes, ears,
+mouth, limbs, back, tail and markings, the way a field guide describes a body)
+and a line on how it lives. The wheel scrolls the page; a click or Esc puts it down.
+
+Until you have drawn it, a creature is a **Who's that?**: its picture is a dark
+silhouette lit from behind, the rim tinted by its type (`Capsules.silhouette`),
+its name is ???, and its page says only "it". That holds on the slip, in the Dex
+and for the toy on the shelf, until you compare your drawing.
+
+Every creature is drawn from its words. `Capsules.read` (in `content/capsules.js`,
+pure and tested) reads a page into the creature it describes, giving each part
+the colour named nearest it ("a crest of pale aqua"), and the painter draws that
+at 48×48. The six toys that live in the machine, Emberkit, Sproutle, Tidepup,
+Voltbug, Pebblor and Gloombat, have pages written by hand and come out first,
+once each. After them every capsule holds a new creature whose page is written
+the moment it opens, from a fresh seed, and read back the same way. The tests
+read thousands of those pages and check the words alone give the same picture.
+
+The page goes to the computer (`PC.capsule`): in Studio, the **Capsule Dex** (Start
+menu and desktop) keeps every creature's page, with its picture, category, type,
+height and weight. **Draw it in Pixel** opens the Design Suite on a 48×48 page named
+by its number (so the title gives nothing away); **Compare my drawing** brings
+it out of the shadow ("It's Tidepup!"): your drawing beside its picture at the
+same size, with how close the silhouette (a mirrored drawing counts) and each
+named colour came, and its toy on the shelf in the room lights up. A creature that comes out before you log on, or in Hustle,
+waits until Studio boots.
+
 ## Two ways to play
 
 The first crossing over asks who is logging on. Each is its own save slot —
@@ -355,6 +389,7 @@ src/
     shell.js       floor, walls, window, door, corkboard and the seven posters
     furniture.js   desk, chair, lamps, shelves and what is on the desk
     computer.js    the CRT, the tower and its button, speakers, keyboard, mouse
+    gachapon.js    the capsule machine in the corner: crank, capsule, toy, its page
     window.js      the view: the real time of day, a city, the session's weather
     textures.js    every surface, painted on small canvases
     sound.js       the hum, the tube, the rain; under the desk's volume and mute
@@ -382,6 +417,7 @@ src/
     mail.js        the inbox and its state machine
     browser.js     the browser: history, favourites, URL dropdown, lightbox
     crossing.js    the pixel waterfall
+    capsuledex.js  the Capsule Dex: each creature's page, drawn in Pixel and compared
     app.js         keys and boot
     content/
       clients.js   21 client personas, domains, site copy, reference seeds
@@ -391,6 +427,9 @@ src/
                    the treatment, and how this result was framed (pure, tested)
       pixelscene.js paints a plan small and lit, then scales it by a whole number
       pixelthings.js the things in the pictures: animals, food, objects, people
+      capsules.js  the gachapon's creatures: their pages (six written by hand, the rest
+                   from a seed), read() from words to creature, the painter, and the
+                   score of a drawing (pure, tested)
     hustle/
       camera.js    your camera: the wardrobe, room pieces and palettes (pure, tested)
       camview.js   the camera builder, the setup guide, and you in the corner of a call

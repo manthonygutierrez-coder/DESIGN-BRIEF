@@ -574,3 +574,53 @@
 
 /* Official art is pixel art: keep it hard-edged wherever it is scaled. */
 .ifr img,.lb img,.fr-studio__hero img{image-rendering:pixelated}
+
+/* ── Capsule Dex: slips from the gachapon machine in the room (capsuledex.js) ── */
+.cdx{display:flex;height:100%;min-height:0;background:var(--w-face)}
+.cdx--empty{flex-direction:column;justify-content:center;align-items:center;padding:24px;text-align:center}
+.cdx--empty p{font-family:"VT323",monospace;font-size:20px;margin:4px 0;max-width:40ch}
+.cdx__list{flex:0 0 190px;overflow:auto;background:var(--w-cli);border-right:2px solid var(--w-sh);display:flex;flex-direction:column}
+.cdx__row{all:unset;display:flex;align-items:center;gap:6px;padding:6px 8px;font-family:"Silkscreen",monospace;font-size:9px;
+  color:var(--w-txt);cursor:pointer;border-bottom:1px solid var(--w-lt)}
+.cdx__row:hover{background:var(--w-lt)}
+.cdx__row.on{background:var(--w-nav);color:#fff}
+.cdx__row svg{flex:none}
+.cdx__no{opacity:.6;letter-spacing:.06em}
+.cdx__nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cdx__sc{font-weight:400}
+.cdx__new{font-style:normal;background:#E2483D;color:#fff;padding:1px 4px}
+.cdx__slip{flex:1;min-width:0;overflow:auto;padding:14px 18px 18px;background:#FBF6E6;color:#1A1A1A;
+  background-image:repeating-linear-gradient(transparent 0 23px,rgba(26,26,26,.06) 23px 24px)}
+.cdx__slip header{border-bottom:2px solid #1A1A1A;padding-bottom:6px;margin-bottom:10px}
+.cdx__slip h2{font-family:"Silkscreen",monospace;font-size:18px;letter-spacing:.06em;margin:2px 0 4px}
+.cdx__slip header p{font-family:"Silkscreen",monospace;font-size:9px;letter-spacing:.06em;margin:0;color:#5A5048}
+.cdx__words p{font-family:"VT323",ui-monospace,monospace;font-size:19px;line-height:1.26;margin:0 0 10px;max-width:62ch}
+.cdx__acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 8px}
+.cdx__hint,.cdx__note{font-family:"VT323",monospace;font-size:17px;color:#6A6058;margin:6px 0}
+.cdx__note{color:#B8293A}
+.cdx__cmp{display:grid;grid-template-columns:auto auto 1fr;gap:10px 16px;align-items:start;margin-top:10px;padding-top:10px;border-top:1px dashed #9A8F80}
+.cdx__cmp figure{margin:0;text-align:center}
+.cdx__cmp canvas{width:144px;height:144px;image-rendering:pixelated;background:
+  repeating-conic-gradient(#EFEAE0 0 25%,#E2DCCF 0 50%) 0 0/12px 12px;border:2px solid #1A1A1A}
+.cdx__cmp figcaption{font-family:"Silkscreen",monospace;font-size:8px;letter-spacing:.1em;margin-top:4px}
+.cdx__nums{margin:0;display:grid;grid-template-columns:auto auto;gap:2px 10px;font-family:"Silkscreen",monospace;font-size:10px}
+.cdx__nums dt{color:#5A5048}.cdx__nums dd{margin:0;text-align:right}.cdx__nums b{font-size:14px}
+.cdx__cols{grid-column:1 / -1;list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 14px;font-family:"VT323",monospace;font-size:17px}
+.cdx__cols li{display:flex;align-items:center;gap:5px}
+.cdx__cols i{width:12px;height:12px;border:1px solid #1A1A1A;display:inline-block}
+.cdx__cols em{font-style:normal;color:#5A5048}
+.theme-dark .cdx__list{background:#1E2026;border-right-color:#3A3D44}
+.theme-dark .cdx__row{color:#E6E2D8;border-bottom-color:#2A2D33}
+.theme-dark .cdx__row:hover{background:#2A2D33}
+.cdx__mini{width:24px;height:24px;flex:none;image-rendering:pixelated;background:#F2EFE7;border:1px solid var(--w-sh)}
+.cdx__box{float:right;width:178px;margin:0 0 12px 16px;padding:8px;background:#FFFDF4;border:2px solid #1A1A1A;box-shadow:3px 3px 0 rgba(26,26,26,.25)}
+.cdx__box h2{text-align:center;margin:0 0 6px}
+.cdx__box canvas{display:block;width:144px;height:144px;margin:0 auto 8px;image-rendering:pixelated;background:#F2EFE7;border:1px solid #9A8F80}
+.cdx__box dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 8px;font-family:"Silkscreen",monospace;font-size:8px;letter-spacing:.05em}
+.cdx__box dt{color:#5A5048}.cdx__box dd{margin:0;text-align:right}
+.cdx__slip h3{overflow:hidden;font-family:"Silkscreen",monospace;font-size:10px;letter-spacing:.1em;margin:4px 0 6px;border-bottom:1px solid #1A1A1A;padding-bottom:3px}
+.cdx__cmp,.cdx__acts{clear:both}
+.cdx__box.is-unseen canvas{background:radial-gradient(circle at 62% 38%,#514A74 0,#241D33 55%,#0E0B14 100%);border-color:#0E0B14}
+.cdx__box.is-unseen h2{font-size:14px}
+.cdx__mini{background:#1B1626}
+.cdx__note:not(:empty){font-family:"Silkscreen",monospace;font-size:12px;letter-spacing:.06em}

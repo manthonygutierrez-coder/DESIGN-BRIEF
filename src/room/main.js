@@ -18,6 +18,7 @@ import { pixelCanvas, screenSize, isClick } from "./fit.js";
 import { buildShell } from "./shell.js";
 import { buildFurniture } from "./furniture.js";
 import { buildComputer } from "./computer.js";
+import { buildGachapon } from "./gachapon.js";
 import { createGlass } from "./glass.js";
 import { buildPost } from "./post.js";
 import { Rig } from "./rig.js";
@@ -39,7 +40,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const frames = (n) => new Promise((r) => { const f = () => (--n <= 0 ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); });
 
 let renderer, scene, camera, css, canvas, layer, hint, veil;
-let shell, furniture, computer, glass, post, rig, sound, crt, sun;
+let shell, furniture, computer, glass, post, rig, sound, crt, sun, gacha;
 let screenLights = [], fit = null;
 let mode = "room", power = "on", usedHere = false;
 let beamTo = 1, beamRate = 2;
@@ -98,6 +99,8 @@ async function boot() {
   shell = buildShell(scene);
   furniture = buildFurniture(scene);
   computer = buildComputer(scene, glass.material);
+  gacha = buildGachapon(scene);
+  gacha.mount(layer, () => showHint());
   light();
   post = buildPost(renderer, scene, camera);
   rig = new Rig(camera, computer.glass, { onPhase: (p) => { if (p === "seated") seatedAt = performance.now(); showHint(); } });
@@ -114,6 +117,8 @@ async function boot() {
     // The page is about to reload (logging off): come back at the screen.
     keepSeat() { try { sessionStorage.setItem(FLAG, JSON.stringify({ at: "pc" })); } catch { /* private */ } },
     state: () => ({ mode, phase: rig.phase, power, weather: shell.view.weather, sky: shell.view.sky().phase }),
+    // A creature drawn and compared in the Capsule Dex: its toy on the gachapon's shelf comes out of the shadow.
+    reveal: () => { if (gacha) gacha.reveal(); },
   };
 
   if (flag.at === "pc") {
@@ -199,6 +204,7 @@ function frame(now) {
   last = now;
 
   rig.update(dt);
+  gacha.update(dt, camera);
   shell.view.update(dt);
   sun.color.copy(shell.view.light.color);
   sun.intensity = shell.view.light.intensity * LIGHTS.sun.intensity;
@@ -370,6 +376,12 @@ function onPointer(e) {
   if (mode !== "room") return;
   e.stopPropagation();
   if (e.type === "contextmenu" || e.type === "wheel") e.preventDefault();
+  // A capsule's slip is up: the wheel scrolls it, and a click puts it down.
+  if (gacha && gacha.slipOpen()) {
+    if (e.type === "wheel") gacha.scrollSlip(e.deltaY);
+    else if (e.type === "pointerup" && e.button === 0) gacha.closeSlip();
+    return;
+  }
   if (e.type === "pointerdown") down(e);
   else if (e.type === "pointermove") move(e);
   else if (e.type === "pointerup" || e.type === "pointercancel") up(e);
@@ -413,6 +425,7 @@ function up(e) {
   if (hit.screen) { if (power === "on") enterPC(); else powerOn(); }
   else if (hit.power) towerButton();
   else if (hit.poster) poster(hit.poster);
+  else if (hit.gacha) { if (gacha.pull()) sound.click(); }
 }
 
 function wheel(e) {
@@ -442,6 +455,7 @@ function onKey(e) {
   sound.wake();
   if (rig.phase === "seated") pressed.add(e.code);
   if (e.repeat || rig.busy) return;
+  if (gacha && gacha.slipOpen() && (e.key === "Escape" || e.key === "Enter" || e.key === " ")) { e.preventDefault(); gacha.closeSlip(); return; }
   if (e.key === "Escape") { if (rig.phase === "seated") rig.stand(); }
   else if (e.key === "Enter" || e.key === " ") {
     e.preventDefault();
@@ -454,14 +468,14 @@ function pick() {
   ray.setFromCamera(pointer, camera);
   const hit = ray.intersectObjects(scene.children, true)[0];
   const d = hit ? hit.object.userData : {};
-  return { screen: !!d.screen, power: !!d.power, poster: d.poster || null };
+  return { screen: !!d.screen, power: !!d.power, poster: d.poster || null, gacha: !!d.gacha };
 }
 
 function hover() {
   const hit = pick();
-  canvas.style.cursor = hit.screen || hit.power || (hit.poster && power === "on") ? "pointer" : "grab";
+  canvas.style.cursor = hit.screen || hit.power || hit.gacha || (hit.poster && power === "on") ? "pointer" : "grab";
   const d = hit.poster ? PC.discipline(hit.poster) : null;
-  const next = d ? (d.label + " — " + d.concept).toUpperCase() : "";
+  const next = d ? (d.label + " — " + d.concept).toUpperCase() : hit.gacha ? (gacha.busy() ? "GACHAPON — HERE IT COMES" : "GACHAPON — CLICK TO TURN THE CRANK") : "";
   if (next !== label) { label = next; showHint(); }
 }
 
@@ -473,7 +487,8 @@ function poster(id) {
 function showHint() {
   if (!hint) return;
   let text = "";
-  if (label && rig.phase === "seated") text = label;
+  if (gacha && gacha.slipOpen()) text = "CLICK OR ESC TO PUT THE SLIP DOWN";
+  else if (label && rig.phase === "seated") text = label;
   else if (mode === "room" && !rig.busy) text = rig.phase === "wide" ? HINT.wide : rig.phase === "seated" ? HINT[power === "on" ? "seated" : "off"] : "";
   hint.textContent = text;
   hint.classList.toggle("is-label", !!label && rig.phase === "seated");
