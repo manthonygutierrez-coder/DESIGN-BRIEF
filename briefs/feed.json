@@ -1,7 +1,198 @@
 {
   "version": 1,
-  "updated": "2026-10-26T13:42:15Z",
+  "updated": "2026-11-02T13:55:38Z",
   "briefs": [
+    {
+      "id": "2026-11-02-before-the-clay",
+      "cadence": "weekly",
+      "received": "2026-11-02T13:55:38Z",
+      "discipline": "Illustration",
+      "brief": {
+        "project": "BEFORE THE CLAY",
+        "client": "An excavation that will be under four hundred thousand tonnes of imported clay by next autumn",
+        "ask": "The sea defence here is being realigned inland and the old wall breached, so from September the whole Saltmere foreshore goes under imported clay and then under water twice a day. The excavation licence ends on 31 March and will not be renewed, which means that from April the only way anybody sees this site is a picture of it. The last dendrochronology came back three weeks ago and the phasing is finally firm enough to draw from — a post alignment and a brushwood trackway thrown across a tidal creek between 1486 and 1402 BC, rebuilt four times, left to silt up. We need reconstruction paintings for the monograph and for the panel going on the new embankment, and we need them drawn while the structure is still walkable at low water, which it is until the February springs and not after.",
+        "deliver": [
+          "Three reconstruction paintings at 420 x 260 mm final size: the trackway in use at low water, the fourth rebuild going in, and the abandonment with the creek already silting over it",
+          "Six phase reconstructions, one per phase, monochrome, 90 mm wide, for the sequence chapter",
+          "A cutaway of post 114 and its stone packing at 1:5, drawn from the timber itself, with the axe facets as they survive and not as they were cut",
+          "Panel artwork at 1600 x 500 mm full size, drawn from the viewpoint the panel will actually stand at — embankment crest, looking east-south-east",
+          "An evidence overlay for each painting: the same drawing in line, every element keyed as excavated, paralleled or conjectural, for the site archive",
+          "Layered working files, one element to a layer, so we can correct the boat or the hurdling after peer review without you repainting the sky"
+        ],
+        "limits": [
+          "Three categories of certainty — excavated, paralleled from another site, conjectural — and the painting has to show which is which by itself. Not a key underneath it. If a viewer cannot see that the boat is a guess then the picture is lying on our behalf.",
+          "The water in each painting is the level the tidal model gives for that hour of that phase, and the light is the light at fifty-three degrees north in the month the dendro says the timber was felled. Neither of them moves to improve a composition. No sunset. No mist.",
+          "Plants and timber from the pollen and the waterlogged wood record only. Twenty-nine taxa and the list is in the report. No oak on a bank that was alder.",
+          "Nobody looks out of the picture and nobody is demonstrating anything to a child. They are working, in weather, and they have done it before.",
+          "There is no textile from this site. Not a fibre. Whatever you dress them in you will be asked to justify at the Prehistoric Society by somebody who has read the same reports you have.",
+          "The same drawing has to hold at 90 mm on a page and at 1600 mm on a panel read from four metres off, in a wind coming up the estuary."
+        ],
+        "tone": "Tidal · evidenced · unsentimental"
+      },
+      "clientProfile": {
+        "who": "Gwilym Padgett",
+        "role": "Site Director",
+        "co": "Saltmere Foreshore Project",
+        "dom": "saltmereforeshore.org.uk",
+        "frame": "board",
+        "voice": "I can defend every date in that report and not one line of the picture, and the picture is the only part of it most people will ever look at.",
+        "refs": [
+          "submerged forest at low tide",
+          "oak post with axe facets",
+          "estuary saltmarsh creek",
+          "site hut on a sea wall",
+          "context sheet clipboard"
+        ],
+        "site": {
+          "tagline": "A rescue excavation on the Saltmere foreshore. Licence expires 31 March 2027.",
+          "nav": [
+            [
+              "Home",
+              "/"
+            ],
+            [
+              "The structure",
+              "/structure"
+            ]
+          ],
+          "pages": {
+            "/": [
+              {
+                "t": "lede",
+                "p": "Nine hundred metres of foreshore, worked in whatever the tide leaves us, on a site that is being given back to the sea on purpose."
+              },
+              {
+                "t": "notice",
+                "h": "The foreshore is buried from September 2027",
+                "p": "The sea defence moves inland and the old wall is breached. The trackway, the post alignment and everything under them go beneath imported clay and then under water twice a day. This is not a delay and there is no provision to come back and look again.",
+                "stamp": "Realignment scheme RS/14"
+              },
+              {
+                "t": "spec",
+                "h": "The excavation",
+                "rows": [
+                  [
+                    "Extent",
+                    "Nine hundred metres between the old sea wall and the low water mark"
+                  ],
+                  [
+                    "Working window",
+                    "Whatever the tide leaves us, April to October"
+                  ],
+                  [
+                    "Seasons",
+                    "Four. This is the last one"
+                  ],
+                  [
+                    "Licence",
+                    "Expires 31 March 2027 and will not be renewed"
+                  ],
+                  [
+                    "Funded by",
+                    "The realignment scheme, as the archaeological condition on its consent"
+                  ],
+                  [
+                    "Record so far",
+                    "Eleven hundred context sheets, four hundred and six timbers, one piece of a boat"
+                  ],
+                  [
+                    "After September",
+                    "Four hundred thousand tonnes of clay, then saltmarsh"
+                  ]
+                ]
+              }
+            ],
+            "/structure": [
+              {
+                "t": "table",
+                "h": "Phases and felling dates",
+                "cols": [
+                  "Phase",
+                  "What was built",
+                  "Felled"
+                ],
+                "rows": [
+                  [
+                    "I",
+                    "Brushwood trackway, single width, laid along the creek edge",
+                    "1486-1479 BC"
+                  ],
+                  [
+                    "II",
+                    "Post alignment, oak, east side",
+                    "1468 BC"
+                  ],
+                  [
+                    "III",
+                    "Trackway relaid over phase I, hazel hurdle revetment",
+                    "1441-1436 BC"
+                  ],
+                  [
+                    "IV",
+                    "Post alignment extended north-east, posts stone-packed",
+                    "1419 BC"
+                  ],
+                  [
+                    "V",
+                    "Trackway relaid narrower, patched with alder",
+                    "1402 BC"
+                  ],
+                  [
+                    "VI",
+                    "Nothing built. Silt, and a boat plank in it",
+                    "after 1402 BC"
+                  ]
+                ],
+                "note": "From one hundred and nine dendrochronological samples, sixty-one of them dated to the year. The phasing is firm. What the structure was for is not, and the report does not pretend otherwise."
+              },
+              {
+                "t": "spec",
+                "h": "The structure",
+                "rows": [
+                  [
+                    "Recorded length",
+                    "Two hundred and ten metres, running north-east from the creek edge"
+                  ],
+                  [
+                    "Posts",
+                    "Four hundred and six. Two hundred and nine still stand above the silt"
+                  ],
+                  [
+                    "Largest timber",
+                    "Post 114. Oak, 2.9 m, dressed to a point with a flat axe, stone-packed"
+                  ],
+                  [
+                    "Trackway",
+                    "Brushwood and hazel hurdle, relaid three times on the same line"
+                  ],
+                  [
+                    "Boat",
+                    "One plank fragment from phase VI silt, with a cleat and two treenail holes"
+                  ],
+                  [
+                    "Textile",
+                    "None. Not a fibre"
+                  ],
+                  [
+                    "Interpretation",
+                    "A crossing, a fish weir, or a boundary. All three are in the report and all three stay in it"
+                  ]
+                ]
+              },
+              {
+                "t": "notice",
+                "h": "Do not walk on the posts",
+                "p": "The surviving timbers are waterlogged and soft enough to mark with a thumbnail, and the creek fills quicker than it looks. This is open foreshore and we cannot stop you crossing it, but a boot on a post head takes four thousand years of surface off in one step.",
+                "stamp": "Posted at both slipways"
+              }
+            ]
+          }
+        }
+      },
+      "assets": {
+        "markSVG": "<rect x=\"2\" y=\"37\" width=\"60\" height=\"8\" fill=\"%C%\"/><path d=\"M10 58V24l5-9 5 9v34z\" fill=\"%B%\"/><path d=\"M26 58V30l5-8 5 8v28z\" fill=\"%B%\"/><path d=\"M42 58V20l5-9 5 9v38z\" fill=\"%B%\"/>"
+      }
+    },
     {
       "id": "2026-10-26-by-torchlight",
       "cadence": "weekly",
