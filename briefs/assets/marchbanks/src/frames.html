@@ -1,0 +1,230 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+:root{--bg:#0D0A14;--panel:#171127;--ink:#F4EEFF;--dim:#9A8FB8;--line:#2B2140;--b:#C7FF35;--c:#FF2D8A}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#000;font-family:Inter,sans-serif;-webkit-font-smoothing:antialiased}
+.void{fill:#0D0A14}
+#board .void{fill:#0C0816}
+#uv .void{fill:#07040C}
+#doors .void{fill:#140E22}
+.frame{position:relative;overflow:hidden;background:var(--bg);margin:0 0 24px}
+#page{width:1200px;height:900px}
+.el{width:800px;height:600px}
+/* ---------- PAGE ---------- */
+#page{padding:0;display:flex;flex-direction:column}
+.mast{border-bottom:3px solid var(--b);padding:22px 48px 18px;display:flex;align-items:flex-end;gap:20px}
+.mk{width:54px;height:54px;flex:none}
+.wm{flex:1}
+.wm b{display:block;font-size:31px;font-weight:900;letter-spacing:.055em;color:var(--b);line-height:1;transform:scaleX(.93);transform-origin:left}
+.wm span{display:block;margin-top:7px;font-size:12.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--dim)}
+.nav{display:flex;gap:9px}
+.nav i{font-style:normal;font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:7px 13px;border:1px solid var(--line);color:var(--ink)}
+.nav i.on{background:var(--b);color:var(--bg);border-color:var(--b);font-weight:700}
+.body{padding:26px 48px 0;flex:1}
+.lede{font-size:19.5px;line-height:1.5;color:var(--ink);max-width:960px;font-weight:400}
+.notice{margin-top:22px;border:1px solid var(--c);background:rgba(255,45,138,.07);padding:16px 20px 14px;position:relative}
+.notice b{display:block;font-size:17px;color:var(--c);letter-spacing:.01em;margin-bottom:7px}
+.notice p{font-size:13.5px;line-height:1.55;color:var(--ink);max-width:880px}
+.notice span{position:absolute;right:18px;top:16px;font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim)}
+.cols{display:flex;gap:34px;margin-top:24px}
+h3{font-size:11px;letter-spacing:.17em;text-transform:uppercase;color:var(--b);margin-bottom:11px;font-weight:700}
+table{width:100%;border-collapse:collapse}
+th{font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim);text-align:left;padding:0 10px 7px 0;border-bottom:1px solid var(--line);font-weight:600}
+td{font-size:12.5px;color:var(--ink);padding:8px 10px 8px 0;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.35}
+td:first-child{color:var(--b);font-weight:600}
+.note{font-size:10.5px;line-height:1.5;color:var(--dim);margin-top:9px;max-width:520px}
+dl{display:grid;grid-template-columns:118px 1fr;gap:0}
+dt{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);padding:8px 0;border-bottom:1px solid var(--line)}
+dd{font-size:12.5px;color:var(--ink);padding:8px 0;border-bottom:1px solid var(--line);line-height:1.35}
+dd.hl{color:var(--c);font-weight:600}
+.gal{display:flex;gap:14px;margin-top:26px}
+.gal figure{flex:1}
+.gal svg{width:100%;display:block;border:1px solid var(--line)}
+.gal figcaption{margin-top:8px;font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
+.foot{margin-top:auto;border-top:1px solid var(--line);padding:13px 48px;display:flex;justify-content:space-between;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+/* ---------- shared element chrome ---------- */
+.cap{position:absolute;left:46px;bottom:42px;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.cap em{font-style:normal;color:var(--b)}
+/* ---------- BOARD ---------- */
+#board{background:#0A0710}
+.bd{position:absolute;inset:26px;border:3px solid var(--c);background:linear-gradient(#140E22,#0A0710)}
+.lamps i{position:absolute;width:9px;height:9px;border-radius:50%;background:var(--b);font-style:normal}
+.bt{position:absolute;left:352px;top:86px;right:52px}
+.bt u{display:block;text-decoration:none;font-size:13px;letter-spacing:.3em;text-transform:uppercase;color:var(--c);font-weight:700}
+.bt b{display:block;font-size:84px;line-height:.9;font-weight:900;color:var(--b);letter-spacing:-.01em;transform:scaleX(.88);transform-origin:left;margin:12px 0 0;text-shadow:0 0 1px #0A0710}
+.bt s{display:block;text-decoration:none;margin-top:18px;font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink)}
+.bt q{display:block;quotes:none;margin-top:5px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.fig{position:absolute;left:54px;bottom:52px;width:286px}
+/* ---------- FIGURE under UV ---------- */
+#uv{background:#07040C}
+.uvfig{position:absolute;left:62px;top:28px;width:300px}
+.sheetpanel{position:absolute;right:40px;top:52px;width:356px}
+.sheetpanel h4{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--c);margin-bottom:14px;font-weight:700}
+.pig{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.pig span{width:34px;height:34px;flex:none;border:1px solid rgba(244,238,255,.18)}
+.pig em{font-style:normal;font-size:12px;color:var(--ink);flex:1}
+.pig i{font-style:normal;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
+.dims{position:absolute;right:40px;bottom:58px;width:356px;font-size:10.5px;line-height:1.65;color:var(--dim)}
+.dims b{color:var(--b);font-weight:600}
+.scalebar{position:absolute;left:62px;bottom:52px;width:300px}
+.scalebar hr{border:0;border-top:1px solid var(--b)}
+.scalebar p{margin-top:6px;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--b)}
+/* ---------- DOORS ---------- */
+#doors{background:#07040C}
+.dw{position:absolute;left:0;top:0;width:800px;height:600px}
+.dlab{position:absolute;right:30px;top:30px;text-align:right}
+.dcap{position:absolute;left:30px;top:30px;max-width:300px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);line-height:1.8}
+.dcap em{font-style:normal;color:var(--b)}
+.dlab b{display:block;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--c);font-weight:700}
+.dlab span{display:block;margin-top:6px;font-size:10px;letter-spacing:.1em;color:var(--dim);line-height:1.6}
+</style></head><body>
+
+<!-- =================== PAGE =================== -->
+<div class="frame" id="page">
+  <div class="mast">
+    <svg class="mk" viewBox="0 0 64 64"><path d="M6 58V30a26 26 0 0 1 52 0v28z" fill="#C7FF35"/><path d="M22 58V34a10 10 0 0 1 20 0v24z" fill="#FF2D8A"/><rect x="6" y="50" width="52" height="8" fill="#FF2D8A"/></svg>
+    <div class="wm"><b>MARCHBANK&rsquo;S AMUSEMENTS</b><span>Travelling amusements since 1911. Ghost train, waltzer, two juveniles.</span></div>
+    <div class="nav"><i class="on">Home</i><i>Where we are</i></div>
+  </div>
+  <div class="body">
+    <p class="lede">Six lorries and two generators, wintered in a yard at Woodbarrow and on the road from Easter to the first week of October. Four rides, three of them older than anyone now driving them.</p>
+    <div class="notice"><b>The Old Mill will not open before Easter</b>
+      <p>All eleven figures came out of the tunnel after the inspection on 28 September and have been burnt. The ride travels this winter as a shell, the doors chained, and it does not take money until there is something behind them. The waltzer and the juveniles run as booked.</p>
+      <span>Notice to fair committees</span></div>
+    <div class="cols">
+      <div style="flex:1.15">
+        <h3>What travels</h3>
+        <table>
+          <tr><th>Ride</th><th>Built</th><th>Riders an hour</th><th>Lorries</th></tr>
+          <tr><td>Ghost train, &lsquo;The Old Mill&rsquo;</td><td>1964, body by Lanyon &amp; Rowe of Burton</td><td>420</td><td>Two</td></tr>
+          <tr><td>Waltzer</td><td>1971</td><td>560</td><td>Two</td></tr>
+          <tr><td>Juvenile roundabout</td><td>1958</td><td>180</td><td>One</td></tr>
+          <tr><td>Cake walk</td><td>1949, rebuilt 1988</td><td>240</td><td>One</td></tr>
+        </table>
+        <p class="note">Riders an hour is what the ride does on a wet Saturday with both cars running and somebody competent on the brake, not what the plate on the paybox says.</p>
+      </div>
+      <div style="flex:1">
+        <h3>What the Old Mill is, in numbers</h3>
+        <dl>
+          <dt>Track</dt><dd>96 m, single loop, two reverses</dd>
+          <dt>Ride time</dt><dd>2 min 40 s at the speed we run it</dd>
+          <dt>Cars</dt><dd>Four, two seats each, no doors</dd>
+          <dt>Headroom</dt><dd>1.95 m to the cross-members</dd>
+          <dt>Light</dt><dd>None. Ultraviolet tubes only, four pigments</dd>
+          <dt>Figures</dt><dd class="hl">Eleven positions. All eleven empty</dd>
+        </dl>
+        <p class="note">A figure is passed at between 1.2 and 1.8 seconds depending on where it sits on the loop. Nobody gets a second look at anything in here.</p>
+      </div>
+    </div>
+    <div class="gal">
+      <figure><svg viewBox="0 0 200 110"><rect width="200" height="110" fill="#120C1E"/><rect x="10" y="8" width="180" height="94" fill="none" stroke="#FF2D8A" stroke-width="3"/><rect x="34" y="34" width="132" height="16" fill="#C7FF35"/><rect x="34" y="58" width="86" height="9" fill="#FF2D8A"/></svg><figcaption>Front board, 1988 repaint</figcaption></figure>
+      <figure><svg viewBox="0 0 200 110"><rect width="200" height="110" fill="#120C1E"/><rect x="30" y="14" width="64" height="82" fill="#171127" stroke="#2B2140" stroke-width="2"/><rect x="106" y="14" width="64" height="82" fill="#171127" stroke="#2B2140" stroke-width="2"/><rect x="96" y="14" width="8" height="82" fill="#000"/><path d="M58 40 Q100 24 142 40 Q100 56 58 40 Z" fill="#C7FF35"/><rect x="96" y="14" width="8" height="82" fill="#000"/></svg><figcaption>Flap doors, second reverse</figcaption></figure>
+      <figure><svg viewBox="0 0 200 110"><rect width="200" height="110" fill="#07040C"/><path d="M70 96V44a30 30 0 0 1 60 0v52z" fill="#C7FF35"/><rect x="88" y="26" width="24" height="12" fill="#FF2D8A"/><circle cx="60" cy="70" r="3" fill="#F4EEFF"/><circle cx="144" cy="56" r="2.5" fill="#F4EEFF"/></svg><figcaption>Tunnel under UV</figcaption></figure>
+      <figure><svg viewBox="0 0 200 110"><rect width="200" height="110" fill="#120C1E"/><path d="M46 76V52h108v24z" fill="#FF2D8A"/><path d="M62 52V36h34v16z" fill="#C7FF35"/><circle cx="68" cy="84" r="8" fill="#2B2140"/><circle cx="132" cy="84" r="8" fill="#2B2140"/><rect x="30" y="92" width="140" height="4" fill="#2B2140"/></svg><figcaption>Car three</figcaption></figure>
+    </div>
+  </div>
+  <div class="foot"><span>Marchbank&rsquo;s Amusements &middot; Woodbarrow</span><span>Showmen&rsquo;s Guild &middot; Est. 1911</span></div>
+</div>
+
+<!-- =================== BOARD =================== -->
+<div class="frame el" id="board">
+  <div class="bd"></div>
+  <div class="lamps" id="lamps"></div>
+  <svg class="fig" viewBox="0 0 300 480"><defs><g id="fig">
+    <path d="M96 214 Q48 234 56 288 Q98 310 126 278 L120 220 Z" fill="#FF2D8A"/>
+    <path d="M100 198 L200 198 L232 462 L68 462 Z" fill="#C7FF35"/>
+    <path d="M72 430 L228 430 L232 462 L68 462 Z" fill="#FF2D8A"/>
+    <path d="M120 136 L180 136 L186 204 L114 204 Z" fill="#C7FF35"/>
+    <path class="void" d="M128 150 L172 150 L177 197 L123 197 Z"/>
+    <path d="M110 132 L110 102 Q150 76 190 102 L190 132 Z" fill="#C7FF35"/>
+    <path d="M42 132 Q150 96 258 132 Q150 162 42 132 Z" fill="#C7FF35"/>
+    <path d="M196 224 L270 192 L282 222 L202 256 Z" fill="#FF2D8A"/>
+    <path d="M262 180 L298 170 L300 210 L268 218 Z" fill="#FF2D8A"/>
+    <g fill="#F4EEFF"><circle cx="128" cy="258" r="3.4"/><circle cx="166" cy="272" r="2.6"/><circle cx="104" cy="306" r="3"/><circle cx="150" cy="320" r="2.4"/><circle cx="192" cy="300" r="3.2"/><circle cx="118" cy="358" r="2.6"/><circle cx="176" cy="364" r="3"/><circle cx="146" cy="400" r="2.4"/><circle cx="208" cy="346" r="2.6"/><circle cx="88" cy="394" r="3"/><circle cx="198" cy="410" r="2.4"/></g>
+  </g></defs><use href="#fig"/></svg>
+  <div class="bt">
+    <u>Marchbank&rsquo;s</u>
+    <b>THE OLD<br>MILL</b>
+    <s>Ghost train &middot; eleven figures</s>
+    <q>Nothing in here is lit. Mind your head at the second bend.</q>
+  </div>
+  <div class="cap">Front board &middot; <em>brush-ready outline, six enamels</em></div>
+</div>
+
+<!-- =================== UV FIGURE =================== -->
+<div class="frame el" id="uv">
+  <svg class="uvfig" viewBox="0 0 300 480"><defs><g id="fig2">
+    <path d="M96 214 Q48 234 56 288 Q98 310 126 278 L120 220 Z" fill="#FF2D8A"/>
+    <path d="M100 198 L200 198 L232 462 L68 462 Z" fill="#C7FF35"/>
+    <path d="M72 430 L228 430 L232 462 L68 462 Z" fill="#FF2D8A"/>
+    <path d="M120 136 L180 136 L186 204 L114 204 Z" fill="#C7FF35"/>
+    <path class="void" d="M128 150 L172 150 L177 197 L123 197 Z"/>
+    <path d="M110 132 L110 102 Q150 76 190 102 L190 132 Z" fill="#C7FF35"/>
+    <path d="M42 132 Q150 96 258 132 Q150 162 42 132 Z" fill="#C7FF35"/>
+    <path d="M196 224 L270 192 L282 222 L202 256 Z" fill="#FF2D8A"/>
+    <path d="M262 180 L298 170 L300 210 L268 218 Z" fill="#FF2D8A"/>
+    <g fill="#F4EEFF"><circle cx="128" cy="258" r="3.4"/><circle cx="166" cy="272" r="2.6"/><circle cx="104" cy="306" r="3"/><circle cx="150" cy="320" r="2.4"/><circle cx="192" cy="300" r="3.2"/><circle cx="118" cy="358" r="2.6"/><circle cx="176" cy="364" r="3"/><circle cx="146" cy="400" r="2.4"/><circle cx="208" cy="346" r="2.6"/><circle cx="88" cy="394" r="3"/><circle cx="198" cy="410" r="2.4"/></g>
+  </g></defs><use href="#fig2"/></svg>
+  <div class="sheetpanel">
+    <h4>Paint schedule &middot; figure 4 of 11</h4>
+    <div class="pig"><span style="background:#C7FF35"></span><em>Signal green</em><i>Coat, brim, crown</i></div>
+    <div class="pig"><span style="background:#FF2D8A"></span><em>Hot pink</em><i>Sack, hem, hand</i></div>
+    <div class="pig"><span style="background:#F4EEFF"></span><em>Dead white</em><i>Flour only, 11 spots</i></div>
+    <div class="pig"><span style="background:#07040C;border-color:#2B2140"></span><em>Unpainted</em><i>Face, arm shadow</i></div>
+  </div>
+  <div class="dims">
+    <b>1.88 m</b> standing &middot; two-part mould, no undercuts<br>
+    One moving part: the brim, <b>38 mm throw</b> off the cam, resting down<br>
+    Passed at <b>1.4 s</b> from car three, 2.1 m, 40&deg; off the nose
+  </div>
+  <div class="scalebar"><hr><p>&larr; 1.9 m &middot; drawn at 1:10 &rarr;</p></div>
+  <div class="cap" style="left:62px;bottom:20px">Under UV, no white light &middot; <em>four pigments, two values</em></div>
+</div>
+
+<!-- =================== DOORS =================== -->
+<div class="frame el" id="doors">
+  <svg class="dw" viewBox="0 0 800 600">
+    <!-- tunnel arch surround -->
+    <path d="M90 560V300a310 310 0 0 1 620 0v260z" fill="#120C1E"/>
+    <path d="M118 560V302a282 282 0 0 1 564 0v258z" fill="#0A0612"/>
+    <!-- left leaf -->
+    <path d="M152 548V306a248 248 0 0 1 96 -150V548z" fill="#140E22" stroke="#2B2140" stroke-width="2"/>
+    <rect x="248" y="150" width="144" height="398" fill="#140E22" stroke="#2B2140" stroke-width="2"/>
+    <!-- right leaf -->
+    <rect x="408" y="150" width="144" height="398" fill="#140E22" stroke="#2B2140" stroke-width="2"/>
+    <path d="M648 548V306a248 248 0 0 0 -96 -150V548z" fill="#140E22" stroke="#2B2140" stroke-width="2"/>
+    <!-- centre gap -->
+    <rect x="392" y="150" width="16" height="398" fill="#000"/>
+    <!-- painted across the join: brim + hand, split by the gap -->
+    <g>
+      
+      <path d="M316 322 L484 322 L500 548 L300 548 Z" fill="#C7FF35"/>
+      <path d="M344 258 L456 258 L466 326 L334 326 Z" fill="#C7FF35"/>
+      <path class="void" d="M372 284 L428 284 L434 322 L366 322 Z"/>
+      <path d="M352 266 L352 230 Q400 198 448 230 L448 266 Z" fill="#C7FF35"/>
+      <path d="M232 266 Q400 208 568 266 Q400 316 232 266 Z" fill="#C7FF35"/>
+      <path d="M302 510 L498 510 L500 548 L300 548 Z" fill="#FF2D8A"/>
+      <path d="M470 352 L586 306 L600 344 L478 392 Z" fill="#FF2D8A"/>
+      <path d="M580 290 L634 278 L638 330 L590 340 Z" fill="#FF2D8A"/>
+      <path d="M330 352 Q252 376 262 440 Q318 468 346 428 L344 358 Z" fill="#FF2D8A"/>
+    </g>
+    <rect x="392" y="150" width="16" height="398" fill="#000"/>
+    <!-- hinges -->
+    <rect x="150" y="300" width="10" height="34" fill="#2B2140"/><rect x="150" y="440" width="10" height="34" fill="#2B2140"/>
+    <rect x="640" y="300" width="10" height="34" fill="#2B2140"/><rect x="640" y="440" width="10" height="34" fill="#2B2140"/>
+    <!-- rail -->
+    <rect x="118" y="548" width="564" height="7" fill="#2B2140"/>
+    <rect x="356" y="555" width="14" height="45" fill="#2B2140"/><rect x="430" y="555" width="14" height="45" fill="#2B2140"/>
+  </svg>
+  <div class="dlab"><b>Second reverse</b><span>Flap doors, two leaves<br>1.10 m &times; 1.90 m each<br>Figure 4 painted across the join</span></div>
+  <div class="dcap">Flap doors, painted across the join<br><em>whole for 1.5 s, then split at 11 mph</em></div>
+</div>
+
+<script>
+const L=document.getElementById('lamps');
+const put=(x,y)=>{const i=document.createElement('i');i.style.left=x+'px';i.style.top=y+'px';L.appendChild(i)};
+for(let x=40;x<=760;x+=48){put(x,13);put(x,578)}
+for(let y=61;y<=530;y+=47){put(13,y);put(778,y)}
+</script>
+</body></html>

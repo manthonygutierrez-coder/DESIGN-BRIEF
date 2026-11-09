@@ -1,7 +1,262 @@
 {
   "version": 1,
-  "updated": "2026-11-02T13:55:38Z",
+  "updated": "2026-11-09T13:33:00Z",
   "briefs": [
+    {
+      "id": "2026-11-09-one-and-a-half-seconds",
+      "cadence": "weekly",
+      "received": "2026-11-09T13:23:16Z",
+      "discipline": "Character Design",
+      "brief": {
+        "project": "ONE AND A HALF SECONDS",
+        "client": "A travelling fairground whose ghost train lost every figure in it to one afternoon's fire inspection",
+        "ask": "The fire officer went through the Old Mill on the last day of the September run and condemned all eleven figures in it — papier-mache over chicken wire, made by Vera's great-uncle, no certificate on any of them and no patterns left behind when he died. The tunnel is empty, the ride travels this winter as a shell that does not take money, and the glass fibre moulder at Burton wants patterns in his hands by 16 January if there are to be eleven figures cured, painted and hung for the Easter opening.",
+        "deliver": [
+          "Eleven figure designs, front elevation and profile at 1:10, dimensioned and drawn to come out of a two-part mould",
+          "A cam sheet per figure: the one moving part, its throw in millimetres, and the position it rests in when the ride is switched off",
+          "A paint schedule per figure, written in the four pigments the ride already carries, naming every surface that stays unpainted",
+          "Sightline proofs — each figure drawn as it is actually seen, from the seat, at the distance and angle the car passes it, at one and a half seconds",
+          "The front board figure at board scale in brush-ready outline, with two sides of rules on what it never does, for the signwriter who repaints it every winter"
+        ],
+        "limits": [
+          "One and a half seconds, one seat, one angle. A figure that needs a second look does not get one.",
+          "Four pigments, all of them fluorescent, and no white light anywhere in the tunnel. Anything not painted in those four is not in the ride.",
+          "One moving part each, off a cam. A figure that wants two will be built with one, and not the one you meant.",
+          "No undercuts, and nothing above 1.9 m. The cross-members are at 1.95 m and the lorry is loaded to the inch.",
+          "The ride takes four-year-olds and the car does not stop. Frightening is the job. Nothing bleeding, and nothing with the face of a person anybody has met."
+        ],
+        "tone": "Lurid · quick · never gory"
+      },
+      "clientProfile": {
+        "who": "Vera Marchbank",
+        "role": "Fourth generation; runs the dark ride and the generators",
+        "co": "Marchbank's Amusements",
+        "dom": "marchbanks-amusements.co.uk",
+        "frame": "neon",
+        "theme": {
+          "bg": "#0D0A14",
+          "panel": "#171127",
+          "ink": "#F4EEFF",
+          "dim": "#9A8FB8",
+          "line": "#2B2140",
+          "brand": "#C7FF35",
+          "brand2": "#FF2D8A",
+          "link": "#C7FF35",
+          "onBrand": "#0D0A14",
+          "head": "'Archivo', 'Helvetica Neue', Arial, sans-serif",
+          "body": "'Helvetica Neue', Arial, sans-serif",
+          "mark": "disc",
+          "markText": "M",
+          "markFace": "Arial, sans-serif"
+        },
+        "voice": "We open at Pennyholme on Easter Saturday whether there is anything in the tunnel or not, and an empty tunnel is a draught you have queued twenty minutes for.",
+        "refs": [
+          "ghost train front board",
+          "fluorescent paint under blacklight",
+          "fairground flap doors",
+          "glass fibre mould workshop",
+          "dark ride car on rails"
+        ],
+        "site": {
+          "tagline": "Travelling amusements since 1911. Ghost train, waltzer, two juveniles.",
+          "nav": [
+            [
+              "Home",
+              "/"
+            ],
+            [
+              "Where we are",
+              "/route"
+            ]
+          ],
+          "pages": {
+            "/": [
+              {
+                "t": "lede",
+                "p": "Six lorries and two generators, wintered in a yard at Woodbarrow and on the road from Easter to the first week of October. Four rides, three of them older than anyone now driving them."
+              },
+              {
+                "t": "notice",
+                "h": "The Old Mill will not open before Easter",
+                "p": "All eleven figures came out of the tunnel after the inspection on 28 September and have been burnt. The ride travels this winter as a shell, the doors chained, and it does not take money until there is something behind them. The waltzer and the juveniles run as booked.",
+                "stamp": "Notice to fair committees and ground agents"
+              },
+              {
+                "t": "table",
+                "h": "What travels",
+                "cols": [
+                  "Ride",
+                  "Built",
+                  "Riders an hour",
+                  "Lorries"
+                ],
+                "rows": [
+                  [
+                    "Ghost train, 'The Old Mill'",
+                    "1964, body by Lanyon & Rowe of Burton",
+                    "420",
+                    "Two"
+                  ],
+                  [
+                    "Waltzer",
+                    "1971",
+                    "560",
+                    "Two"
+                  ],
+                  [
+                    "Juvenile roundabout",
+                    "1958",
+                    "180",
+                    "One"
+                  ],
+                  [
+                    "Cake walk",
+                    "1949, rebuilt 1988",
+                    "240",
+                    "One"
+                  ]
+                ],
+                "note": "Riders an hour is what the ride does on a wet Saturday with both cars running and somebody competent on the brake, not what the plate on the paybox says."
+              },
+              {
+                "t": "spec",
+                "h": "What the Old Mill is, in numbers",
+                "sub": "Asked often enough by committees that it is quicker to put it here.",
+                "rows": [
+                  [
+                    "Track",
+                    "96 m, single loop, two reverses"
+                  ],
+                  [
+                    "Ride time",
+                    "2 min 40 s at the speed we run it"
+                  ],
+                  [
+                    "Cars",
+                    "Four, two seats each, no doors"
+                  ],
+                  [
+                    "Headroom",
+                    "1.95 m to the cross-members, less under the second reverse"
+                  ],
+                  [
+                    "Light in the tunnel",
+                    "None. Ultraviolet tubes only, four pigments"
+                  ],
+                  [
+                    "Figures",
+                    "Eleven positions. All eleven currently empty"
+                  ]
+                ],
+                "note": "A figure is passed at between 1.2 and 1.8 seconds depending on where it sits on the loop. Nobody gets a second look at anything in here."
+              }
+            ],
+            "/route": [
+              {
+                "t": "lede",
+                "p": "The run is settled at the Guild meeting in January and does not change much from one year to the next. Dates move with Easter and with the ground being fit to pull onto, not with us."
+              },
+              {
+                "t": "table",
+                "h": "2027, as booked",
+                "cols": [
+                  "Dates",
+                  "Fair",
+                  "Ground"
+                ],
+                "rows": [
+                  [
+                    "3–5 April",
+                    "Pennyholme Easter Fair",
+                    "The green, east end"
+                  ],
+                  [
+                    "17–19 April",
+                    "Carlby Charter Fair",
+                    "Market place"
+                  ],
+                  [
+                    "1–4 May",
+                    "Stanwardine Feast",
+                    "Recreation ground"
+                  ],
+                  [
+                    "29–31 May",
+                    "Woodbarrow Wakes",
+                    "The carr"
+                  ],
+                  [
+                    "10–12 July",
+                    "Netherthong Show",
+                    "Showfield, lower car park"
+                  ],
+                  [
+                    "2–4 October",
+                    "Carlby Michaelmas",
+                    "Market place"
+                  ]
+                ],
+                "note": "A charter fair cannot be moved and does not need anybody's permission. The rest are at a committee's invitation and can be taken off us, which happens about once in five years and always in writing after the lorries are loaded."
+              },
+              {
+                "t": "spec",
+                "h": "What a ground needs",
+                "rows": [
+                  [
+                    "Frontage",
+                    "22 m for the Old Mill, 18 m for the waltzer"
+                  ],
+                  [
+                    "Headroom on the pull-on",
+                    "No branch under 4.5 m, and we will not take a saw to one"
+                  ],
+                  [
+                    "Surface",
+                    "Hardstanding or firm grass. We do not pull onto soft ground twice"
+                  ],
+                  [
+                    "Power",
+                    "We bring our own. A 125 A supply saves us forty litres a night"
+                  ],
+                  [
+                    "Access",
+                    "One pull-on wide enough for an artic, not two tight turns and an apology"
+                  ],
+                  [
+                    "Opening",
+                    "Six in the evening on a weekday, noon at a weekend"
+                  ]
+                ],
+                "note": "Send the ground plan before the booking, not after. Every argument we have ever had with a committee has been about frontage."
+              }
+            ]
+          },
+          "gallery": [
+            "Front board, 1988 repaint",
+            "Flap doors, second reverse",
+            "Tunnel under UV",
+            "Car three"
+          ]
+        }
+      },
+      "assets": {
+        "markSVG": "<path d=\"M6 58V30a26 26 0 0 1 52 0v28z\" fill=\"%B%\"/><path d=\"M22 58V34a10 10 0 0 1 20 0v24z\" fill=\"%C%\"/><rect x=\"6\" y=\"50\" width=\"52\" height=\"8\" fill=\"%C%\"/>",
+        "images": [
+          {
+            "ref": "ghost train front board",
+            "path": "briefs/assets/marchbanks/board.png"
+          },
+          {
+            "ref": "fluorescent paint under blacklight",
+            "path": "briefs/assets/marchbanks/figure.png"
+          },
+          {
+            "ref": "fairground flap doors",
+            "path": "briefs/assets/marchbanks/doors.png"
+          }
+        ]
+      }
+    },
     {
       "id": "2026-11-02-before-the-clay",
       "cadence": "weekly",
