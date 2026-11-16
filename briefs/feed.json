@@ -1,7 +1,288 @@
 {
   "version": 1,
-  "updated": "2026-11-09T13:33:00Z",
+  "updated": "2026-11-16T13:34:22Z",
   "briefs": [
+    {
+      "id": "2026-11-16-the-handstroke-gap",
+      "cadence": "weekly",
+      "received": "2026-11-16T13:34:22Z",
+      "discipline": "Motion Design",
+      "brief": {
+        "project": "THE HANDSTROKE GAP",
+        "client": "A guild of bell ringers who lose their tower for sixteen weeks in January",
+        "ask": "St Botolph's goes from eight bells to ten. The ring comes out on 5 January, the two new bells are cast in February and the whole ten are dedicated at 11:00 on 25 April, which leaves the band sixteen weeks with no tower and one dumb bell in the parish room. Everything they can already ring changes when you add two bells — the line a ringer follows through a method on ten is not the line they followed on eight — and twenty-two of the thirty-one on the books learned by watching somebody else's rope, never off a diagram. I want the five methods we will ring on 25 April animated at ringing speed, on the parish room screen, from the first practice on 13 January.",
+        "deliver": [
+          "Five methods animated as a full course, one file each: Plain Hunt on ten, Plain Bob Royal, Grandsire Caters, Stedman Caters and Little Bob Royal",
+          "Each course cut again once per working bell, that bell's line carried and the rest held as ground — forty-eight files with the plain hunt",
+          "A rounds and call changes sequence covering the four calls this band uses, the row rebuilding as each call takes effect",
+          "A numbered contact sheet, every row of every course as a still, for me to check against the published place notation before a frame of it is cut",
+          "Delivery as H.264 and as a numbered PNG sequence, playing offline from a stick on a 2013 laptop with no network and nothing installable on it",
+          "Two sides of motion rules — the timing, the gap, the colour, and what is never permitted to move — so the Guild can cut a sixth method in 2028 without ringing you"
+        ],
+        "limits": [
+          "A row every two seconds, and every other row carries the handstroke gap: one blow's silence before it, every time. Spaced evenly it is wrong, and thirty-one people will see that it is wrong before one of them can tell you why.",
+          "One bell is carried. The other nine are ground, at no more than a quarter strength. Carry a second line and the learner follows the wrong one and blames themselves.",
+          "A bell moves one place, or it stays where it is. If a path crosses two places between one row and the next it is not a method, and somebody will go away having learned it.",
+          "It is read from eight feet by a person with a rope in both hands who can look up for about half a second at the end of each backstroke. Nothing that needs two glances.",
+          "Thrown onto a magnolia wall by a 1024 by 768 projector at 400 lumens, with the strip light on, because the fire officer will not have it off."
+        ],
+        "tone": "Metrical · plain · unforgiving"
+      },
+      "clientProfile": {
+        "who": "Gordon Rylatt",
+        "role": "Ringing Master",
+        "co": "The Tansdale Guild of Church Bell Ringers",
+        "dom": "tansdaleringers.org.uk",
+        "frame": "paper",
+        "theme": {
+          "bg": "#F5F1E6",
+          "panel": "#EAE4D3",
+          "ink": "#1F1A12",
+          "dim": "#6B6049",
+          "line": "#D4C9AE",
+          "brand": "#8A5A22",
+          "brand2": "#2B3A33",
+          "link": "#7A4A17",
+          "onBrand": "#F5F1E6",
+          "head": "'Instrument Serif', Georgia, serif",
+          "body": "Georgia, 'Times New Roman', serif",
+          "mark": "crest",
+          "markText": "T",
+          "markFace": "Georgia, serif"
+        },
+        "greet": "Gordon Rylatt, Tansdale Guild.",
+        "voice": "I have drawn that line on a whiteboard for nineteen years and the whiteboard has never once moved at the right speed.",
+        "wrap": "Three of the new ones rang a touch of Bob Royal on the dumb bell last Tuesday without being talked through it, which I have not seen before week nine in nineteen years of this. Four people have told me the gap is right, none of whom were asked what they were looking at.",
+        "refs": [
+          "ringing chamber ropes",
+          "bell wheel and headstock",
+          "peal board on a wall",
+          "rope sally detail",
+          "bells lifted out of a tower"
+        ],
+        "site": {
+          "tagline": "Thirty-one towers, and somebody to teach in nineteen of them.",
+          "mastL": "Founded 1893",
+          "mastR": "Vol. CXXXI",
+          "foot": "Subscriptions due 1 January",
+          "nav": [
+            [
+              "Home",
+              "/"
+            ],
+            [
+              "Towers",
+              "/towers"
+            ]
+          ],
+          "pages": {
+            "/": [
+              {
+                "t": "lede",
+                "p": "The Guild exists to keep bells ringing in the Tansdale deanery, which in practice means finding, teaching and keeping the people who ring them. Thirty-one towers are on the books. Nineteen have a band able to ring on a Sunday, and that figure has not gone up since 2019."
+              },
+              {
+                "t": "notice",
+                "h": "St Botolph's: the ring comes out on 5 January",
+                "p": "The eight are being augmented to ten. The bells come out on 5 January, the frame is extended through February, and the whole ten are dedicated at 11:00 on 25 April. There is no ringing at St Botolph's in that time. Practice moves to the parish room, Tuesdays at 19:30, on the dumb bell and the simulator. The room holds twelve and we are already turning people away, so write before you come.",
+                "stamp": "Notice to members"
+              },
+              {
+                "t": "spec",
+                "h": "The ring at St Botolph's, after the work",
+                "rows": [
+                  [
+                    "Bells",
+                    "Ten from 25 April. The back eight by Harnwell of Nottingham, 1908"
+                  ],
+                  [
+                    "Tenor",
+                    "17 cwt 2 qr 11 lb in E flat"
+                  ],
+                  [
+                    "New bells",
+                    "Treble and second, cast February, 3-1-6 and 3-3-19"
+                  ],
+                  [
+                    "Frame",
+                    "Cast iron lowside, 1908, extended for two"
+                  ],
+                  [
+                    "Practice",
+                    "Tuesday 19:30. Parish room until 21 April"
+                  ],
+                  [
+                    "Learners",
+                    "Taken at any practice, but say you are coming"
+                  ]
+                ]
+              },
+              {
+                "t": "table",
+                "h": "What the band can ring",
+                "cols": [
+                  "Method",
+                  "On eight",
+                  "On ten"
+                ],
+                "rows": [
+                  [
+                    "Plain Hunt",
+                    "31",
+                    "31"
+                  ],
+                  [
+                    "Plain Bob",
+                    "19",
+                    "6"
+                  ],
+                  [
+                    "Grandsire",
+                    "14",
+                    "4"
+                  ],
+                  [
+                    "Stedman",
+                    "9",
+                    "2"
+                  ],
+                  [
+                    "Little Bob",
+                    "7",
+                    "None yet"
+                  ]
+                ],
+                "note": "Counted at the October practice, out of thirty-one members. The right-hand column is the whole of the problem, and the reason there is now a screen in the parish room."
+              }
+            ],
+            "/towers": [
+              {
+                "t": "table",
+                "h": "Towers of the Guild",
+                "cols": [
+                  "Tower",
+                  "Bells",
+                  "Tenor",
+                  "Practice"
+                ],
+                "rows": [
+                  [
+                    "St Botolph, Tansdale",
+                    "10 from 25 April",
+                    "17-2-11",
+                    "Tue 19:30"
+                  ],
+                  [
+                    "All Saints, Winnard Green",
+                    "8",
+                    "12-0-4",
+                    "Thu 19:45"
+                  ],
+                  [
+                    "Holy Trinity, Pellwick",
+                    "8",
+                    "14-2-26",
+                    "Wed 20:00"
+                  ],
+                  [
+                    "St Mary, Garbrook",
+                    "6",
+                    "9-1-18",
+                    "Mon 19:30"
+                  ],
+                  [
+                    "St Cuthbert, Melsham Moor",
+                    "6",
+                    "7-3-2",
+                    "Fri 19:00"
+                  ],
+                  [
+                    "St James, Stangrove",
+                    "6",
+                    "8-2-14",
+                    "Thu 19:30"
+                  ],
+                  [
+                    "St Anne, Cowdry Bridge",
+                    "5",
+                    "6-0-9",
+                    "Alternate Mondays"
+                  ],
+                  [
+                    "St Helen, Orrell Brook",
+                    "4",
+                    "5-1-7",
+                    "By arrangement"
+                  ]
+                ],
+                "note": "Eight of the nineteen towers with a band of their own. The other twelve on the books are rung at by visiting bands, or they are not rung at all, and we will tell you which if you ask."
+              },
+              {
+                "t": "spec",
+                "h": "Learning here",
+                "rows": [
+                  [
+                    "Cost",
+                    "Nothing for the first year. Fourteen pounds a year after that"
+                  ],
+                  [
+                    "Age",
+                    "Ten upwards. Under sixteen brings an adult and the adult stays"
+                  ],
+                  [
+                    "How long",
+                    "Six months to ring rounds with a band. Two years to be useful"
+                  ],
+                  [
+                    "Hands",
+                    "A blister in week two and no blister by week six"
+                  ],
+                  [
+                    "Bring",
+                    "Flat shoes, and no scarf"
+                  ],
+                  [
+                    "Height",
+                    "Irrelevant. The rope is adjusted, not the ringer"
+                  ]
+                ]
+              },
+              {
+                "t": "notice",
+                "h": "The simulator is not the bells",
+                "p": "It counts, it strikes and it will tell you what you did, and it does none of the things a thirteen hundredweight bell does to a person holding the rope. Nobody who learns in the parish room this winter is a ringer until they have stood under the tower and been corrected by it.",
+                "stamp": "From the Ringing Master"
+              },
+              {
+                "t": "contact",
+                "h": "Write to the Guild",
+                "lines": [
+                  "The Tansdale Guild of Church Bell Ringers",
+                  "c/o the vestry, St Botolph's, Tansdale"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "assets": {
+        "markSVG": "<rect x=\"29\" y=\"4\" width=\"6\" height=\"9\" rx=\"3\" fill=\"%C%\"/><path d=\"M32 11c-10 0-15 7-16 17-1 8-3 12-7 16h46c-4-4-6-8-7-16-1-10-6-17-16-17z\" fill=\"%B%\"/><rect x=\"7\" y=\"44\" width=\"50\" height=\"6\" rx=\"1\" fill=\"%C%\"/><circle cx=\"32\" cy=\"57\" r=\"5\" fill=\"%B%\"/>",
+        "images": [
+          {
+            "ref": "peal board on a wall",
+            "path": "briefs/assets/tansdaleringers/pealboard.png"
+          },
+          {
+            "ref": "bell wheel and headstock",
+            "path": "briefs/assets/tansdaleringers/headstock.png"
+          },
+          {
+            "ref": "rope sally detail",
+            "path": "briefs/assets/tansdaleringers/sally.png"
+          }
+        ]
+      }
+    },
     {
       "id": "2026-11-09-one-and-a-half-seconds",
       "cadence": "weekly",

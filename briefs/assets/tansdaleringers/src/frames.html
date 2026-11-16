@@ -1,0 +1,221 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+:root{--bg:#F5F1E6;--panel:#EAE4D3;--ink:#1F1A12;--dim:#6B6049;--line:#D4C9AE;--b:#8A5A22;--c:#2B3A33}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#8d8878;font-family:"Bitstream Charter","Liberation Serif",Georgia,serif;-webkit-font-smoothing:antialiased}
+.frame{position:relative;overflow:hidden;background:var(--bg);margin:0 0 24px}
+#page{width:1200px;height:900px;display:flex;flex-direction:column}
+.el{width:800px;height:600px}
+.sc{font-family:Inter,"Liberation Sans",sans-serif;text-transform:uppercase;letter-spacing:.16em}
+
+/* ---------- PAGE ---------- */
+.mast{display:grid;grid-template-columns:1fr auto 1fr;align-items:flex-end;gap:24px;
+      padding:40px 56px 18px;border-bottom:1px solid var(--line)}
+.slug{font-size:11px;color:var(--dim)}
+.slug.r{text-align:right}
+.wm{display:flex;align-items:center;gap:18px}
+.mk{width:52px;height:52px;flex:none}
+.wm h1{font-size:37px;font-weight:400;letter-spacing:.005em;color:var(--ink);line-height:1.04;text-align:center}
+.tag{text-align:center;font-size:15.5px;font-style:italic;color:var(--dim);padding:13px 0 0}
+.nav{display:flex;justify-content:center;gap:0;padding:15px 0 0;margin:0 56px;border-bottom:3px double var(--line);padding-bottom:13px}
+.nav i{font-style:normal;font-size:10.5px;color:var(--ink);padding:0 15px;border-right:1px solid var(--line)}
+.nav i:last-child{border-right:0}
+.nav i.on{color:var(--b);font-weight:700}
+.body{padding:26px 56px 0;flex:1}
+.lede{font-size:20px;line-height:1.48;color:var(--ink);max-width:1000px}
+.lede::first-letter{float:left;font-size:58px;line-height:.86;padding:4px 10px 0 0;color:var(--b)}
+.notice{margin-top:24px;border:1px solid var(--c);border-left:6px solid var(--c);background:var(--panel);
+        padding:15px 22px 15px 20px;position:relative}
+.notice b{display:block;font-size:17.5px;color:var(--c);margin-bottom:6px}
+.notice p{font-size:13.5px;line-height:1.56;color:var(--ink);max-width:860px}
+.notice span{position:absolute;right:18px;top:16px;font-size:9px;color:var(--dim)}
+.cols{display:flex;gap:40px;margin-top:26px}
+.cols>div{flex:1}
+h3{font-size:10.5px;color:var(--b);margin-bottom:12px;font-weight:700}
+dl{display:grid;grid-template-columns:104px 1fr}
+dt{font-size:10px;color:var(--dim);padding:9px 0;border-bottom:1px solid var(--line);font-family:Inter,sans-serif;
+   text-transform:uppercase;letter-spacing:.1em}
+dd{font-size:13px;color:var(--ink);padding:8px 0;border-bottom:1px solid var(--line);line-height:1.34}
+table{width:100%;border-collapse:collapse}
+th{font-size:9px;color:var(--dim);text-align:left;padding:0 10px 7px 0;border-bottom:1px solid var(--ink);
+   font-family:Inter,sans-serif;text-transform:uppercase;letter-spacing:.12em;font-weight:600}
+th:not(:first-child),td:not(:first-child){text-align:right;padding-right:0}
+td{font-size:13px;color:var(--ink);padding:8px 10px 8px 0;border-bottom:1px solid var(--line);line-height:1.3}
+td:first-child{font-weight:700}
+tr.z td{color:var(--b)}
+.note{font-size:10.5px;line-height:1.52;color:var(--dim);margin-top:10px;font-style:italic}
+.foot{margin-top:auto;border-top:1px solid var(--line);padding:13px 56px 20px;text-align:center;
+      font-size:10px;color:var(--dim)}
+
+/* ---------- ELEMENTS ---------- */
+.el svg{display:block;width:800px;height:600px}
+.cap{position:absolute;left:28px;bottom:22px;font-size:9px;color:var(--dim);font-family:Inter,sans-serif;
+     text-transform:uppercase;letter-spacing:.15em}
+</style></head><body>
+
+<!-- ============ PAGE ============ -->
+<div class="frame" id="page">
+  <div class="mast">
+    <span class="slug sc">Founded 1893</span>
+    <div class="wm">
+      <svg class="mk" viewBox="0 0 64 64"><rect x="29" y="4" width="6" height="9" rx="3" fill="#2B3A33"/><path d="M32 11c-10 0-15 7-16 17-1 8-3 12-7 16h46c-4-4-6-8-7-16-1-10-6-17-16-17z" fill="#8A5A22"/><rect x="7" y="44" width="50" height="6" rx="1" fill="#2B3A33"/><circle cx="32" cy="57" r="5" fill="#8A5A22"/></svg>
+      <h1>The Tansdale Guild of<br>Church Bell Ringers</h1>
+    </div>
+    <span class="slug r sc">Vol. CXXXI</span>
+  </div>
+  <p class="tag">Thirty-one towers, and somebody to teach in nineteen of them.</p>
+  <div class="nav"><i class="on">Home</i><i>Towers</i></div>
+  <div class="body">
+    <p class="lede">The Guild exists to keep bells ringing in the Tansdale deanery, which in practice means finding, teaching and keeping the people who ring them. Thirty-one towers are on the books. Nineteen have a band able to ring on a Sunday, and that figure has not gone up since 2019.</p>
+
+    <div class="notice">
+      <b>St Botolph&rsquo;s: the ring comes out on 5 January</b>
+      <p>The eight are being augmented to ten. The bells come out on 5 January, the frame is extended through February, and the whole ten are dedicated at 11:00 on 25 April. There is no ringing at St Botolph&rsquo;s in that time. Practice moves to the parish room, Tuesdays at 19:30, on the dumb bell and the simulator. The room holds twelve and we are already turning people away, so write before you come.</p>
+      <span class="sc">Notice to members</span>
+    </div>
+
+    <div class="cols">
+      <div>
+        <h3 class="sc">The ring at St Botolph&rsquo;s, after the work</h3>
+        <dl>
+          <dt>Bells</dt><dd>Ten from 25 April. The back eight by Harnwell of Nottingham, 1908</dd>
+          <dt>Tenor</dt><dd>17 cwt 2 qr 11 lb in E flat</dd>
+          <dt>New bells</dt><dd>Treble and second, cast February, 3-1-6 and 3-3-19</dd>
+          <dt>Frame</dt><dd>Cast iron lowside, 1908, extended for two</dd>
+          <dt>Practice</dt><dd>Tuesday 19:30. Parish room until 21 April</dd>
+          <dt>Learners</dt><dd>Taken at any practice, but say you are coming</dd>
+        </dl>
+      </div>
+      <div>
+        <h3 class="sc">What the band can ring</h3>
+        <table>
+          <thead><tr><th>Method</th><th>On eight</th><th>On ten</th></tr></thead>
+          <tbody>
+            <tr><td>Plain Hunt</td><td>31</td><td>31</td></tr>
+            <tr><td>Plain Bob</td><td>19</td><td>6</td></tr>
+            <tr><td>Grandsire</td><td>14</td><td>4</td></tr>
+            <tr><td>Stedman</td><td>9</td><td>2</td></tr>
+            <tr class="z"><td>Little Bob</td><td>7</td><td>None yet</td></tr>
+          </tbody>
+        </table>
+        <p class="note">Counted at the October practice, out of thirty-one members. The right-hand column is the whole of the problem, and the reason there is now a screen in the parish room.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot">The Tansdale Guild of Church Bell Ringers &middot; tansdaleringers.org.uk &middot; Subscriptions due 1 January</div>
+</div>
+
+<!-- ============ ELEMENT 1 — peal board ============ -->
+<div class="frame el" id="pealboard">
+  <svg viewBox="0 0 800 600">
+    <rect width="800" height="600" fill="#E9E3D2"/>
+    <g opacity=".5">
+      <rect x="0" y="0" width="800" height="600" fill="none"/>
+      <path d="M0 108h800M0 232h800M0 356h800M0 480h800" stroke="#D9D2BE" stroke-width="2"/>
+    </g>
+    <rect x="118" y="46" width="564" height="508" fill="#1F2B25"/>
+    <rect x="118" y="46" width="564" height="508" fill="none" stroke="#141C18" stroke-width="2"/>
+    <rect x="134" y="62" width="532" height="476" fill="none" stroke="#8A5A22" stroke-width="4"/>
+    <rect x="146" y="74" width="508" height="452" fill="none" stroke="#8A5A22" stroke-width="1.5"/>
+    <g fill="#D9B06B" text-anchor="middle" font-family="Bitstream Charter, Georgia, serif">
+      <text x="400" y="122" font-size="25" letter-spacing="5">TANSDALE</text>
+      <text x="400" y="152" font-size="15" letter-spacing="3" fill="#B98C45">THE CHURCH OF ST BOTOLPH</text>
+      <path d="M300 168h200" stroke="#8A5A22" stroke-width="1.5"/>
+      <text x="400" y="203" font-size="15" fill="#C3A271">On Tuesday, the fourteenth of March 1911</text>
+      <text x="400" y="243" font-size="29" letter-spacing="1">A PEAL OF GRANDSIRE</text>
+      <text x="400" y="277" font-size="29" letter-spacing="1">TRIPLES</text>
+      <text x="400" y="309" font-size="16" fill="#C3A271">5040 Changes, in 2 hrs 58 mins</text>
+      <path d="M300 326h200" stroke="#8A5A22" stroke-width="1.5"/>
+    </g>
+    <g fill="#D9B06B" font-size="14.5" font-family="Bitstream Charter, Georgia, serif">
+      <text x="196" y="360">1. Alfred Rylatt</text><text x="430" y="360">5. Samuel Garbrook</text>
+      <text x="196" y="388">2. Ellen Winnard</text><text x="430" y="388">6. Thomas Pellwick</text>
+      <text x="196" y="416">3. James Stangrove</text><text x="430" y="416">7. Arthur Melsham</text>
+      <text x="196" y="444">4. Hannah Orrell</text><text x="430" y="444">8. Jabez Cowdry</text>
+    </g>
+    <g fill="#B98C45" font-size="13" text-anchor="middle" font-family="Bitstream Charter, Georgia, serif">
+      <text x="400" y="482">Conducted by James Stangrove</text>
+      <text x="400" y="506">Tenor 17 cwt 2 qr 11 lb in E flat</text>
+    </g>
+    <circle cx="400" cy="520" r="0" fill="none"/>
+    <rect x="118" y="546" width="564" height="12" fill="#141C18"/>
+    <rect x="104" y="556" width="592" height="7" fill="#C9C1AB"/>
+  </svg>
+  <span class="cap">Peal board, 1911 &middot; gold on green, repainted 1974</span>
+</div>
+
+<!-- ============ ELEMENT 2 — bell, headstock and wheel ============ -->
+<div class="frame el" id="headstock">
+  <svg viewBox="0 0 800 600">
+    <rect width="800" height="600" fill="#F5F1E6"/>
+    <path d="M70 528h660" stroke="#DED5BC" stroke-width="2"/>
+    <!-- frame side members -->
+    <rect x="132" y="96" width="28" height="432" fill="#2B3A33"/>
+    <rect x="640" y="96" width="28" height="432" fill="#2B3A33"/>
+    <rect x="132" y="96" width="536" height="22" fill="#2B3A33"/>
+    <!-- wheel, behind everything -->
+    <g stroke="#8A5A22" fill="none">
+      <circle cx="400" cy="286" r="152" stroke-width="12"/>
+      <circle cx="400" cy="286" r="138" stroke-width="2.5"/>
+      <g stroke-width="6">
+        <path d="M400 148v276M262 286h276"/>
+        <path d="M302 188l196 196M498 188L302 384"/>
+      </g>
+      <circle cx="400" cy="286" r="28" stroke-width="6"/>
+    </g>
+    <!-- rope in the wheel groove, then down the right-hand side -->
+    <path d="M552 286V600" stroke="#5E5340" stroke-width="7"/>
+    <!-- stay, standing up from the headstock -->
+    <path d="M438 274h18l9-120h-14z" fill="#2B3A33"/>
+    <!-- headstock and gudgeons -->
+    <rect x="288" y="258" width="224" height="56" rx="5" fill="#2B3A33"/>
+    <circle cx="268" cy="286" r="22" fill="#8A5A22"/><circle cx="532" cy="286" r="22" fill="#8A5A22"/>
+    <circle cx="268" cy="286" r="8" fill="#F5F1E6"/><circle cx="532" cy="286" r="8" fill="#F5F1E6"/>
+    <!-- bell, hung mouth down -->
+    <path d="M400 316c-48 0-72 30-76 76-3 34-13 52-31 68h214c-18-16-28-34-31-68-4-46-28-76-76-76z" fill="#8A5A22"/>
+    <rect x="286" y="458" width="228" height="20" rx="3" fill="#2B3A33"/>
+    <path d="M400 340v100" stroke="#2B3A33" stroke-width="5"/>
+    <circle cx="400" cy="454" r="17" fill="#2B3A33"/>
+    <g font-family="Inter, sans-serif" font-size="10.5" fill="#6B6049" letter-spacing="1.6">
+      <text x="70" y="70">WHEEL, 5 FT 6 IN</text>
+      <text x="470" y="70">STAY</text>
+      <text x="730" y="70" text-anchor="end">ROPE TO THE CHAMBER BELOW</text>
+      <text x="70" y="562">HEADSTOCK, GUDGEONS, PLAIN BEARINGS</text>
+    </g>
+  </svg>
+  <span class="cap">Fifth bell, hung for full-circle ringing &middot; elevation</span>
+</div>
+
+<!-- ============ ELEMENT 3 — rope sally detail ============ -->
+<div class="frame el" id="sally">
+  <svg viewBox="0 0 800 600">
+    <rect width="800" height="600" fill="#EFEADC"/>
+    <defs>
+      <g id="rope">
+        <rect x="-11" y="0" width="22" height="600" fill="#D5CAAB"/>
+        <g stroke="#BCAF8A" stroke-width="2.6" fill="none">
+          <path d="M-11 -8l22 26M-11 18l22 26M-11 44l22 26M-11 70l22 26M-11 96l22 26M-11 122l22 26M-11 148l22 26M-11 174l22 26M-11 200l22 26M-11 226l22 26M-11 252l22 26M-11 278l22 26M-11 304l22 26M-11 330l22 26M-11 356l22 26M-11 382l22 26M-11 408l22 26M-11 434l22 26M-11 460l22 26M-11 486l22 26M-11 512l22 26M-11 538l22 26M-11 564l22 26M-11 590l22 26"/>
+        </g>
+      </g>
+      <g id="sallybody">
+        <rect x="-26" y="0" width="52" height="210" rx="25" fill="#8A5A22"/>
+        <path d="M-26 46h52M-26 92h52M-26 138h52" stroke="#2B3A33" stroke-width="18"/>
+        <g stroke="#F0E7D2" stroke-width="1.4" opacity=".4">
+          <path d="M-18 6v198M-7 3v204M7 3v204M18 6v198"/>
+        </g>
+      </g>
+    </defs>
+    <g transform="translate(176 0)"><use href="#rope"/><g transform="translate(0 196)"><use href="#sallybody"/></g></g>
+    <g transform="translate(400 0)"><use href="#rope"/><g transform="translate(0 130)"><use href="#sallybody"/></g></g>
+    <g transform="translate(624 0)"><use href="#rope"/><g transform="translate(0 252)"><use href="#sallybody"/></g></g>
+    <path d="M44 92h712" stroke="#DCD3BA" stroke-width="1.5"/>
+    <g font-family="Inter, sans-serif" font-size="10.5" fill="#6B6049" letter-spacing="1.6" text-anchor="middle">
+      <text x="176" y="70">TREBLE</text><text x="400" y="70">SECOND</text><text x="624" y="70">THIRD</text>
+    </g>
+    <text x="756" y="562" font-family="Inter, sans-serif" font-size="10.5" fill="#6B6049" letter-spacing="1.6" text-anchor="end">FOUR FEET OF WOOL, SET WHERE THE HAND GOES</text>
+  </svg>
+  <span class="cap">Guild sally &middot; bell metal and verdigris, three bands</span>
+</div>
+
+</body></html>
