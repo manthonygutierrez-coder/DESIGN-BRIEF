@@ -116,6 +116,7 @@ const Session = (() => {
       addStartItem("camera", "Setup guide", () => Camera.walk());
     }
     addStartItem("suite", "Design Suite", () => Suite.launcher());
+    if (slot === "studio" && typeof CapsuleDex !== "undefined") addStartItem("capsule", "Capsule Dex", () => CapsuleDex.open());
     addStartItem("logoff", "Log Off " + LABELS[slot].name + "...", logoff);
     // The computer is on a desk in your room (src/room): get up from it, or
     // switch it off.
@@ -144,6 +145,11 @@ const Session = (() => {
       addShortcut("camera", "Camera", "camera", () => Camera.open());
     }
     addShortcut("suite", "Design Suite", "suite", () => Suite.launcher());
+    // Slips from the gachapon machine in the room: drawing prompts for Studio.
+    if (slot === "studio" && typeof CapsuleDex !== "undefined") {
+      await CapsuleDex.boot().catch((e) => console.error("[capsules] boot failed:", e));
+      addShortcut("capsules", "Capsule Dex", "capsule", () => CapsuleDex.open());
+    }
     if (slot === "studio") Mail.restore();
 
     // The desk has its own music, from the first logon. An established

@@ -172,6 +172,12 @@ winterbourneandsons:{p:{k:"#14110E",w:"#D8C08A",a:"#8A7040"},g:[
     "..kkttttbbttkk..",".kktaattbbtttkk.",".kttaattttttcck.","kkttttttttttcckk",
     "kttttttttttttttk","kkttddttttttttkk",".kttddtttkkkttk.",".kkttttttk.ktkk.",
     "..kktttttkkkkk..","...kkttttttkk...",".....kkkkkk.....","................"]},
+  // a gachapon capsule: clear top, coloured bottom
+  capsule:{p:{k:"#0A0A0A",w:"#EAF6F8",h:"#FFFFFF",a:"#E2483D",d:"#A8322A"},g:[
+    "................",".....kkkkkk.....","...kkwwwwwwkk...","..kwhhwwwwwwwk..",
+    ".kwhhwwwwwwwwwk.",".kwwwwwwwwwwwwk.",".kkkkkkkkkkkkkk.",".kaaaaaaaaaaaak.",
+    ".kaaaaaaaaaaadk.","..kaaaaaaaaadk..","...kkaaaaaddk...",".....kkkkkk.....",
+    "................","................","................","................"]},
   /* ── the room: leaving the desk, and switching off ── */
   standup:{p:{k:"#0A0A0A",a:"#7CF9C0"},g:[
     "................",".......kk.......","......kaak......",".....kaaaak.....",
