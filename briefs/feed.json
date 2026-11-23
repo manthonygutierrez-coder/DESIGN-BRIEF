@@ -1,7 +1,257 @@
 {
   "version": 1,
-  "updated": "2026-11-16T13:34:22Z",
+  "updated": "2026-11-23T13:33:52Z",
   "briefs": [
+    {
+      "id": "2026-11-23-the-middle-of-the-o",
+      "cadence": "weekly",
+      "received": "2026-11-23T13:33:52Z",
+      "discipline": "Type Design",
+      "brief": {
+        "project": "THE MIDDLE OF THE O",
+        "client": "A monumental mason's yard whose last freehand letter-cutter stopped in August",
+        "ask": "Harold cut every letter that left this yard from 1961 until August and never worked from an alphabet, because he drew them straight onto the stone and cut off the drawing. We bought a stencil plotter in October and found out what he never had to know: a plotter-cut O drops its middle out at the first pass of grit, because nothing is holding it in. Draw us an alphabet with the ties already in it — one that cuts in rubber, cuts on the banker, and goes into a churchyard next to his without either of them looking like a correction of the other. Fourteen stones are promised before Easter and the regulations change on 1 January.",
+        "deliver": [
+          "Roman capitals, lower case and figures in two weights, one for slate and one for sandstone, with the accents the Polish and Welsh names on the books need",
+          "A tied stencil variant of every closed letter and figure, the ties drawn rather than generated",
+          "A date set that columns up on a two-line date at 55 mm without respacing by hand",
+          "A cutting sheet at 1:1 for 40, 55 and 75 mm, stroke widths and tie positions marked for the bench",
+          "A proof blasted into an offcut of each of the three stones we keep, photographed wet and dry",
+          "Twelve letters set beside Harold's 1961 alphabet, same words, same stone, for the parish to look at"
+        ],
+        "limits": [
+          "Every closed letter has to hold together as one piece of rubber. An O with no tie drops its middle out on the first pass of grit.",
+          "One alphabet, two stones. Burlington slate will take a 2 mm stroke; the Lazonby sandstone will not hold anything under 5.",
+          "Capitals cap at 75 mm and nothing applied is permitted from January. No letter can rely on lead or paint to be read.",
+          "It is read at arm's length, wet, by somebody who already knows what it says. Fine is not the same as legible."
+        ],
+        "tone": "Plain · durable · not solemn"
+      },
+      "clientProfile": {
+        "who": "Olwen Bracegirdle",
+        "role": "Letter cutter; the yard since 1998",
+        "co": "Dunnerdale Monumental Works",
+        "dom": "dunnerdalestone.co.uk",
+        "frame": "press",
+        "theme": {
+          "bg": "#F3EFE6",
+          "panel": "#E6DFD0",
+          "ink": "#1C1A17",
+          "dim": "#6B6355",
+          "line": "#CFC6B4",
+          "brand": "#3C4A52",
+          "brand2": "#9C5334",
+          "link": "#7A3F26",
+          "onBrand": "#F3EFE6",
+          "head": "Georgia, 'Times New Roman', serif",
+          "body": "Georgia, 'Times New Roman', serif"
+        },
+        "voice": "I will want to see it blasted into slate before I agree it works, and so will you.",
+        "refs": [
+          "blast rubber stencil",
+          "slate headstone lettering",
+          "painted yard board",
+          "mason's banker and chisels",
+          "churchyard in rain"
+        ],
+        "site": {
+          "tagline": "Monumental masons · letters cut on the premises since 1904",
+          "est": "Est. 1904 · The Yard, Seathwaite Bridge",
+          "foot": "We do not quote by telephone. Bring the wording written down.",
+          "nav": [
+            [
+              "Home",
+              "/"
+            ],
+            [
+              "Lettering",
+              "/lettering"
+            ]
+          ],
+          "pages": {
+            "/": [
+              {
+                "t": "lede",
+                "p": "Headstones, kerbs and churchyard repairs for the eleven parishes between Broughton and Coniston. Every letter on every stone that has left this yard since 1904 was cut here, by somebody whose name is in the wages book. Until August they were drawn freehand on the stone and cut straight off the drawing."
+              },
+              {
+                "t": "notice",
+                "h": "Lettering, from 1 January",
+                "p": "The Chancellor's revised churchyard regulations take effect on 1 January and no longer permit applied lead or plastic letters on any new stone in this diocese. Everything leaving the yard after that date is incised on the banker or blasted through rubber cut here. Stones already standing are unaffected.",
+                "stamp": "Diocesan notice"
+              },
+              {
+                "t": "spec",
+                "h": "How a stone is made here",
+                "rows": [
+                  [
+                    "Stone kept",
+                    "Burlington blue-grey slate, Lazonby red sandstone, Portland limestone"
+                  ],
+                  [
+                    "Lettering",
+                    "Incised on the banker, or blasted through rubber cut on the premises"
+                  ],
+                  [
+                    "Letter height",
+                    "Capitals 40 to 75 mm. The regulations do not permit more"
+                  ],
+                  [
+                    "Finish",
+                    "Rubbed, not polished. Six of the eleven churchyards forbid a polished face"
+                  ],
+                  [
+                    "Fixing",
+                    "Dowelled into a 450 mm foundation, by us, on a dry day"
+                  ],
+                  [
+                    "From order",
+                    "Fourteen to twenty weeks. Frost stops the fixing, not the cutting"
+                  ]
+                ]
+              },
+              {
+                "t": "table",
+                "h": "The eleven churchyards, and what they allow",
+                "sub": "The incumbent decides, not us. Where two parishes share an incumbent they do not always agree.",
+                "cols": [
+                  "Churchyard",
+                  "Stone permitted",
+                  "Lettering",
+                  "Height"
+                ],
+                "rows": [
+                  [
+                    "Seathwaite",
+                    "Slate, sandstone",
+                    "Incised or blasted",
+                    "75 mm"
+                  ],
+                  [
+                    "Ulpha",
+                    "Slate only",
+                    "Incised only",
+                    "55 mm"
+                  ],
+                  [
+                    "Broughton Mills",
+                    "Slate, limestone",
+                    "Incised or blasted",
+                    "75 mm"
+                  ],
+                  [
+                    "Torver",
+                    "Slate only",
+                    "Incised only",
+                    "50 mm"
+                  ],
+                  [
+                    "Coniston",
+                    "Slate, sandstone, limestone",
+                    "Incised or blasted",
+                    "75 mm"
+                  ]
+                ],
+                "note": "Three will not take a kerb. None will take an applied letter after January."
+              }
+            ],
+            "/lettering": [
+              {
+                "t": "table",
+                "h": "What a letter costs",
+                "sub": "Per letter, cut and painted in where the parish allows it. A date is charged as its figures.",
+                "cols": [
+                  "Work",
+                  "Height",
+                  "Method",
+                  "Per letter"
+                ],
+                "rows": [
+                  [
+                    "Roman capitals",
+                    "40 mm",
+                    "Incised on the banker",
+                    "£9.40"
+                  ],
+                  [
+                    "Roman capitals",
+                    "55 mm",
+                    "Incised on the banker",
+                    "£11.80"
+                  ],
+                  [
+                    "Roman capitals",
+                    "75 mm",
+                    "Blasted, rubber cut here",
+                    "£7.60"
+                  ],
+                  [
+                    "Lower case",
+                    "55 mm",
+                    "Incised on the banker",
+                    "£12.20"
+                  ],
+                  [
+                    "Figures, date set",
+                    "55 mm",
+                    "Blasted",
+                    "£7.60"
+                  ],
+                  [
+                    "Recutting, weathered",
+                    "As found",
+                    "Incised on the banker",
+                    "£14.00"
+                  ]
+                ],
+                "note": "Prices hold to 31 March. Slate has gone up twice this year and we have not passed it on yet."
+              },
+              {
+                "t": "notice",
+                "h": "Why the letters are changing",
+                "p": "Harold Sissons cut every letter that left this yard between 1961 and August. He pencilled them on the stone and cut straight off the drawing, and he did not work from an alphabet because he had no use for one. The plotter cuts rubber from a drawn alphabet or it cuts nothing. That alphabet is being drawn now, and until it is finished we are quoting incised work only.",
+                "stamp": "October 2026"
+              },
+              {
+                "t": "spec",
+                "h": "The stones, and what they hold",
+                "rows": [
+                  [
+                    "Burlington blue-grey slate",
+                    "Takes a 2 mm stroke and keeps it. Riven face, or rubbed"
+                  ],
+                  [
+                    "Lazonby red sandstone",
+                    "Nothing under 5 mm. The grain takes the edge off a fine line in ten winters"
+                  ],
+                  [
+                    "Portland limestone",
+                    "Cuts sweetly, weathers green on the north side within five years"
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "assets": {
+        "markSVG": "<path d=\"M35.6 9.3A23 23 0 0 1 35.6 54.7\" fill=\"none\" stroke=\"%B%\" stroke-width=\"9\"/><path d=\"M28.4 54.7A23 23 0 0 1 28.4 9.3\" fill=\"none\" stroke=\"%B%\" stroke-width=\"9\"/><rect x=\"28\" y=\"4\" width=\"8\" height=\"10\" fill=\"%C%\"/><rect x=\"28\" y=\"50\" width=\"8\" height=\"10\" fill=\"%C%\"/>",
+        "images": [
+          {
+            "ref": "blast rubber stencil",
+            "path": "briefs/assets/dunnerdalestone/stencil.png"
+          },
+          {
+            "ref": "slate headstone lettering",
+            "path": "briefs/assets/dunnerdalestone/slab.png"
+          },
+          {
+            "ref": "painted yard board",
+            "path": "briefs/assets/dunnerdalestone/board.png"
+          }
+        ]
+      }
+    },
     {
       "id": "2026-11-16-the-handstroke-gap",
       "cadence": "weekly",

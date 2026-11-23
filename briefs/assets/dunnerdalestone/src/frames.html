@@ -1,0 +1,233 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+:root{--bg:#F3EFE6;--panel:#E6DFD0;--ink:#1C1A17;--dim:#6B6355;--line:#CFC6B4;--b:#3C4A52;--c:#9C5334;
+      --slate:#46525B;--slateL:#67737C;--cut:#8E9AA2;--rubber:#26211E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#8d8878;font-family:"Bitstream Charter","Liberation Serif",Georgia,serif;-webkit-font-smoothing:antialiased}
+.frame{position:relative;overflow:hidden;background:var(--bg);margin:0 0 24px}
+#page{width:1200px;height:900px;display:flex;flex-direction:column}
+.el{width:800px;height:600px}
+.sc{font-family:Inter,"Liberation Sans",sans-serif;text-transform:uppercase;letter-spacing:.16em}
+.inscr{font-family:Caladea,"Liberation Serif",Georgia,serif}
+
+/* ---------- PAGE ---------- */
+.mast{display:grid;grid-template-columns:1fr auto 1fr;align-items:flex-end;gap:24px;
+      padding:38px 56px 16px;border-bottom:1px solid var(--line)}
+.slug{font-size:10.5px;color:var(--dim)}
+.slug.r{text-align:right}
+.wm{display:flex;align-items:center;gap:18px}
+.mk{width:50px;height:50px;flex:none}
+.wm h1{font-size:35px;font-weight:400;letter-spacing:.005em;color:var(--ink);line-height:1.06;text-align:center}
+.tag{text-align:center;font-size:15px;font-style:italic;color:var(--dim);padding:12px 0 0}
+.nav{display:flex;justify-content:center;padding:14px 0 0;margin:0 56px;border-bottom:3px double var(--line);padding-bottom:12px}
+.nav i{font-style:normal;font-size:10.5px;color:var(--ink);padding:0 15px;border-right:1px solid var(--line)}
+.nav i:last-child{border-right:0}
+.nav i.on{color:var(--c);font-weight:700}
+.body{padding:20px 56px 0;flex:1;display:flex;flex-direction:column}
+.lede{font-size:18px;line-height:1.44;color:var(--ink);max-width:1010px}
+.lede::first-letter{float:left;font-size:52px;line-height:.86;padding:4px 10px 0 0;color:var(--c)}
+.notice{margin-top:16px;border:1px solid var(--b);border-left:6px solid var(--b);background:var(--panel);
+        padding:12px 22px 12px 20px;position:relative}
+.notice b{display:block;font-size:17px;color:var(--b);margin-bottom:5px}
+.notice p{font-size:13.5px;line-height:1.55;color:var(--ink);max-width:880px}
+.notice span{position:absolute;right:18px;top:15px;font-size:9px;color:var(--dim);
+             font-family:Inter,sans-serif;text-transform:uppercase;letter-spacing:.14em}
+.cols{display:flex;gap:44px;margin-top:18px}
+.cols>.l{flex:1}
+.cols>.r{width:316px;flex:none}
+h3{font-size:10px;color:var(--c);margin-bottom:11px;font-weight:700;
+   font-family:Inter,sans-serif;text-transform:uppercase;letter-spacing:.13em}
+dl{display:grid;grid-template-columns:118px 1fr}
+dt{font-size:9.5px;color:var(--dim);padding:6px 0;border-bottom:1px solid var(--line);font-family:Inter,sans-serif;
+   text-transform:uppercase;letter-spacing:.1em}
+dd{font-size:12.5px;color:var(--ink);padding:5px 0;border-bottom:1px solid var(--line);line-height:1.34}
+.heights{border-top:1px solid var(--ink)}
+.hrow{display:flex;align-items:flex-end;gap:16px;border-bottom:1px solid var(--line);padding:7px 0 5px}
+.hrow .g{color:var(--b);line-height:.9}
+.hrow .m{font-size:9.5px;color:var(--dim);font-family:Inter,sans-serif;letter-spacing:.1em;
+         text-transform:uppercase;padding-bottom:3px;margin-left:auto;text-align:right}
+.tbl{margin-top:12px}
+table{width:100%;border-collapse:collapse}
+th{font-size:9px;color:var(--dim);text-align:left;padding:0 10px 6px 0;border-bottom:1px solid var(--ink);
+   font-family:Inter,sans-serif;text-transform:uppercase;letter-spacing:.12em;font-weight:600}
+th:last-child,td:last-child{text-align:right;padding-right:0}
+td{font-size:12.5px;color:var(--ink);padding:5px 10px 5px 0;border-bottom:1px solid var(--line);line-height:1.3}
+td:first-child{font-weight:700}
+.note{font-size:10.5px;line-height:1.5;color:var(--dim);margin-top:7px;font-style:italic}
+.foot{margin-top:auto;border-top:1px solid var(--line);padding:10px 56px 12px;text-align:center;
+      font-size:10px;color:var(--dim)}
+
+/* ---------- ELEMENTS ---------- */
+.el svg{display:block;width:800px;height:600px}
+.cap{position:absolute;left:28px;bottom:20px;font-size:9px;color:var(--dim);font-family:Inter,sans-serif;
+     text-transform:uppercase;letter-spacing:.15em}
+.cap.lt{color:#A9B2B8}
+</style></head><body>
+
+<!-- ============ PAGE ============ -->
+<div class="frame" id="page">
+  <div class="mast">
+    <span class="slug sc">Est. 1904</span>
+    <div class="wm">
+      <svg class="mk" viewBox="0 0 64 64"><path d="M35.6 9.3A23 23 0 0 1 35.6 54.7" fill="none" stroke="#3C4A52" stroke-width="9"/><path d="M28.4 54.7A23 23 0 0 1 28.4 9.3" fill="none" stroke="#3C4A52" stroke-width="9"/><rect x="28" y="4" width="8" height="10" fill="#9C5334"/><rect x="28" y="50" width="8" height="10" fill="#9C5334"/></svg>
+      <h1>Dunnerdale<br>Monumental Works</h1>
+    </div>
+    <span class="slug r sc">The Yard, Seathwaite Bridge</span>
+  </div>
+  <p class="tag">Monumental masons · letters cut on the premises since 1904</p>
+  <div class="nav"><i class="on">Home</i><i>Lettering</i></div>
+  <div class="body">
+    <p class="lede">Headstones, kerbs and churchyard repairs for the eleven parishes between Broughton and Coniston. Every letter on every stone that has left this yard since 1904 was cut here, by somebody whose name is in the wages book. Until August they were drawn freehand on the stone and cut straight off the drawing.</p>
+    <div class="notice">
+      <b>Lettering, from 1 January</b>
+      <p>The Chancellor&rsquo;s revised churchyard regulations take effect on 1 January and no longer permit applied lead or plastic letters on any new stone in this diocese. Everything leaving the yard after that date is incised on the banker or blasted through rubber cut here. Stones already standing are unaffected.</p>
+      <span>Diocesan notice</span>
+    </div>
+    <div class="cols">
+      <div class="l">
+        <h3>How a stone is made here</h3>
+        <dl>
+          <dt>Stone kept</dt><dd>Burlington blue-grey slate, Lazonby red sandstone, Portland limestone</dd>
+          <dt>Lettering</dt><dd>Incised on the banker, or blasted through rubber cut on the premises</dd>
+          <dt>Letter height</dt><dd>Capitals 40 to 75 mm. The regulations do not permit more</dd>
+          <dt>Finish</dt><dd>Rubbed, not polished. Six of the eleven churchyards forbid a polished face</dd>
+          <dt>Fixing</dt><dd>Dowelled into a 450 mm foundation, by us, on a dry day</dd>
+          <dt>From order</dt><dd>Fourteen to twenty weeks. Frost stops the fixing, not the cutting</dd>
+        </dl>
+      </div>
+      <div class="r">
+        <h3>Heights the regulations allow</h3>
+        <div class="heights">
+          <div class="hrow"><span class="g inscr" style="font-size:75px">OH</span><span class="m">75 mm<br>blasted</span></div>
+          <div class="hrow"><span class="g inscr" style="font-size:55px">OH</span><span class="m">55 mm<br>on the banker</span></div>
+          <div class="hrow"><span class="g inscr" style="font-size:40px">OH</span><span class="m">40 mm<br>on the banker</span></div>
+        </div>
+        <p class="note">Set at the sizes they are cut at, not scaled from one drawing. The 75 mm is the only height we blast.</p>
+      </div>
+    </div>
+    <div class="tbl">
+      <h3>The eleven churchyards, and what they allow</h3>
+      <table>
+        <thead><tr><th>Churchyard</th><th>Stone permitted</th><th>Lettering</th><th>Height</th></tr></thead>
+        <tbody>
+          <tr><td>Seathwaite</td><td>Slate, sandstone</td><td>Incised or blasted</td><td>75 mm</td></tr>
+          <tr><td>Ulpha</td><td>Slate only</td><td>Incised only</td><td>55 mm</td></tr>
+          <tr><td>Broughton Mills</td><td>Slate, limestone</td><td>Incised or blasted</td><td>75 mm</td></tr>
+          <tr><td>Coniston</td><td>Slate, sandstone, limestone</td><td>Incised or blasted</td><td>75 mm</td></tr>
+        </tbody>
+      </table>
+      <p class="note">Three will not take a kerb. None will take an applied letter after January.</p>
+    </div>
+  </div>
+  <div class="foot">Dunnerdale Monumental Works · dunnerdalestone.co.uk<br>We do not quote by telephone. Bring the wording written down.</div>
+</div>
+
+<!-- ============ STENCIL ============ -->
+<div class="frame el" id="stencil">
+  <svg viewBox="0 0 800 600" id="stencilsvg">
+    <rect width="800" height="600" fill="#5A666F"/>
+    <rect x="46" y="40" width="708" height="520" fill="#26211E"/>
+    <rect x="46" y="40" width="708" height="520" fill="none" stroke="#1A1613" stroke-width="2"/>
+    <!-- glyph fill is the stone showing through where the rubber is cut away -->
+    <g id="cuts" fill="#8E9AA2" font-family="Caladea, 'Liberation Serif', Georgia, serif">
+      <text class="cut" data-tie="1" x="128" y="300" font-size="210">O</text>
+      <text class="cut" data-tie="1" x="330" y="300" font-size="210">8</text>
+      <text class="cut" data-tie="1" x="532" y="300" font-size="210">0</text>
+      <text class="line" data-tie="0" y="412" font-size="62" letter-spacing="5">E M H</text>
+      <text class="line" data-tie="1" y="412" font-size="62" letter-spacing="5">O</text>
+      <text class="line" data-tie="0" y="412" font-size="62" letter-spacing="5">WGILL</text>
+    </g>
+    <g id="ties" fill="#26211E"></g>
+    <path d="M112 452h576" stroke="#9C5334" stroke-width="2"/>
+    <text x="112" y="482" fill="#C77A52" font-family="Inter, sans-serif" font-size="14" letter-spacing="2.6">TIES 3 MM, AT THE TOP AND THE FOOT OF EVERY CLOSED LETTER</text>
+    <text x="112" y="512" fill="#7A746E" font-family="Inter, sans-serif" font-size="13" letter-spacing="2.6">BLAST RUBBER, 1.6 MM — PLOTTER-CUT, SHEET 1 OF 4</text>
+    <text x="112" y="536" fill="#5E5955" font-family="Inter, sans-serif" font-size="12" letter-spacing="2.2">DUNNERDALE MONUMENTAL WORKS · 75 MM CAPITALS</text>
+    <g stroke="#5A666F" stroke-width="2">
+      <path d="M70 64h-24M70 64v-24"/><path d="M730 536h24M730 536v24"/>
+    </g>
+  </svg>
+  <span class="cap lt">Stencil, plotter-cut · bridged counters</span>
+</div>
+
+<!-- ============ SLAB ============ -->
+<div class="frame el" id="slab">
+  <svg viewBox="0 0 800 600">
+    <rect width="800" height="600" fill="#D8D2C4"/>
+    <rect x="158" y="18" width="484" height="516" fill="#46525B"/>
+    <rect x="158" y="18" width="484" height="516" fill="none" stroke="#39434B" stroke-width="3"/>
+    <rect x="180" y="40" width="440" height="472" fill="none" stroke="#5E6A73" stroke-width="1.5"/>
+    <g fill="#E8E4DA" font-family="Caladea, 'Liberation Serif', Georgia, serif" text-anchor="middle">
+      <text x="400" y="112" font-size="25" letter-spacing="7">IN MEMORY OF</text>
+      <text x="400" y="196" font-size="55" letter-spacing="3">ELSIE MARGARET</text>
+      <text x="400" y="264" font-size="55" letter-spacing="3">HOWGILL</text>
+      <text x="400" y="348" font-size="42" letter-spacing="5">1931 — 2026</text>
+      <text x="400" y="430" font-size="24" letter-spacing="3.5">SIXTY YEARS THE POST OFFICE</text>
+      <text x="400" y="466" font-size="24" letter-spacing="3.5">AT SEATHWAITE BRIDGE</text>
+    </g>
+    <path d="M300 298h200" stroke="#9C5334" stroke-width="3"/>
+    <g fill="none" stroke="#5E6A73" stroke-width="1.5">
+      <path d="M158 534h484"/>
+    </g>
+  </svg>
+  <span class="cap">Burlington blue-grey slate · 55 mm roman, painted in</span>
+</div>
+
+<!-- ============ BOARD ============ -->
+<div class="frame el" id="board">
+  <svg viewBox="0 0 800 600">
+    <rect width="800" height="600" fill="#CFC6B4"/>
+    <g stroke="#8C8372" stroke-width="4"><path d="M170 496v74M630 496v74"/></g>
+    <rect x="58" y="62" width="684" height="438" fill="#3C4A52"/>
+    <rect x="74" y="78" width="652" height="406" fill="none" stroke="#9C5334" stroke-width="5"/>
+    <rect x="86" y="90" width="628" height="382" fill="none" stroke="#9C5334" stroke-width="1.5"/>
+    <g transform="translate(94,132) scale(1.62)">
+      <path d="M35.6 9.3A23 23 0 0 1 35.6 54.7" fill="none" stroke="#F3EFE6" stroke-width="9"/>
+      <path d="M28.4 54.7A23 23 0 0 1 28.4 9.3" fill="none" stroke="#F3EFE6" stroke-width="9"/>
+      <rect x="28" y="4" width="8" height="10" fill="#9C5334"/>
+      <rect x="28" y="50" width="8" height="10" fill="#9C5334"/>
+    </g>
+    <g fill="#F3EFE6" font-family="Caladea, 'Liberation Serif', Georgia, serif" font-size="50" letter-spacing="2">
+      <text x="238" y="178">DUNNERDALE</text>
+      <text x="238" y="240">MONUMENTAL</text>
+      <text x="238" y="302">WORKS</text>
+    </g>
+    <path d="M110 346h580" stroke="#9C5334" stroke-width="2"/>
+    <g font-family="Inter, sans-serif">
+      <text x="110" y="392" font-size="19" letter-spacing="5.5" fill="#E2DCCF">LETTERS CUT ON THE PREMISES</text>
+      <text x="110" y="436" font-size="13" letter-spacing="4" fill="#A6AFB5">THE YARD · SEATHWAITE BRIDGE · EST. 1904</text>
+    </g>
+  </svg>
+  <span class="cap">Yard board, 1800 × 900 mm · two colours and the ground</span>
+</div>
+
+<script>
+/* Ties are measured off the drawn glyphs rather than guessed: a tie crosses the
+   cut stroke at the top and the foot of a closed letter, so the counter cannot
+   drop out of the rubber when the grit hits it. */
+(function(){
+  var svg = document.getElementById('stencilsvg');
+  var ties = document.getElementById('ties');
+  function tie(x,y,w,h){
+    var r = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    r.setAttribute('x',x); r.setAttribute('y',y);
+    r.setAttribute('width',w); r.setAttribute('height',h);
+    ties.appendChild(r);
+  }
+  /* lay the cut line out left to right from one origin */
+  var x = 112;
+  svg.querySelectorAll('text.line').forEach(function(t){
+    t.setAttribute('x', x);
+    x += t.getComputedTextLength();
+  });
+  svg.querySelectorAll('text.cut, text.line').forEach(function(t){
+    if (t.dataset.tie !== '1') return;
+    var b = t.getBBox();
+    var w = Math.max(5, b.height * 0.075);
+    var cx = b.x + b.width / 2 - w / 2;
+    tie(cx, b.y - 4, w, b.height * 0.24);
+    tie(cx, b.y + b.height * 0.76, w, b.height * 0.24 + 4);
+  });
+})();
+</script>
+</body></html>
