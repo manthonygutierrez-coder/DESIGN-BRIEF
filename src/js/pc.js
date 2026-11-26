@@ -39,6 +39,10 @@ const PC = (() => {
     // The posters on the wall are just posters now: the start screen has no
     // discipline to put up.
     pick: () => false,
+    // A creature out of the gachapon machine in the room ("toy:tidepup",
+    // "seed:123"): its page goes into the Capsule Dex in Studio, or waits until
+    // Studio is logged on ("dex" or "waiting").
+    capsule: (id) => (typeof CapsuleDex !== "undefined" ? CapsuleDex.receive(id) : "waiting"),
     // Where the game is: the start screen ("world", as it always was), or the desk.
     side: () => (atScreen ? "desk" : "world"),
     // Give the game the keyboard, where it would have it after crossing.
